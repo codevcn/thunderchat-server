@@ -5,8 +5,7 @@ export type TUserId = TUser['id']
 export type TCreateUserParams = {
    email: string
    password: string
-   firstName: string
-   lastName: string
+   fullName: string
    birthday: Date
 }
 

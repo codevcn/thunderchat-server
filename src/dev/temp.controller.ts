@@ -4,7 +4,7 @@ import { PrismaService } from '@/configs/db/prisma.service'
 import { DirectMessageService } from '@/direct-message/direct-message.service'
 import { ElasticsearchService } from '@/configs/elasticsearch/elasticsearch.service'
 import { parseTxtFileToObject } from './helpers'
-import { EMessageTypes } from '@/direct-message/direct-message.enum'
+import { DevLogger } from './dev-logger'
 
 @Controller('temp')
 export class TempController {
@@ -29,7 +29,7 @@ export class TempController {
          false,
          sortType
       )
-      console.log('>>> res:', res)
+      DevLogger.logInfo('res:', res)
    }
 
    @Get('init-data')
@@ -39,19 +39,19 @@ export class TempController {
       const { key: objKey } = obj
       const { key: queryKey } = query
       if (!objKey || !queryKey || queryKey !== objKey) {
-         console.log('>>> objKey or queryKey is required')
+         DevLogger.logInfo('objKey or queryKey is required')
          return { success: false, error: 'objKey or queryKey is required' }
       }
       const users = await this.PrismaService.user.findMany({ include: { Profile: true } })
       for (const user of users) {
-         console.log('>>> user:', user)
+         DevLogger.logInfo('user:', user)
          await this.elasticsearchService.createUser(user.id, {
             user_id: user.id,
             full_name: user.Profile?.fullName,
             avatar: user.Profile?.avatar || undefined,
             email: user.email,
          })
-         console.log('>>> run this create new doc successfully')
+         DevLogger.logInfo('run this create new doc successfully')
       }
       return { success: true }
    }
@@ -60,7 +60,7 @@ export class TempController {
    async todo(@Query() query: any) {
       const { keyword, limit } = query
       if (!keyword || !limit) {
-         console.log('>>> keyword or limit is required')
+         DevLogger.logInfo('keyword or limit is required')
          return { success: false, error: 'keyword or limit is required' }
       }
       await this.elasticsearchService.searchUsers(keyword, limit)
@@ -70,10 +70,10 @@ export class TempController {
    @Get('test')
    async test(@Query() query: any) {
       try {
-         console.log('>>> run this test api create new message')
+         DevLogger.logInfo('run this test api create new message')
          const { content, authorId, recipientId, directChatId, type, stickerUrl } = query
          if (!content || !authorId || !recipientId || !directChatId) {
-            console.log('>>> input data is required')
+            DevLogger.logInfo('input data is required')
             return { success: false, error: 'input data is required' }
          }
          const res = await this.DirectMessageService.createNewMessage(
@@ -85,10 +85,10 @@ export class TempController {
             type,
             stickerUrl
          )
-         console.log('>>> res:', res)
+         DevLogger.logInfo('res:', res)
          return { success: true }
       } catch (error) {
-         console.log('>>> error:', error)
+         DevLogger.logInfo('error:', error)
          return { success: false, error: error.message }
       }
    }

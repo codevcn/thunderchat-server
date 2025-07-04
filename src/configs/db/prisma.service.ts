@@ -1,3 +1,4 @@
+import { DevLogger } from '@/dev/dev-logger'
 import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common'
 import { Prisma, PrismaClient } from '@prisma/client'
 
@@ -8,13 +9,8 @@ export class PrismaService
 {
    constructor() {
       super({ log: [{ emit: 'event', level: 'query' }] })
-      this.$on('query', async (e) => {
-         queueMicrotask(() => {
-            console.log('\n>>> SQL Query:')
-            console.log(e.query)
-            console.log('>>> Params:', e.params)
-            console.log('>>> Duration:', `${e.duration}ms`, '\n')
-         })
+      this.$on('query', (e) => {
+         DevLogger.logSQLQuery(e.query, e.params, e.duration)
       })
    }
 

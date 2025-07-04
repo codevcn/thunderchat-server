@@ -1,3 +1,4 @@
+import { DevLogger } from '@/dev/dev-logger'
 import type { TMsgToken } from '@/gateway/gateway.type'
 import type { TUserId } from '@/user/user.type'
 import ms from 'ms'
@@ -8,7 +9,7 @@ export class MessageTokensManager {
 
    printOutTokens(): void {
       for (const [key, value] of this.uniqueMsgTokens) {
-         console.log(`>>> key: ${key} - something: ${value}`)
+         DevLogger.logInfo(`key: ${key} - something: ${value}`)
       }
    }
 

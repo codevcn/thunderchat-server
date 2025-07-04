@@ -12,7 +12,6 @@ export class FriendService {
    constructor(@Inject(EProviderTokens.PRISMA_CLIENT) private PrismaService: PrismaService) {}
 
    async findByIds(userId: number, friendId: number): Promise<TFriendRequest | null> {
-      console.log('>>> findByIds:', { userId, friendId })
       return await this.PrismaService.friendRequest.findFirst({
          where: {
             OR: [

@@ -37,10 +37,10 @@ export class UserService {
 
    async createUser({ email, password }: TCreateUserParams): Promise<TUser> {
       const hashedPassword = await this.credentialService.getHashedPassword(password)
-      const exist_user = await this.PrismaService.user.findUnique({
+      const existUser = await this.PrismaService.user.findUnique({
          where: { email },
       })
-      if (exist_user) {
+      if (existUser) {
          throw new ConflictException(EAuthMessages.USER_EXISTED)
       }
       const user = await this.PrismaService.user.create({
@@ -49,10 +49,10 @@ export class UserService {
             password: hashedPassword,
          },
       })
-      this.syncDataToESService.syncDataToES(user.id, {
-         type: ESyncDataToESWorkerType.CREATE_USER,
-         data: user,
-      })
+      // this.syncDataToESService.syncDataToES(user.id, {
+      //    type: ESyncDataToESWorkerType.CREATE_USER,
+      //    data: user,
+      // })
       return user
    }
 

@@ -10,4 +10,4 @@ import { SyncDataToESService } from '@/configs/elasticsearch/sync-data-to-ES/syn
    controllers: [TempController],
    providers: [DirectMessageService, SyncDataToESService],
 })
-export class TempModule {}
+export class DevModule {}

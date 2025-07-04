@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsNumber } from 'class-validator'
+import { IsNotEmpty, IsNumber, IsOptional } from 'class-validator'
 import { Type } from 'class-transformer'
 
 export class FetchDirectChatDTO {
@@ -6,4 +6,16 @@ export class FetchDirectChatDTO {
    @IsNumber()
    @Type(() => Number)
    conversationId: number
+}
+
+export class FetchDirectChatsDTO {
+   @IsOptional()
+   @IsNumber()
+   @Type(() => Number)
+   lastId?: number
+
+   @IsNotEmpty()
+   @IsNumber()
+   @Type(() => Number)
+   limit: number
 }

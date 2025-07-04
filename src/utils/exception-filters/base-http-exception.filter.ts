@@ -3,13 +3,12 @@ import type { Response } from 'express'
 import type { THttpErrorResBody } from '@/utils/types'
 import { BaseHttpException } from '../exceptions/base-http.exception'
 import { EValidationMessages } from '../messages'
+import { DevLogger } from '@/dev/dev-logger'
 
 @Catch(HttpException)
 export class BaseHttpExceptionFilter implements ExceptionFilter<HttpException> {
    catch(exception: HttpException, host: ArgumentsHost) {
-      queueMicrotask(() => {
-         console.error('>>> http exception:', exception)
-      })
+      DevLogger.logError('http exception:', exception)
       const ctx = host.switchToHttp()
       const response = ctx.getResponse<Response<THttpErrorResBody>>()
 

@@ -63,10 +63,8 @@ export class AuthService {
    }
 
    async validateSocketAuth(clientSocket: TClientSocket): Promise<ClientSocketAuthDTO> {
-      console.log('>>> socket.auth:', clientSocket.handshake.auth)
       const socketAuth = plainToInstance(ClientSocketAuthDTO, clientSocket.handshake.auth)
       const errors = await validate(socketAuth)
-      console.log('>>> errors:', errors)
       if (errors && errors.length > 0) {
          throw new BaseWsException(EValidationMessages.INVALID_INPUT)
       }

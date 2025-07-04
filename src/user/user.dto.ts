@@ -13,10 +13,7 @@ export class CreateUserDTO {
    password: string
 
    @IsNotEmpty()
-   firstName: string
-
-   @IsNotEmpty()
-   lastName: string
+   fullName: string
 
    @IsISO8601({}, { message: EValidationMessages.WRONG_DATE_ISO_TYPE })
    birthday: Date

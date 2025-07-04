@@ -61,7 +61,7 @@ model DirectChat {
     creatorId         Int      @map("creator_id")
     recipientId       Int      @map("recipient_id")
     createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
-    lastSentMessageId Int?     @unique @map("last_sent_message_id")
+    lastSentMessageId Int      @unique @map("last_sent_message_id")
 
     Recipient       User            @relation("DirectChatsAsRecipient", fields: [recipientId], references: [id])
     Creator         User            @relation("DirectChatsAsSender", fields: [creatorId], references: [id])
@@ -198,4 +198,6 @@ enum MessageStatusEnum {
 enum DirectMessageType {
     TEXT
     STICKER
+    VIDEO
+    IMAGE
 }

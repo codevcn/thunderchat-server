@@ -1,0 +1,637 @@
+Tree view of: D:\D-Documents\Code_VCN\React\VCN-THUNDER-CHAT-APP\server
+
+├── .env
+├── .env.development
+├── .eslintrc.js
+├── .gitignore
+├── .husky
+│   ├── _
+│   │   ├── .gitignore
+│   │   ├── applypatch-msg
+│   │   ├── commit-msg
+│   │   ├── h
+│   │   ├── husky.sh
+│   │   ├── post-applypatch
+│   │   ├── post-checkout
+│   │   ├── post-commit
+│   │   ├── post-merge
+│   │   ├── post-rewrite
+│   │   ├── pre-applypatch
+│   │   ├── pre-auto-gc
+│   │   ├── pre-commit
+│   │   ├── pre-push
+│   │   ├── pre-rebase
+│   │   └── prepare-commit-msg
+│   └── pre-commit
+├── .prettierignore
+├── .prettierrc.json
+├── .vscode
+│   └── settings.json
+├── README.md
+├── check-ts.cmd
+├── dev.cmd
+├── dist
+│   ├── app.middleware.d.ts
+│   ├── app.middleware.js
+│   ├── app.middleware.js.map
+│   ├── app.module.d.ts
+│   ├── app.module.js
+│   ├── app.module.js.map
+│   ├── auth
+│   │   ├── auth.controller.d.ts
+│   │   ├── auth.controller.js
+│   │   ├── auth.controller.js.map
+│   │   ├── auth.dto.d.ts
+│   │   ├── auth.dto.js
+│   │   ├── auth.dto.js.map
+│   │   ├── auth.guard.d.ts
+│   │   ├── auth.guard.js
+│   │   ├── auth.guard.js.map
+│   │   ├── auth.interface.d.ts
+│   │   ├── auth.interface.js
+│   │   ├── auth.interface.js.map
+│   │   ├── auth.message.d.ts
+│   │   ├── auth.message.js
+│   │   ├── auth.message.js.map
+│   │   ├── auth.module.d.ts
+│   │   ├── auth.module.js
+│   │   ├── auth.module.js.map
+│   │   ├── auth.service.d.ts
+│   │   ├── auth.service.js
+│   │   ├── auth.service.js.map
+│   │   ├── auth.type.d.ts
+│   │   ├── auth.type.js
+│   │   ├── auth.type.js.map
+│   │   ├── credentials
+│   │   │   ├── credentials.service.d.ts
+│   │   │   ├── credentials.service.js
+│   │   │   └── credentials.service.js.map
+│   │   └── jwt
+│   │       ├── jwt.service.d.ts
+│   │       ├── jwt.service.js
+│   │       └── jwt.service.js.map
+│   ├── configs
+│   │   ├── db
+│   │   │   ├── prisma.module.d.ts
+│   │   │   ├── prisma.module.js
+│   │   │   ├── prisma.module.js.map
+│   │   │   ├── prisma.service.d.ts
+│   │   │   ├── prisma.service.js
+│   │   │   └── prisma.service.js.map
+│   │   ├── elasticsearch
+│   │   │   ├── elasticsearch.enum.d.ts
+│   │   │   ├── elasticsearch.enum.js
+│   │   │   ├── elasticsearch.enum.js.map
+│   │   │   ├── elasticsearch.module.d.ts
+│   │   │   ├── elasticsearch.module.js
+│   │   │   ├── elasticsearch.module.js.map
+│   │   │   ├── elasticsearch.service.d.ts
+│   │   │   ├── elasticsearch.service.js
+│   │   │   ├── elasticsearch.service.js.map
+│   │   │   ├── elasticsearch.type.d.ts
+│   │   │   ├── elasticsearch.type.js
+│   │   │   ├── elasticsearch.type.js.map
+│   │   │   └── sync-data-to-ES
+│   │   │       ├── sync-data-to-ES.dto.d.ts
+│   │   │       ├── sync-data-to-ES.dto.js
+│   │   │       ├── sync-data-to-ES.dto.js.map
+│   │   │       ├── sync-data-to-ES.message.d.ts
+│   │   │       ├── sync-data-to-ES.message.js
+│   │   │       ├── sync-data-to-ES.message.js.map
+│   │   │       ├── sync-data-to-ES.module.d.ts
+│   │   │       ├── sync-data-to-ES.module.js
+│   │   │       ├── sync-data-to-ES.module.js.map
+│   │   │       ├── sync-data-to-ES.service.d.ts
+│   │   │       ├── sync-data-to-ES.service.js
+│   │   │       ├── sync-data-to-ES.service.js.map
+│   │   │       ├── sync-data-to-ES.worker.d.ts
+│   │   │       ├── sync-data-to-ES.worker.js
+│   │   │       └── sync-data-to-ES.worker.js.map
+│   │   └── logger
+│   │       ├── logger.module.d.ts
+│   │       ├── logger.module.js
+│   │       ├── logger.module.js.map
+│   │       ├── logger.service.d.ts
+│   │       ├── logger.service.js
+│   │       └── logger.service.js.map
+│   ├── dev
+│   │   ├── dev-logger.d.ts
+│   │   ├── dev-logger.js
+│   │   ├── dev-logger.js.map
+│   │   ├── helpers.d.ts
+│   │   ├── helpers.js
+│   │   ├── helpers.js.map
+│   │   ├── temp.controller.d.ts
+│   │   ├── temp.controller.js
+│   │   ├── temp.controller.js.map
+│   │   ├── temp.module.d.ts
+│   │   ├── temp.module.js
+│   │   └── temp.module.js.map
+│   ├── direct-chat
+│   │   ├── direct-chat.controller.d.ts
+│   │   ├── direct-chat.controller.js
+│   │   ├── direct-chat.controller.js.map
+│   │   ├── direct-chat.dto.d.ts
+│   │   ├── direct-chat.dto.js
+│   │   ├── direct-chat.dto.js.map
+│   │   ├── direct-chat.interface.d.ts
+│   │   ├── direct-chat.interface.js
+│   │   ├── direct-chat.interface.js.map
+│   │   ├── direct-chat.module.d.ts
+│   │   ├── direct-chat.module.js
+│   │   ├── direct-chat.module.js.map
+│   │   ├── direct-chat.service.d.ts
+│   │   ├── direct-chat.service.js
+│   │   ├── direct-chat.service.js.map
+│   │   ├── direct-chat.type.d.ts
+│   │   ├── direct-chat.type.js
+│   │   └── direct-chat.type.js.map
+│   ├── direct-message
+│   │   ├── direct-message.controller.d.ts
+│   │   ├── direct-message.controller.js
+│   │   ├── direct-message.controller.js.map
+│   │   ├── direct-message.dto.d.ts
+│   │   ├── direct-message.dto.js
+│   │   ├── direct-message.dto.js.map
+│   │   ├── direct-message.enum.d.ts
+│   │   ├── direct-message.enum.js
+│   │   ├── direct-message.enum.js.map
+│   │   ├── direct-message.interface.d.ts
+│   │   ├── direct-message.interface.js
+│   │   ├── direct-message.interface.js.map
+│   │   ├── direct-message.message.d.ts
+│   │   ├── direct-message.message.js
+│   │   ├── direct-message.message.js.map
+│   │   ├── direct-message.module.d.ts
+│   │   ├── direct-message.module.js
+│   │   ├── direct-message.module.js.map
+│   │   ├── direct-message.service.d.ts
+│   │   ├── direct-message.service.js
+│   │   ├── direct-message.service.js.map
+│   │   ├── direct-message.type.d.ts
+│   │   ├── direct-message.type.js
+│   │   ├── direct-message.type.js.map
+│   │   ├── security
+│   │   │   ├── es-message-encryptor.d.ts
+│   │   │   ├── es-message-encryptor.js
+│   │   │   └── es-message-encryptor.js.map
+│   │   └── stickers
+│   │       ├── sticker.dto.d.ts
+│   │       ├── sticker.dto.js
+│   │       ├── sticker.dto.js.map
+│   │       ├── sticker.interface.d.ts
+│   │       ├── sticker.interface.js
+│   │       ├── sticker.interface.js.map
+│   │       ├── stickers.controller.d.ts
+│   │       ├── stickers.controller.js
+│   │       ├── stickers.controller.js.map
+│   │       ├── stickers.module.d.ts
+│   │       ├── stickers.module.js
+│   │       ├── stickers.module.js.map
+│   │       ├── stickers.service.d.ts
+│   │       ├── stickers.service.js
+│   │       └── stickers.service.js.map
+│   ├── friend
+│   │   ├── friend.controller.d.ts
+│   │   ├── friend.controller.js
+│   │   ├── friend.controller.js.map
+│   │   ├── friend.dto.d.ts
+│   │   ├── friend.dto.js
+│   │   ├── friend.dto.js.map
+│   │   ├── friend.interface.d.ts
+│   │   ├── friend.interface.js
+│   │   ├── friend.interface.js.map
+│   │   ├── friend.message.d.ts
+│   │   ├── friend.message.js
+│   │   ├── friend.message.js.map
+│   │   ├── friend.module.d.ts
+│   │   ├── friend.module.js
+│   │   ├── friend.module.js.map
+│   │   ├── friend.service.d.ts
+│   │   ├── friend.service.js
+│   │   ├── friend.service.js.map
+│   │   ├── friend.type.d.ts
+│   │   ├── friend.type.js
+│   │   └── friend.type.js.map
+│   ├── friend-request
+│   │   ├── friend-request.controller.d.ts
+│   │   ├── friend-request.controller.js
+│   │   ├── friend-request.controller.js.map
+│   │   ├── friend-request.dto.d.ts
+│   │   ├── friend-request.dto.js
+│   │   ├── friend-request.dto.js.map
+│   │   ├── friend-request.enum.d.ts
+│   │   ├── friend-request.enum.js
+│   │   ├── friend-request.enum.js.map
+│   │   ├── friend-request.interface.d.ts
+│   │   ├── friend-request.interface.js
+│   │   ├── friend-request.interface.js.map
+│   │   ├── friend-request.message.d.ts
+│   │   ├── friend-request.message.js
+│   │   ├── friend-request.message.js.map
+│   │   ├── friend-request.module.d.ts
+│   │   ├── friend-request.module.js
+│   │   ├── friend-request.module.js.map
+│   │   ├── friend-request.service.d.ts
+│   │   ├── friend-request.service.js
+│   │   ├── friend-request.service.js.map
+│   │   ├── friend-request.type.d.ts
+│   │   ├── friend-request.type.js
+│   │   └── friend-request.type.js.map
+│   ├── gateway
+│   │   ├── gateway.d.ts
+│   │   ├── gateway.dto.d.ts
+│   │   ├── gateway.dto.js
+│   │   ├── gateway.dto.js.map
+│   │   ├── gateway.enum.d.ts
+│   │   ├── gateway.enum.js
+│   │   ├── gateway.enum.js.map
+│   │   ├── gateway.event.d.ts
+│   │   ├── gateway.event.js
+│   │   ├── gateway.event.js.map
+│   │   ├── gateway.interceptor.d.ts
+│   │   ├── gateway.interceptor.js
+│   │   ├── gateway.interceptor.js.map
+│   │   ├── gateway.interface.d.ts
+│   │   ├── gateway.interface.js
+│   │   ├── gateway.interface.js.map
+│   │   ├── gateway.js
+│   │   ├── gateway.js.map
+│   │   ├── gateway.message.d.ts
+│   │   ├── gateway.message.js
+│   │   ├── gateway.message.js.map
+│   │   ├── gateway.module.d.ts
+│   │   ├── gateway.module.js
+│   │   ├── gateway.module.js.map
+│   │   ├── gateway.type.d.ts
+│   │   ├── gateway.type.js
+│   │   ├── gateway.type.js.map
+│   │   ├── gateway.validation.d.ts
+│   │   ├── gateway.validation.js
+│   │   ├── gateway.validation.js.map
+│   │   ├── helpers
+│   │   │   ├── conversation-typing.helper.d.ts
+│   │   │   ├── conversation-typing.helper.js
+│   │   │   ├── conversation-typing.helper.js.map
+│   │   │   ├── message-tokens.helper.d.ts
+│   │   │   ├── message-tokens.helper.js
+│   │   │   └── message-tokens.helper.js.map
+│   │   └── socket
+│   │       ├── socket.module.d.ts
+│   │       ├── socket.module.js
+│   │       ├── socket.module.js.map
+│   │       ├── socket.service.d.ts
+│   │       ├── socket.service.js
+│   │       ├── socket.service.js.map
+│   │       ├── socket.type.d.ts
+│   │       ├── socket.type.js
+│   │       └── socket.type.js.map
+│   ├── main.d.ts
+│   ├── main.js
+│   ├── main.js.map
+│   ├── message-mapping
+│   │   ├── message-mapping.module.d.ts
+│   │   ├── message-mapping.module.js
+│   │   ├── message-mapping.module.js.map
+│   │   ├── message-mapping.service.d.ts
+│   │   ├── message-mapping.service.js
+│   │   ├── message-mapping.service.js.map
+│   │   ├── message-mapping.type.d.ts
+│   │   ├── message-mapping.type.js
+│   │   └── message-mapping.type.js.map
+│   ├── search
+│   │   ├── search.controller.d.ts
+│   │   ├── search.controller.js
+│   │   ├── search.controller.js.map
+│   │   ├── search.dto.d.ts
+│   │   ├── search.dto.js
+│   │   ├── search.dto.js.map
+│   │   ├── search.interface.d.ts
+│   │   ├── search.interface.js
+│   │   ├── search.interface.js.map
+│   │   ├── search.module.d.ts
+│   │   ├── search.module.js
+│   │   ├── search.module.js.map
+│   │   ├── search.service.d.ts
+│   │   ├── search.service.js
+│   │   ├── search.service.js.map
+│   │   ├── search.type.d.ts
+│   │   ├── search.type.js
+│   │   └── search.type.js.map
+│   ├── tsconfig.build.tsbuildinfo
+│   ├── user
+│   │   ├── user.controller.d.ts
+│   │   ├── user.controller.js
+│   │   ├── user.controller.js.map
+│   │   ├── user.decorator.d.ts
+│   │   ├── user.decorator.js
+│   │   ├── user.decorator.js.map
+│   │   ├── user.dto.d.ts
+│   │   ├── user.dto.js
+│   │   ├── user.dto.js.map
+│   │   ├── user.interface.d.ts
+│   │   ├── user.interface.js
+│   │   ├── user.interface.js.map
+│   │   ├── user.message.d.ts
+│   │   ├── user.message.js
+│   │   ├── user.message.js.map
+│   │   ├── user.module.d.ts
+│   │   ├── user.module.js
+│   │   ├── user.module.js.map
+│   │   ├── user.service.d.ts
+│   │   ├── user.service.js
+│   │   ├── user.service.js.map
+│   │   ├── user.type.d.ts
+│   │   ├── user.type.js
+│   │   └── user.type.js.map
+│   └── utils
+│       ├── crypto
+│       │   ├── symmetric-encryption.crypto.d.ts
+│       │   ├── symmetric-encryption.crypto.js
+│       │   └── symmetric-encryption.crypto.js.map
+│       ├── entities
+│       │   ├── direct-chat.entity.d.ts
+│       │   ├── direct-chat.entity.js
+│       │   ├── direct-chat.entity.js.map
+│       │   ├── direct-message.entity.d.ts
+│       │   ├── direct-message.entity.js
+│       │   ├── direct-message.entity.js.map
+│       │   ├── friend.entity.d.ts
+│       │   ├── friend.entity.js
+│       │   ├── friend.entity.js.map
+│       │   ├── message-mappings.d.ts
+│       │   ├── message-mappings.js
+│       │   ├── message-mappings.js.map
+│       │   ├── profile.entity.d.ts
+│       │   ├── profile.entity.js
+│       │   ├── profile.entity.js.map
+│       │   ├── sticker.entity.d.ts
+│       │   ├── sticker.entity.js
+│       │   ├── sticker.entity.js.map
+│       │   ├── user.entity.d.ts
+│       │   ├── user.entity.js
+│       │   └── user.entity.js.map
+│       ├── enums.d.ts
+│       ├── enums.js
+│       ├── enums.js.map
+│       ├── exception-filters
+│       │   ├── base-http-exception.filter.d.ts
+│       │   ├── base-http-exception.filter.js
+│       │   ├── base-http-exception.filter.js.map
+│       │   ├── base-ws-exception.filter.d.ts
+│       │   ├── base-ws-exception.filter.js
+│       │   └── base-ws-exception.filter.js.map
+│       ├── exceptions
+│       │   ├── base-http.exception.d.ts
+│       │   ├── base-http.exception.js
+│       │   ├── base-http.exception.js.map
+│       │   ├── base-ws.exception.d.ts
+│       │   ├── base-ws.exception.js
+│       │   ├── base-ws.exception.js.map
+│       │   ├── system.exception.d.ts
+│       │   ├── system.exception.js
+│       │   └── system.exception.js.map
+│       ├── helpers.d.ts
+│       ├── helpers.js
+│       ├── helpers.js.map
+│       ├── messages.d.ts
+│       ├── messages.js
+│       ├── messages.js.map
+│       ├── types.d.ts
+│       ├── types.js
+│       ├── types.js.map
+│       └── validation
+│           ├── env.validation.d.ts
+│           ├── env.validation.js
+│           ├── env.validation.js.map
+│           ├── transformers.d.ts
+│           ├── transformers.js
+│           └── transformers.js.map
+├── environment.d.ts
+├── gen-sql.cmd
+├── logs
+│   └── dev.log
+├── mig-db.cmd
+├── nest-cli.json
+├── note.txt
+├── package.json
+├── print_tree.py
+├── prisma
+│   ├── migrations
+│   │   ├── 20250113140556_init
+│   │   │   └── migration.sql
+│   │   ├── 20250415104952_add_status_column_msg_db
+│   │   │   └── migration.sql
+│   │   ├── 20250416084635_add_last_msg_sent_column
+│   │   │   └── migration.sql
+│   │   ├── 20250416084730_fix_to_right
+│   │   │   └── migration.sql
+│   │   ├── 20250416085810_back_to_pre_version
+│   │   │   └── migration.sql
+│   │   ├── 20250416092338_add_last_sent_message_column
+│   │   │   └── migration.sql
+│   │   ├── 20250416092446_make_correct
+│   │   │   └── migration.sql
+│   │   ├── 20250416092743_make_last_sent_msg_nullable
+│   │   │   └── migration.sql
+│   │   ├── 20250505094321_add_sticker_table
+│   │   │   └── migration.sql
+│   │   ├── 20250505100018_refactor_sticker_table
+│   │   │   └── migration.sql
+│   │   ├── 20250505112340_refactor_sticker_table
+│   │   │   └── migration.sql
+│   │   ├── 20250505160335_add_foreign_keys
+│   │   │   └── migration.sql
+│   │   ├── 20250506043253_refactor_sticker_table
+│   │   │   └── migration.sql
+│   │   ├── 20250506050314_add_sticker_category_table
+│   │   │   └── migration.sql
+│   │   ├── 20250511033204_update_sticker_category_table
+│   │   │   └── migration.sql
+│   │   ├── 20250511033429_update_sticker_category_table
+│   │   │   └── migration.sql
+│   │   ├── 20250511042341_update_sticker_category_table
+│   │   │   └── migration.sql
+│   │   ├── 20250512084800_change_to_sticker_url_column_msg_table
+│   │   │   └── migration.sql
+│   │   ├── 20250512094434_update_max_len_url_of_image
+│   │   │   └── migration.sql
+│   │   ├── 20250513144843_remove_username_field
+│   │   │   └── migration.sql
+│   │   ├── 20250515090004_add_greeting_sticker_table
+│   │   │   └── migration.sql
+│   │   ├── 20250518110814_add_recipient_to_direct_message_table
+│   │   │   └── migration.sql
+│   │   ├── 20250518152601_add_index_to_sticker_id_column
+│   │   │   └── migration.sql
+│   │   ├── 20250521101839_add_msg_mappings_field
+│   │   │   └── migration.sql
+│   │   ├── 20250521102141_add_msg_mappings_table
+│   │   │   └── migration.sql
+│   │   ├── 20250521102845_del_msg_mappings_table
+│   │   │   └── migration.sql
+│   │   ├── 20250521102911_add_msg_mappings_table
+│   │   │   └── migration.sql
+│   │   ├── 20250521104050_update_msg_mappings_table
+│   │   │   └── migration.sql
+│   │   ├── 20250521104136_update_msg_mappings_table
+│   │   │   └── migration.sql
+│   │   ├── 20250521112647_update_msg_mappings_table
+│   │   │   └── migration.sql
+│   │   ├── 20250526102249_update_message_mappings_table
+│   │   │   └── migration.sql
+│   │   └── migration_lock.toml
+│   ├── schema.prisma
+│   └── sql
+│       ├── countMutualFriends.sql
+│       ├── explainStatement.sql
+│       └── getRandomGreetingSticker.sql
+├── project_tree.txt
+├── src
+│   ├── app.middleware.ts
+│   ├── app.module.ts
+│   ├── auth
+│   │   ├── auth.controller.ts
+│   │   ├── auth.dto.ts
+│   │   ├── auth.guard.ts
+│   │   ├── auth.interface.ts
+│   │   ├── auth.message.ts
+│   │   ├── auth.module.ts
+│   │   ├── auth.service.ts
+│   │   ├── auth.type.ts
+│   │   ├── credentials
+│   │   │   └── credentials.service.ts
+│   │   └── jwt
+│   │       └── jwt.service.ts
+│   ├── configs
+│   │   ├── db
+│   │   │   ├── prisma.module.ts
+│   │   │   └── prisma.service.ts
+│   │   ├── elasticsearch
+│   │   │   ├── elasticsearch.enum.ts
+│   │   │   ├── elasticsearch.module.ts
+│   │   │   ├── elasticsearch.service.ts
+│   │   │   ├── elasticsearch.type.ts
+│   │   │   └── sync-data-to-ES
+│   │   │       ├── sync-data-to-ES.dto.ts
+│   │   │       ├── sync-data-to-ES.message.ts
+│   │   │       ├── sync-data-to-ES.module.ts
+│   │   │       ├── sync-data-to-ES.service.ts
+│   │   │       └── sync-data-to-ES.worker.ts
+│   │   └── logger
+│   │       ├── logger.module.ts
+│   │       └── logger.service.ts
+│   ├── dev
+│   │   ├── dev-logger.ts
+│   │   ├── helpers.ts
+│   │   ├── temp.controller.ts
+│   │   ├── temp.module.ts
+│   │   └── temp.txt
+│   ├── direct-chat
+│   │   ├── direct-chat.controller.ts
+│   │   ├── direct-chat.dto.ts
+│   │   ├── direct-chat.interface.ts
+│   │   ├── direct-chat.module.ts
+│   │   ├── direct-chat.service.ts
+│   │   └── direct-chat.type.ts
+│   ├── direct-message
+│   │   ├── direct-message.controller.ts
+│   │   ├── direct-message.dto.ts
+│   │   ├── direct-message.enum.ts
+│   │   ├── direct-message.interface.ts
+│   │   ├── direct-message.message.ts
+│   │   ├── direct-message.module.ts
+│   │   ├── direct-message.service.ts
+│   │   ├── direct-message.type.ts
+│   │   ├── security
+│   │   │   └── es-message-encryptor.ts
+│   │   └── stickers
+│   │       ├── sticker.dto.ts
+│   │       ├── sticker.interface.ts
+│   │       ├── stickers.controller.ts
+│   │       ├── stickers.module.ts
+│   │       └── stickers.service.ts
+│   ├── friend
+│   │   ├── friend.controller.ts
+│   │   ├── friend.dto.ts
+│   │   ├── friend.interface.ts
+│   │   ├── friend.message.ts
+│   │   ├── friend.module.ts
+│   │   ├── friend.service.ts
+│   │   └── friend.type.ts
+│   ├── friend-request
+│   │   ├── friend-request.controller.ts
+│   │   ├── friend-request.dto.ts
+│   │   ├── friend-request.enum.ts
+│   │   ├── friend-request.interface.ts
+│   │   ├── friend-request.message.ts
+│   │   ├── friend-request.module.ts
+│   │   ├── friend-request.service.ts
+│   │   └── friend-request.type.ts
+│   ├── gateway
+│   │   ├── gateway.dto.ts
+│   │   ├── gateway.enum.ts
+│   │   ├── gateway.event.ts
+│   │   ├── gateway.interceptor.ts
+│   │   ├── gateway.interface.ts
+│   │   ├── gateway.message.ts
+│   │   ├── gateway.module.ts
+│   │   ├── gateway.ts
+│   │   ├── gateway.type.ts
+│   │   ├── gateway.validation.ts
+│   │   ├── helpers
+│   │   │   ├── conversation-typing.helper.ts
+│   │   │   └── message-tokens.helper.ts
+│   │   └── socket
+│   │       ├── socket.module.ts
+│   │       ├── socket.service.ts
+│   │       └── socket.type.ts
+│   ├── main.ts
+│   ├── message-mapping
+│   │   ├── message-mapping.module.ts
+│   │   ├── message-mapping.service.ts
+│   │   └── message-mapping.type.ts
+│   ├── search
+│   │   ├── search.controller.ts
+│   │   ├── search.dto.ts
+│   │   ├── search.interface.ts
+│   │   ├── search.module.ts
+│   │   ├── search.service.ts
+│   │   └── search.type.ts
+│   ├── user
+│   │   ├── user.controller.ts
+│   │   ├── user.decorator.ts
+│   │   ├── user.dto.ts
+│   │   ├── user.interface.ts
+│   │   ├── user.message.ts
+│   │   ├── user.module.ts
+│   │   ├── user.service.ts
+│   │   └── user.type.ts
+│   └── utils
+│       ├── crypto
+│       │   └── symmetric-encryption.crypto.ts
+│       ├── entities
+│       │   ├── direct-chat.entity.ts
+│       │   ├── direct-message.entity.ts
+│       │   ├── friend.entity.ts
+│       │   ├── message-mappings.ts
+│       │   ├── profile.entity.ts
+│       │   ├── sticker.entity.ts
+│       │   └── user.entity.ts
+│       ├── enums.ts
+│       ├── exception-filters
+│       │   ├── base-http-exception.filter.ts
+│       │   └── base-ws-exception.filter.ts
+│       ├── exceptions
+│       │   ├── base-http.exception.ts
+│       │   ├── base-ws.exception.ts
+│       │   └── system.exception.ts
+│       ├── helpers.ts
+│       ├── messages.ts
+│       ├── types.ts
+│       └── validation
+│           ├── env.validation.ts
+│           └── transformers.ts
+├── tsconfig.build.json
+├── tsconfig.json
+└── yarn.lock

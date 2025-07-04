@@ -4,11 +4,12 @@ import { BaseWsExceptionFilter, WsException } from '@nestjs/websockets'
 import type { TClientSocket } from '@/gateway/gateway.type'
 import { EClientSocketEvents } from '@/gateway/gateway.event'
 import type { TWsErrorResponse } from '../types'
+import { DevLogger } from '@/dev/dev-logger'
 
 @Catch(WsException)
 export class BaseWsExceptionsFilter extends BaseWsExceptionFilter {
    catch(exception: WsException, host: ArgumentsHost) {
-      console.error('>>> ws exception:', exception)
+      DevLogger.logError('ws exception:', exception)
       const clientSocket = host.switchToWs().getClient<TClientSocket>()
       const formattedException = this.formatException(exception)
       clientSocket.emit(EClientSocketEvents.error, formattedException)
@@ -37,7 +38,7 @@ export function CatchInternalSocketError() {
             // call original function
             return await originalMethod.apply(this, args)
          } catch (error) {
-            console.error('>>> catched ws error:', error)
+            DevLogger.logError('catched ws error:', error)
             // return error data to client
             return {
                isError: true,

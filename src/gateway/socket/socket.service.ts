@@ -8,6 +8,7 @@ import { EFriendRequestStatus } from '@/friend-request/friend-request.enum'
 import type { TGetFriendRequestsData } from '@/friend-request/friend-request.type'
 import type { TUserId } from '@/user/user.type'
 import type { TServerMiddleware } from './socket.type'
+import { DevLogger } from '@/dev/dev-logger'
 
 @Injectable()
 export class SocketService {
@@ -40,7 +41,7 @@ export class SocketService {
 
    printOutSession() {
       for (const [key, value] of this.connectedClients) {
-         console.log(`>>> key: ${key} - something: ${value.handshake?.auth.clientId}`)
+         DevLogger.logInfo(`key: ${key} - something: ${value.handshake?.auth.clientId}`)
       }
    }
 

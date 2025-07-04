@@ -2,6 +2,7 @@ import { Injectable, OnModuleInit } from '@nestjs/common'
 import { Client } from '@elastic/elasticsearch'
 import type { TDirectMessageMapping, TUserMapping } from './elasticsearch.type'
 import { EESIndexes } from './elasticsearch.enum'
+import { DevLogger } from '@/dev/dev-logger'
 
 export const ESClient = new Client({
    cloud: { id: process.env.ELASTIC_CLOUD_ID },
@@ -78,7 +79,7 @@ export class ElasticsearchService implements OnModuleInit {
             },
          },
       })
-      console.log('>>> result 1:', { result, keyword })
+      DevLogger.logInfo('result 1:', { result, keyword })
       return result.hits.hits.map((hit) => hit._source!)
    }
 

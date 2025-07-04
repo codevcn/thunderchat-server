@@ -32,6 +32,7 @@ import type { TDirectMessage } from '@/utils/entities/direct-message.entity'
 import { ConversationTypingManager } from './helpers/conversation-typing.helper'
 import { SyncDataToESService } from '@/configs/elasticsearch/sync-data-to-ES/sync-data-to-ES.service'
 import { GatewayInterceptor } from './gateway.interceptor'
+import { DevLogger } from '@/dev/dev-logger'
 
 @WebSocketGateway({
    cors: {
@@ -74,7 +75,6 @@ export class AppGateway
    async afterInit(server: Server): Promise<void> {
       this.socketService.setServer(server)
       this.socketService.setServerMiddleware(async (socket, next) => {
-         console.log('>>> socket 123:', socket.id)
          try {
             await this.authService.validateSocketConnection(socket)
          } catch (error) {
@@ -91,11 +91,9 @@ export class AppGateway
     * @param client - The client instance.
     */
    async handleConnection(client: TClientSocket): Promise<void> {
-      queueMicrotask(() => {
-         console.log('>>> connected socket:', {
-            socketId: client.id,
-            auth: client.handshake.auth,
-         })
+      DevLogger.logForWebsocket('connected socket:', {
+         socketId: client.id,
+         auth: client.handshake.auth,
       })
       try {
          const { clientId, messageOffset, directChatId, groupId } =
@@ -107,7 +105,7 @@ export class AppGateway
             await this.recoverMissingMessages(client, messageOffset, directChatId, groupId)
          }
       } catch (error) {
-         console.log('>>> error:', error)
+         DevLogger.logForWebsocket('error at handleConnection:', error)
          client.disconnect(true)
       }
    }
@@ -118,11 +116,9 @@ export class AppGateway
     * @param client - The client instance.
     */
    async handleDisconnect(client: TClientSocket): Promise<void> {
-      queueMicrotask(() => {
-         console.log('>>> disconnected socket:', {
-            socketId: client.id,
-            auth: client.handshake.auth,
-         })
+      DevLogger.logForWebsocket('disconnected socket:', {
+         socketId: client.id,
+         auth: client.handshake.auth,
       })
       const { userId } = client.handshake.auth
       if (userId) {
@@ -200,7 +196,6 @@ export class AppGateway
       @MessageBody() payload: SendDirectMessageDTO,
       @ConnectedSocket() client: TClientSocket
    ) {
-      console.log('>>> payload 123:', payload)
       const { clientId } = await this.authService.validateSocketAuth(client)
       const { type, msgPayload } = payload
       const { receiverId, token } = msgPayload

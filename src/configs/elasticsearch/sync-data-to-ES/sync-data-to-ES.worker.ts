@@ -28,6 +28,7 @@ import type {
    TUserMapping,
 } from '@/configs/elasticsearch/elasticsearch.type'
 import { SymmetricEncryptor } from '@/utils/crypto/symmetric-encryption.crypto'
+import { DevLogger } from '@/dev/dev-logger'
 
 type TDirectChatWithRelations = TDirectChat & {
    Creator: TUserWithProfile
@@ -244,9 +245,9 @@ const encryptMessageContent = (
 }
 
 const launchWorker = async (workerData: SyncDataToESWorkerMessageDTO) => {
-   console.log('>>> launch worker 1')
+   DevLogger.logInfo('launch worker 1')
    if (isMainThread) return
-   console.log('>>> launch worker 2')
+   DevLogger.logInfo('launch worker 2')
 
    const { messageData, prismaClient, syncDataToESHandler } = await checkInputData(workerData)
    const { type, data, msgEncryptor } = messageData
