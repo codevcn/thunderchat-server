@@ -1,0 +1,206 @@
+generator client {
+    provider        = "prisma-client-js"
+    previewFeatures = ["typedSql"]
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+model MessageMapping {
+    id        Int      @id @default(autoincrement())
+    userId    Int      @unique @map("user_id")
+    mappings  String?
+    key       String   @db.VarChar(255)
+    createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+    User User @relation("MessageMappings", fields: [userId], references: [id])
+
+    @@index([userId], type: BTree)
+    @@map("message_mappings")
+}
+
+model User {
+    id        Int      @id @default(autoincrement())
+    email     String   @unique @db.VarChar(255)
+    password  String   @db.VarChar(255)
+    createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+    Profile                   Profile?
+    DirectChatsAsSender       DirectChat[]     @relation("DirectChatsAsSender")
+    DirectChatsAsRecipient    DirectChat[]     @relation("DirectChatsAsRecipient")
+    GroupMessages             GroupMessage[]   @relation("GroupMessages")
+    DirectMessages            DirectMessage[]  @relation("DirectMessagesAsSender")
+    FriendsAsRecipient        Friend[]         @relation("FriendsAsRecipient")
+    FriendsAsSender           Friend[]         @relation("FriendsAsSender")
+    FriendRequestsSent        FriendRequest[]  @relation("FriendRequestsSent")
+    FriendRequestsReceived    FriendRequest[]  @relation("FriendRequestsReceived")
+    DirectMessagesAsRecipient DirectMessage[]  @relation("DirectMessagesAsRecipient")
+    MessageMappings           MessageMapping[] @relation("MessageMappings")
+
+    @@map("users")
+}
+
+model Profile {
+    id        Int       @id @default(autoincrement())
+    fullName  String    @map("full_name") @db.VarChar(255)
+    birthday  DateTime? @db.Date
+    about     String?
+    avatar    String?
+    userId    Int       @unique @map("user_id")
+    createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+    User User @relation(fields: [userId], references: [id])
+
+    @@map("profiles")
+}
+
+model DirectChat {
+    id                Int      @id @default(autoincrement())
+    creatorId         Int      @map("creator_id")
+    recipientId       Int      @map("recipient_id")
+    createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+    lastSentMessageId Int?     @unique @map("last_sent_message_id")
+
+    Recipient       User            @relation("DirectChatsAsRecipient", fields: [recipientId], references: [id])
+    Creator         User            @relation("DirectChatsAsSender", fields: [creatorId], references: [id])
+    Messages        DirectMessage[] @relation("MessagesOnDirectChat")
+    LastSentMessage DirectMessage?  @relation("LastSentMessageOnDirectChat", fields: [lastSentMessageId], references: [id])
+
+    @@unique([creatorId, recipientId])
+    @@map("direct_chats")
+}
+
+model DirectMessage {
+    id           Int               @id @default(autoincrement())
+    content      String
+    authorId     Int               @map("author_id")
+    recipientId  Int               @map("recipient_id")
+    directChatId Int               @map("direct_chat_id")
+    type         DirectMessageType @default(TEXT)
+    status       MessageStatusEnum
+    stickerUrl   String?           @map("sticker_url")
+    createdAt    DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+
+    Chat           DirectChat  @relation("MessagesOnDirectChat", fields: [directChatId], references: [id])
+    Author         User        @relation("DirectMessagesAsSender", fields: [authorId], references: [id])
+    ReferencedChat DirectChat? @relation("LastSentMessageOnDirectChat")
+    Sticker        Sticker?    @relation("StickerOnDirectMessage", fields: [stickerUrl], references: [imageUrl])
+    Recipient      User        @relation("DirectMessagesAsRecipient", fields: [recipientId], references: [id])
+    mediaUrl       String?     @map("media_url") // thêm dòng này
+
+    @@unique([directChatId, createdAt])
+    @@index(fields: [createdAt(sort: Desc), directChatId], type: BTree)
+    @@map("direct_messages")
+
+    
+}
+
+model Friend {
+    id          Int      @id @default(autoincrement())
+    recipientId Int      @map("recipient_id")
+    senderId    Int      @map("sender_id")
+    createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+    Recipient User @relation("FriendsAsRecipient", fields: [recipientId], references: [id])
+    Sender    User @relation("FriendsAsSender", fields: [senderId], references: [id])
+
+    @@map("friends")
+}
+
+model FriendRequest {
+    id          Int                  @id @default(autoincrement())
+    senderId    Int                  @map("sender_id")
+    recipientId Int                  @map("recipient_id")
+    status      FriendRequestsStatus
+    createdAt   DateTime             @default(now()) @map("created_at") @db.Timestamptz(3)
+    updatedAt   DateTime             @default(now()) @map("updated_at") @db.Timestamptz(3)
+
+    Sender    User @relation("FriendRequestsSent", fields: [senderId], references: [id])
+    Recipient User @relation("FriendRequestsReceived", fields: [recipientId], references: [id])
+
+    @@unique([senderId, recipientId, status])
+    @@map("friend_requests")
+}
+
+model Sticker {
+    id          Int      @id @default(autoincrement())
+    stickerName String   @map("sticker_name") @db.VarChar(50)
+    imageUrl    String   @unique @map("image_url") @db.VarChar(255)
+    categoryId  Int      @map("category_id")
+    createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+    Messages DirectMessage[]  @relation("StickerOnDirectMessage")
+    Category StickerCategory  @relation(fields: [categoryId], references: [id])
+    Greeting GreetingSticker? @relation("StickerOnGreetingSticker")
+
+    @@index(fields: [categoryId], type: BTree)
+    @@map("stickers")
+}
+
+model GreetingSticker {
+    id        Int      @id @default(autoincrement())
+    stickerId Int      @unique @map("sticker_id")
+    createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+    Sticker Sticker @relation("StickerOnGreetingSticker", fields: [stickerId], references: [id])
+
+    @@index(fields: [stickerId], type: BTree)
+    @@map("greeting_stickers")
+}
+
+model StickerCategory {
+    id           Int      @id @default(autoincrement())
+    idName       String   @unique @map("id_name") @db.VarChar(255)
+    thumbnailUrl String   @unique @map("thumbnail_url") @db.VarChar(255)
+    name         String   @db.VarChar(50)
+    createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+    Stickers Sticker[]
+
+    @@map("sticker_categories")
+}
+
+model GroupMessage {
+    id          Int      @id @default(autoincrement())
+    content     String
+    authorId    Int      @map("author_id")
+    groupChatId Int      @map("group_chat_id")
+    createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+    GroupChat GroupChat @relation("MessagesOnGroupChat", fields: [groupChatId], references: [id])
+    Author    User      @relation("GroupMessages", fields: [authorId], references: [id])
+
+    @@unique([groupChatId, createdAt])
+    @@index(fields: [createdAt(sort: Desc), groupChatId], type: BTree)
+    @@map("group_messages")
+}
+
+model GroupChat {
+    id        Int      @id @default(autoincrement())
+    name      String?  @db.VarChar(255)
+    createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+    Messages GroupMessage[] @relation("MessagesOnGroupChat")
+
+    @@map("group_chats")
+}
+
+enum FriendRequestsStatus {
+    PENDING
+    ACCEPTED
+    REJECTED
+}
+
+enum MessageStatusEnum {
+    SENT
+    SEEN
+}
+
+enum DirectMessageType {
+    TEXT
+    STICKER
+    IMAGE
+    VIDEO
+}
