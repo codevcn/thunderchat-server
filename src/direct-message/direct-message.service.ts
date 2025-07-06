@@ -28,8 +28,20 @@ export class DirectMessageService {
       recipientId: number,
       type: EMessageTypes = EMessageTypes.TEXT,
       stickerUrl?: string,
-      mediaUrl?: string // thêm dòng này
+      mediaUrl?: string,
+      fileName?: string
    ): Promise<TDirectMessage> {
+      console.log('💬 DirectMessage Service - Tạo tin nhắn mới:', {
+         type,
+         content: encryptedContent,
+         mediaUrl,
+         stickerUrl,
+         fileName,
+         authorId,
+         recipientId,
+         directChatId
+      })
+
       const message = await this.PrismaService.directMessage.create({
          data: {
             content: encryptedContent,
@@ -40,9 +52,20 @@ export class DirectMessageService {
             type: type as any,
             stickerUrl,
             recipientId,
-            ...(mediaUrl && { mediaUrl: mediaUrl as any }), // thêm dòng này
+            ...(mediaUrl && { mediaUrl: mediaUrl as any }),
+            ...(fileName && { fileName }),
          },
       })
+
+      console.log('✅ DirectMessage Service - Tin nhắn đã tạo:', {
+         id: message.id,
+         type: message.type,
+         content: message.content,
+         mediaUrl: message.mediaUrl,
+         fileName: message.fileName,
+         createdAt: message.createdAt
+      })
+
       // this.syncDataToESService.syncDataToES(authorId, {
       //    type: ESyncDataToESWorkerType.CREATE_MESSAGE,
       //    data: message,

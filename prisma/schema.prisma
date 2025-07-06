@@ -82,19 +82,18 @@ model DirectMessage {
     status       MessageStatusEnum
     stickerUrl   String?           @map("sticker_url")
     createdAt    DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+    mediaUrl       String?     @map("media_url")
+    fileName       String?     @map("file_name")
 
     Chat           DirectChat  @relation("MessagesOnDirectChat", fields: [directChatId], references: [id])
     Author         User        @relation("DirectMessagesAsSender", fields: [authorId], references: [id])
     ReferencedChat DirectChat? @relation("LastSentMessageOnDirectChat")
     Sticker        Sticker?    @relation("StickerOnDirectMessage", fields: [stickerUrl], references: [imageUrl])
     Recipient      User        @relation("DirectMessagesAsRecipient", fields: [recipientId], references: [id])
-    mediaUrl       String?     @map("media_url") // thêm dòng này
 
     @@unique([directChatId, createdAt])
     @@index(fields: [createdAt(sort: Desc), directChatId], type: BTree)
     @@map("direct_messages")
-
-    
 }
 
 model Friend {
@@ -203,4 +202,5 @@ enum DirectMessageType {
     STICKER
     IMAGE
     VIDEO
+    DOCUMENT
 }

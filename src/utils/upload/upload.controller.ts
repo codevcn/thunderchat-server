@@ -10,7 +10,20 @@ export class UploadController {
    @Post()
    @UseInterceptors(FileInterceptor('file'))
    async uploadFile(@UploadedFile() file: Express.Multer.File) {
-      const url = await this.uploadService.uploadFile(file)
-      return { url }
+      console.log('📥 Upload Controller - Nhận file:', file.originalname)
+
+      const result = await this.uploadService.uploadFile(file)
+
+      console.log('📤 Upload Controller - Trả về kết quả:', {
+         url: result.url,
+         fileType: result.fileType,
+         fileName: result.fileName
+      })
+
+      return {
+         url: result.url,
+         fileType: result.fileType,
+         fileName: result.fileName
+      }
    }
 }

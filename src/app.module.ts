@@ -37,6 +37,7 @@ import { StickersModule } from './direct-message/stickers/stickers.module'
 import { FriendRequestModule } from './friend-request/friend-request.module'
 import { SearchModule } from './search/search.module'
 import { UploadModule } from './utils/upload/upload.module'
+import { StatisticsModule } from './statistics/statistics.module'
 
 @Module({
    imports: [
@@ -52,6 +53,7 @@ import { UploadModule } from './utils/upload/upload.module'
       SearchModule,
       TempModule,
       UploadModule,
+      StatisticsModule,
    ],
 })
 export class AppModule implements NestModule {

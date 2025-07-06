@@ -31,6 +31,13 @@ export class GatewayInterceptor implements NestInterceptor {
       // Chỉ xử lý sự kiện gửi tin nhắn 1-1
       if (event !== EClientSocketEvents.send_message_direct) return
 
+      console.log('🔐 Gateway Interceptor - Nhận payload:', {
+         type: data?.type,
+         content: data?.msgPayload?.content,
+         mediaUrl: data?.msgPayload?.mediaUrl,
+         receiverId: data?.msgPayload?.receiverId
+      })
+
       // Validate message type và content
       if (!data || typeof data !== 'object') {
          throw new BaseWsException(EGatewayMessages.INVALID_MESSAGE_FORMAT)

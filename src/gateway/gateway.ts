@@ -173,10 +173,21 @@ export class AppGateway
          type: EMessageTypes
          stickerUrl?: string
          mediaUrl?: string
+         fileName?: string
       }
    ): Promise<void> {
       const { id, socket } = client
-      const { content, timestamp, directChatId, receiverId, stickerUrl, type, mediaUrl } = message
+      const { content, timestamp, directChatId, receiverId, stickerUrl, type, mediaUrl, fileName } = message
+
+      console.log('📨 Gateway - handleMessage nhận:', {
+         type,
+         content,
+         mediaUrl,
+         fileName,
+         receiverId,
+         directChatId
+      })
+
       const newMessage = await this.DirectMessageService.createNewMessage(
          content,
          id,
@@ -185,8 +196,18 @@ export class AppGateway
          receiverId,
          type,
          stickerUrl,
-         mediaUrl
+         mediaUrl,
+         fileName
       )
+
+      console.log('📤 Gateway - Emit tin nhắn cho client:', {
+         messageId: newMessage.id,
+         type: newMessage.type,
+         content: newMessage.content,
+         mediaUrl: newMessage.mediaUrl,
+         fileName: newMessage.fileName
+      })
+
       await this.directChatService.addLastSentMessage(directChatId, newMessage.id)
       const recipientSocket = this.socketService.getConnectedClient<IEmitSocketEvents>(receiverId)
       if (recipientSocket) {
@@ -260,6 +281,27 @@ export class AppGateway
                   receiverId,
                   type: EMessageTypes.VIDEO,
                   mediaUrl: msgPayload.mediaUrl,
+               }
+            )
+            break
+         case EMessageTypes.DOCUMENT:
+            console.log('📄 Gateway - Xử lý tin nhắn DOCUMENT:', {
+               content: msgPayload.content,
+               mediaUrl: msgPayload.mediaUrl,
+               fileName: msgPayload.fileName,
+               receiverId,
+               directChatId
+            })
+            await this.handleMessage(
+               { id: clientId, socket: client },
+               {
+                  content: msgPayload.content || '', // Tên file
+                  timestamp,
+                  directChatId,
+                  receiverId,
+                  type: EMessageTypes.DOCUMENT,
+                  mediaUrl: msgPayload.mediaUrl,
+                  fileName: msgPayload.fileName
                }
             )
             break
