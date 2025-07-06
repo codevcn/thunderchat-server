@@ -28,16 +28,18 @@ model User {
     createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
 
     Profile                   Profile?
-    DirectChatsAsSender       DirectChat[]     @relation("DirectChatsAsSender")
-    DirectChatsAsRecipient    DirectChat[]     @relation("DirectChatsAsRecipient")
-    GroupMessages             GroupMessage[]   @relation("GroupMessages")
-    DirectMessages            DirectMessage[]  @relation("DirectMessagesAsSender")
-    FriendsAsRecipient        Friend[]         @relation("FriendsAsRecipient")
-    FriendsAsSender           Friend[]         @relation("FriendsAsSender")
-    FriendRequestsSent        FriendRequest[]  @relation("FriendRequestsSent")
-    FriendRequestsReceived    FriendRequest[]  @relation("FriendRequestsReceived")
-    DirectMessagesAsRecipient DirectMessage[]  @relation("DirectMessagesAsRecipient")
-    MessageMappings           MessageMapping[] @relation("MessageMappings")
+    DirectChatsAsSender       DirectChat[]      @relation("DirectChatsAsSender")
+    DirectChatsAsRecipient    DirectChat[]      @relation("DirectChatsAsRecipient")
+    GroupMessages             GroupMessage[]    @relation("GroupMessages")
+    DirectMessages            DirectMessage[]   @relation("DirectMessagesAsSender")
+    FriendsAsRecipient        Friend[]          @relation("FriendsAsRecipient")
+    FriendsAsSender           Friend[]          @relation("FriendsAsSender")
+    FriendRequestsSent        FriendRequest[]   @relation("FriendRequestsSent")
+    FriendRequestsReceived    FriendRequest[]   @relation("FriendRequestsReceived")
+    DirectMessagesAsRecipient DirectMessage[]   @relation("DirectMessagesAsRecipient")
+    MessageMappings           MessageMapping[]  @relation("MessageMappings")
+    GroupChatCreator          GroupChat[]       @relation("GroupChatCreator")
+    GroupChatMembers          GroupChatMember[] @relation("GroupChatMembers")
     // UserOnlineStatus          UserOnlineStatus[] @relation("UserOnlineStatus")
 
     @@map("users")
@@ -62,7 +64,7 @@ model DirectChat {
     creatorId         Int      @map("creator_id")
     recipientId       Int      @map("recipient_id")
     createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
-    lastSentMessageId Int      @unique @map("last_sent_message_id")
+    lastSentMessageId Int?     @unique @map("last_sent_message_id")
 
     Recipient       User            @relation("DirectChatsAsRecipient", fields: [recipientId], references: [id])
     Creator         User            @relation("DirectChatsAsSender", fields: [creatorId], references: [id])
@@ -79,16 +81,16 @@ model DirectMessage {
     authorId     Int               @map("author_id")
     recipientId  Int               @map("recipient_id")
     directChatId Int               @map("direct_chat_id")
-    type         DirectMessageType @default(TEXT)
+    type         MessageType       @default(TEXT)
     status       MessageStatusEnum
     stickerUrl   String?           @map("sticker_url")
     createdAt    DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
 
-    Chat           DirectChat  @relation("MessagesOnDirectChat", fields: [directChatId], references: [id])
-    Author         User        @relation("DirectMessagesAsSender", fields: [authorId], references: [id])
-    ReferencedChat DirectChat? @relation("LastSentMessageOnDirectChat")
-    Sticker        Sticker?    @relation("StickerOnDirectMessage", fields: [stickerUrl], references: [imageUrl])
-    Recipient      User        @relation("DirectMessagesAsRecipient", fields: [recipientId], references: [id])
+    Chat                    DirectChat  @relation("MessagesOnDirectChat", fields: [directChatId], references: [id])
+    Author                  User        @relation("DirectMessagesAsSender", fields: [authorId], references: [id])
+    DirectChatOfLastSentMsg DirectChat? @relation("LastSentMessageOnDirectChat")
+    Sticker                 Sticker?    @relation("StickerOnDirectMessage", fields: [stickerUrl], references: [imageUrl])
+    Recipient               User        @relation("DirectMessagesAsRecipient", fields: [recipientId], references: [id])
 
     @@unique([directChatId, createdAt])
     @@index(fields: [createdAt(sort: Desc), directChatId], type: BTree)
@@ -160,29 +162,52 @@ model StickerCategory {
     @@map("sticker_categories")
 }
 
-model GroupMessage {
-    id          Int      @id @default(autoincrement())
-    content     String
-    authorId    Int      @map("author_id")
-    groupChatId Int      @map("group_chat_id")
-    createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+model GroupChat {
+    id                Int      @id @default(autoincrement())
+    name              String   @db.VarChar(255)
+    creatorId         Int      @map("creator_id")
+    avatarUrl         String?  @map("avatar_url")
+    createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+    lastSentMessageId Int?     @unique @map("last_sent_message_id")
 
-    GroupChat GroupChat @relation("MessagesOnGroupChat", fields: [groupChatId], references: [id])
-    Author    User      @relation("GroupMessages", fields: [authorId], references: [id])
+    Messages        GroupMessage[]    @relation("MessagesOnGroupChat")
+    Creator         User              @relation("GroupChatCreator", fields: [creatorId], references: [id])
+    Members         GroupChatMember[] @relation("GroupChatMembers")
+    LastSentMessage GroupMessage?     @relation("LastSentMessageOnGroupChat", fields: [lastSentMessageId], references: [id])
+
+    @@map("group_chats")
+}
+
+model GroupMessage {
+    id          Int               @id @default(autoincrement())
+    content     String
+    authorId    Int               @map("author_id")
+    groupChatId Int               @map("group_chat_id")
+    type        MessageType       @default(TEXT)
+    status      MessageStatusEnum
+    stickerUrl  String?           @map("sticker_url")
+    createdAt   DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+
+    GroupChat              GroupChat  @relation("MessagesOnGroupChat", fields: [groupChatId], references: [id])
+    Author                 User       @relation("GroupMessages", fields: [authorId], references: [id])
+    GroupChatOfLastSentMsg GroupChat? @relation("LastSentMessageOnGroupChat")
 
     @@unique([groupChatId, createdAt])
     @@index(fields: [createdAt(sort: Desc), groupChatId], type: BTree)
     @@map("group_messages")
 }
 
-model GroupChat {
-    id        Int      @id @default(autoincrement())
-    name      String?  @db.VarChar(255)
-    createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+model GroupChatMember {
+    id          Int      @id @default(autoincrement())
+    groupChatId Int      @map("group_chat_id")
+    userId      Int      @map("user_id")
+    joinedAt    DateTime @default(now()) @map("joined_at") @db.Timestamptz(3)
 
-    Messages GroupMessage[] @relation("MessagesOnGroupChat")
+    GroupChat GroupChat @relation("GroupChatMembers", fields: [groupChatId], references: [id])
+    User      User      @relation("GroupChatMembers", fields: [userId], references: [id])
 
-    @@map("group_chats")
+    @@unique([groupChatId, userId])
+    @@map("group_chat_members")
 }
 
 // model UserOnlineStatus {
@@ -207,7 +232,7 @@ enum MessageStatusEnum {
     SEEN
 }
 
-enum DirectMessageType {
+enum MessageType {
     TEXT
     STICKER
     VIDEO

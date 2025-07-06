@@ -12,20 +12,20 @@ import { EventEmitterModule } from '@nestjs/event-emitter'
 import { LoggerModule } from './configs/logger/logger.module'
 
 const globalConfigModules = [
-   ConfigModule.forRoot({
-      envFilePath: ['.env.development', '.env'],
-      validate: envValidation,
-   }),
-   LoggerModule,
-   PrismaModule,
-   JwtModule.register({
-      global: true,
-      secret: process.env.JWT_SECRET,
-      signOptions: {
-         expiresIn: ms(process.env.JWT_TOKEN_MAX_AGE_IN_HOUR),
-      },
-   }),
-   EventEmitterModule.forRoot({ verboseMemoryLeak: true, delimiter: ':' }),
+  ConfigModule.forRoot({
+    envFilePath: ['.env.development', '.env'],
+    validate: envValidation,
+  }),
+  LoggerModule,
+  PrismaModule,
+  JwtModule.register({
+    global: true,
+    secret: process.env.JWT_SECRET,
+    signOptions: {
+      expiresIn: ms(process.env.JWT_TOKEN_MAX_AGE_IN_HOUR),
+    },
+  }),
+  EventEmitterModule.forRoot({ verboseMemoryLeak: true, delimiter: ':' }),
 ]
 
 // put gateway here to be able to get env right way
@@ -36,24 +36,26 @@ import { DevModule } from './dev/temp.module'
 import { StickersModule } from './direct-message/stickers/stickers.module'
 import { FriendRequestModule } from './friend-request/friend-request.module'
 import { SearchModule } from './search/search.module'
+import { GroupChatModule } from './group-chat/group-chat.module'
 
 @Module({
-   imports: [
-      ...globalConfigModules,
-      AuthModule,
-      GatewayModule,
-      DirectChatsModule,
-      DirectMessageModule,
-      UserModule,
-      FriendRequestModule,
-      FriendModule,
-      StickersModule,
-      SearchModule,
-      DevModule,
-   ],
+  imports: [
+    ...globalConfigModules,
+    AuthModule,
+    GatewayModule,
+    DirectChatsModule,
+    DirectMessageModule,
+    UserModule,
+    FriendRequestModule,
+    FriendModule,
+    StickersModule,
+    SearchModule,
+    GroupChatModule,
+    DevModule,
+  ],
 })
 export class AppModule implements NestModule {
-   configure(consumer: MiddlewareConsumer) {
-      consumer.apply(RequestLoggerMiddleware).forRoutes('*')
-   }
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(RequestLoggerMiddleware).forRoutes('*')
+  }
 }

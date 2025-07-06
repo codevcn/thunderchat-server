@@ -1,17 +1,17 @@
-import { TDirectMessage } from '@/utils/entities/direct-message.entity'
+import type { TGroupMessage } from '@/utils/entities/group-message.entity'
 import type { EMessageStatus } from '@/utils/types'
 
 export type TNewGroupMessage = {
   id: number
   content: string
   authorId: number
-  directChatId: number
+  groupChatId: number
   createdAt: Date
 }
 
-export type TGetDirectMessagesData = {
+export type TGetGroupMessagesData = {
   hasMoreMessages: boolean
-  directMessages: TDirectMessage[]
+  groupMessages: TGroupMessage[]
 }
 
 export type TMsgStatusPayload = {
@@ -19,8 +19,8 @@ export type TMsgStatusPayload = {
   status: EMessageStatus
 }
 
-export type TMessageOffset = TDirectMessage['id']
+export type TMessageOffset = TGroupMessage['id']
 
 export type TMessageUpdates = Partial<
-  Omit<TDirectMessage, 'id' | 'createdAt' | 'updatedAt' | 'content'>
+  Omit<TGroupMessage, 'id' | 'createdAt' | 'updatedAt' | 'content'>
 >

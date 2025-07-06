@@ -1,7 +1,7 @@
 import { Type } from 'class-transformer'
 import { IsBoolean, IsEnum, IsNotEmpty, IsNumber, IsOptional } from 'class-validator'
 import { ESortTypes } from '@/utils/types'
-import type { TMessageOffset } from './direct-message.type'
+import type { TMessageOffset } from './group-message.type'
 import { ToBoolean } from '@/utils/validation/transformers'
 
 export class FetchMsgsParamsDTO {
@@ -13,7 +13,7 @@ export class FetchMsgsParamsDTO {
   @IsNumber()
   @IsNotEmpty()
   @Type(() => Number)
-  directChatId: number
+  groupChatId: number
 
   @IsNumber()
   @IsNotEmpty()
