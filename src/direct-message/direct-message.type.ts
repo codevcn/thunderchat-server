@@ -1,5 +1,6 @@
 import { TDirectMessage } from '@/utils/entities/direct-message.entity'
 import type { EMessageStatus } from '@/utils/types'
+import type { EMessageTypes } from './direct-message.enum'
 
 export type TNewGroupMessage = {
   id: number
@@ -24,3 +25,9 @@ export type TMessageOffset = TDirectMessage['id']
 export type TMessageUpdates = Partial<
   Omit<TDirectMessage, 'id' | 'createdAt' | 'updatedAt' | 'content'>
 >
+
+export type TSendMessageDto = {
+  content?: string
+  type: EMessageTypes
+  mediaUrl?: string
+}

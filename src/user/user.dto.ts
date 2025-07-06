@@ -4,38 +4,38 @@ import { EValidationMessages } from '@/utils/messages'
 import { Type } from 'class-transformer'
 
 export class CreateUserDTO {
-   @IsNotEmpty()
-   @IsEmail()
-   email: string
+  @IsNotEmpty()
+  @IsEmail()
+  email: string
 
-   @IsNotEmpty()
-   @MinLength(ELengths.PASSWORD_MIN_LEN)
-   password: string
+  @IsNotEmpty()
+  @MinLength(ELengths.PASSWORD_MIN_LEN)
+  password: string
 
-   @IsNotEmpty()
-   fullName: string
+  @IsNotEmpty()
+  fullName: string
 
-   @IsISO8601({}, { message: EValidationMessages.WRONG_DATE_ISO_TYPE })
-   birthday: Date
+  @IsISO8601({}, { message: EValidationMessages.WRONG_DATE_ISO_TYPE })
+  birthday: Date
 }
 
 export class GetUserByEmailDTO {
-   @IsEmail()
-   @IsNotEmpty()
-   email: string
+  @IsEmail()
+  @IsNotEmpty()
+  email: string
 }
 
 export class SearchUsersDTO {
-   @IsNotEmpty()
-   keyword: string
+  @IsNotEmpty()
+  keyword: string
 
-   @IsNotEmpty()
-   @IsNumber()
-   @Type(() => Number)
-   limit: number
+  @IsNotEmpty()
+  @IsNumber()
+  @Type(() => Number)
+  limit: number
 
-   @IsOptional()
-   @IsNumber()
-   @Type(() => Number)
-   lastUserId?: number
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  lastUserId?: number
 }

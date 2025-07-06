@@ -85,6 +85,8 @@ model DirectMessage {
     status       MessageStatusEnum
     stickerUrl   String?           @map("sticker_url")
     createdAt    DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+    mediaUrl     String?           @map("media_url")
+    fileName     String?           @map("file_name")
 
     Chat                    DirectChat  @relation("MessagesOnDirectChat", fields: [directChatId], references: [id])
     Author                  User        @relation("DirectMessagesAsSender", fields: [authorId], references: [id])
@@ -235,6 +237,7 @@ enum MessageStatusEnum {
 enum MessageType {
     TEXT
     STICKER
-    VIDEO
     IMAGE
+    VIDEO
+    DOCUMENT
 }

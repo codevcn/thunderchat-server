@@ -3,9 +3,9 @@ import { Injectable } from '@nestjs/common'
 
 @Injectable()
 export class LoggerService {
-   log(message: string): void {}
+  log(message: string): void {}
 
-   error(error: UnknownException): void {}
+  error(error: UnknownException): void {}
 
-   warn(message: string): void {}
+  warn(message: string): void {}
 }

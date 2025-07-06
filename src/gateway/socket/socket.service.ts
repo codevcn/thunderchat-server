@@ -12,61 +12,61 @@ import { DevLogger } from '@/dev/dev-logger'
 
 @Injectable()
 export class SocketService {
-   private server: Server
-   private readonly connectedClients = new Map<TUserId, Socket>()
+  private server: Server
+  private readonly connectedClients = new Map<TUserId, Socket>()
 
-   setServer(server: Server): void {
-      this.server = server
-   }
+  setServer(server: Server): void {
+    this.server = server
+  }
 
-   getServer(): Server {
-      return this.server
-   }
+  getServer(): Server {
+    return this.server
+  }
 
-   setServerMiddleware(middleware: TServerMiddleware): void {
-      this.server.use(middleware)
-   }
+  setServerMiddleware(middleware: TServerMiddleware): void {
+    this.server.use(middleware)
+  }
 
-   addConnectedClient(userId: TUserId, client: Socket): void {
-      this.connectedClients.set(userId, client)
-   }
+  addConnectedClient(userId: TUserId, client: Socket): void {
+    this.connectedClients.set(userId, client)
+  }
 
-   getConnectedClient<T extends EventsMap = EventsMap>(clientId: TUserId): Socket<T> | null {
-      return this.connectedClients.get(clientId) || null
-   }
+  getConnectedClient<T extends EventsMap = EventsMap>(clientId: TUserId): Socket<T> | null {
+    return this.connectedClients.get(clientId) || null
+  }
 
-   removeConnectedClient(userId: TUserId): void {
-      this.connectedClients.delete(userId)
-   }
+  removeConnectedClient(userId: TUserId): void {
+    this.connectedClients.delete(userId)
+  }
 
-   printOutSession() {
-      for (const [key, value] of this.connectedClients) {
-         DevLogger.logInfo(`key: ${key} - something: ${value.handshake?.auth.clientId}`)
-      }
-   }
+  printOutSession() {
+    for (const [key, value] of this.connectedClients) {
+      DevLogger.logInfo(`key: ${key} - something: ${value.handshake?.auth.clientId}`)
+    }
+  }
 
-   sendFriendRequest(
-      sender: TUserWithProfile,
-      recipientId: TUserId,
-      requestData: TGetFriendRequestsData
-   ): void {
-      const recipientSocket = this.getConnectedClient<IEmitSocketEvents>(recipientId)
-      if (recipientSocket) {
-         recipientSocket.emit(EClientSocketEvents.send_friend_request, sender, requestData)
-      }
-   }
+  sendFriendRequest(
+    sender: TUserWithProfile,
+    recipientId: TUserId,
+    requestData: TGetFriendRequestsData
+  ): void {
+    const recipientSocket = this.getConnectedClient<IEmitSocketEvents>(recipientId)
+    if (recipientSocket) {
+      recipientSocket.emit(EClientSocketEvents.send_friend_request, sender, requestData)
+    }
+  }
 
-   friendRequestAction(senderId: number, requestId: number, action: EFriendRequestStatus): void {
-      const senderSocket = this.getConnectedClient<IEmitSocketEvents>(senderId)
-      if (senderSocket) {
-         senderSocket.emit(EClientSocketEvents.friend_request_action, {
-            requestId,
-            action,
-         })
-      }
-   }
+  friendRequestAction(senderId: number, requestId: number, action: EFriendRequestStatus): void {
+    const senderSocket = this.getConnectedClient<IEmitSocketEvents>(senderId)
+    if (senderSocket) {
+      senderSocket.emit(EClientSocketEvents.friend_request_action, {
+        requestId,
+        action,
+      })
+    }
+  }
 
-   checkUserOnlineStatus(userId: TUserId): boolean {
-      return this.connectedClients.has(userId)
-   }
+  checkUserOnlineStatus(userId: TUserId): boolean {
+    return this.connectedClients.has(userId)
+  }
 }
