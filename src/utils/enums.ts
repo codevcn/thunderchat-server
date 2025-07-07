@@ -8,6 +8,7 @@ export enum ERoutes {
   HEALTHCHECK = 'healthcheck',
   STICKER = 'sticker',
   SEARCH = 'search',
+  GROUP_CHAT = 'group-chat',
 }
 
 export enum EClientCookieNames {
