@@ -10,28 +10,54 @@ export class DevLogger {
   private static sqlQueriesLogFile: string = join(this.logDir, 'sql-queries.log')
   private static websocketLogFile: string = join(this.logDir, 'websocket.log')
 
+  static safeStringifyMessage(msg: any, depth = 0, maxDepth = 4, seen = new WeakSet()): string {
+    const indent = (level: number) => '  '.repeat(level)
+
+    if (depth > maxDepth) return '[Object depth exceeded]'
+
+    if (msg === null) return 'null'
+    if (typeof msg === 'undefined') return 'undefined'
+    if (typeof msg === 'string') return `"${msg}"`
+    if (typeof msg === 'number' || typeof msg === 'boolean') return String(msg)
+    if (typeof msg === 'function') return '[Function]'
+    if (typeof msg === 'symbol') return '[Symbol]'
+
+    if (Array.isArray(msg)) {
+      const items = msg
+        .map(
+          (item, idx) =>
+            `${indent(depth + 1)}[${idx}]: ${this.safeStringifyMessage(item, depth + 1, maxDepth, seen)}`
+        )
+        .join('\n')
+
+      return `[Array] [\n${items}\n${indent(depth)}]`
+    }
+
+    if (typeof msg === 'object') {
+      if (seen.has(msg)) return '[Circular]'
+      seen.add(msg)
+
+      const entries = Object.entries(msg).map(
+        ([key, value]) =>
+          `${indent(depth + 1)}${key}: ${this.safeStringifyMessage(value, depth + 1, maxDepth, seen)}`
+      )
+
+      seen.delete(msg)
+
+      return `[Object] {\n${entries.join(',\n')}\n${indent(depth)}}`
+    }
+
+    return String(msg)
+  }
+
   static logInfo(...messages: (string | object | number)[]) {
     queueMicrotask(() => {
       if (!existsSync(this.logDir)) {
         mkdirSync(this.logDir, { recursive: true })
       }
 
-      // Ghi mỗi message trên 1 dòng, nếu là object thì log theo format object
       const logMessage =
-        '>>> ' +
-        messages
-          .map((msg) => {
-            if (typeof msg === 'object') {
-              try {
-                return JSON.stringify(msg, null, 2)
-              } catch (e) {
-                return '[Object cannot be stringified]'
-              }
-            }
-            return msg
-          })
-          .join('\n') +
-        '\n'
+        '>>> ' + messages.map((msg) => this.safeStringifyMessage(msg)).join('\n') + '\n'
 
       appendFile(this.infoLogFile, logMessage, { encoding: 'utf8' }, (err) => {
         if (err) {
@@ -73,29 +99,7 @@ export class DevLogger {
 
       // Ghi mỗi message trên 1 dòng, nếu là object thì log theo format object
       const logMessage =
-        '>>> ' +
-        messages
-          .map((msg) => {
-            if (msg instanceof Error) {
-              try {
-                return `Error:\nname: ${msg.name}\nmessage: ${msg.message}\nstack: ${msg.stack
-                  ?.split('\n')
-                  .map((line) => `    ${line}`)
-                  .join('\n')}`
-              } catch (e) {
-                return '[Object cannot be stringified]'
-              }
-            } else if (typeof msg === 'object') {
-              try {
-                return JSON.stringify(msg, null, 2)
-              } catch (e) {
-                return '[Object cannot be stringified]'
-              }
-            }
-            return msg
-          })
-          .join('\n') +
-        '\n'
+        '>>> ' + messages.map((msg) => this.safeStringifyMessage(msg)).join('\n') + '\n'
 
       appendFile(this.errorsLogFile, logMessage, { encoding: 'utf8' }, (err) => {
         if (err) {
@@ -133,20 +137,7 @@ export class DevLogger {
 
       // Ghi mỗi message trên 1 dòng, nếu là object thì log theo format object
       const logMessage =
-        '>>> ' +
-        messages
-          .map((msg) => {
-            if (typeof msg === 'object') {
-              try {
-                return JSON.stringify(msg, null, 2)
-              } catch (e) {
-                return '[Object cannot be stringified]'
-              }
-            }
-            return msg
-          })
-          .join('\n') +
-        '\n'
+        '>>> ' + messages.map((msg) => this.safeStringifyMessage(msg)).join('\n') + '\n'
 
       appendFile(this.websocketLogFile, logMessage, { encoding: 'utf8' }, (err) => {
         if (err) {

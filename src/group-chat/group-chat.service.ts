@@ -2,8 +2,12 @@ import { PrismaService } from '@/configs/db/prisma.service'
 import { S3UploadService } from '@/upload/s3-upload.service'
 import { EProviderTokens } from '@/utils/enums'
 import { Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common'
-import type { GroupChat } from '@prisma/client'
-import type { TFetchGroupChatData, TUploadGroupChatAvatar } from './group-chat.type'
+import type { GroupChat, Prisma } from '@prisma/client'
+import type {
+  TFetchGroupChatData,
+  TFetchGroupChatsData,
+  TUploadGroupChatAvatar,
+} from './group-chat.type'
 
 @Injectable()
 export class GroupChatService {
@@ -26,6 +30,7 @@ export class GroupChatService {
   }
 
   async createGroupChat(
+    creatorId: number,
     groupName: string,
     memberIds: number[],
     avatarUrl?: string
@@ -34,7 +39,12 @@ export class GroupChatService {
       data: {
         name: groupName,
         avatarUrl,
-        creatorId: memberIds[0],
+        creatorId,
+        Members: {
+          create: memberIds.map((memberId) => ({
+            userId: memberId,
+          })),
+        },
       },
     })
     return groupChat
@@ -62,5 +72,31 @@ export class GroupChatService {
       throw new NotFoundException('Group chat not found')
     }
     return groupChat
+  }
+
+  async findGroupChatsByUser(
+    userId: number,
+    lastId?: number,
+    limit: number = 20
+  ): Promise<TFetchGroupChatsData[]> {
+    // Lấy các direct chat mà user là creator hoặc recipient
+    const findCondition: Prisma.GroupChatWhereInput = {
+      creatorId: userId,
+    }
+    if (lastId) {
+      // Giả sử muốn lấy các direct chat có id < lastId (phân trang lùi)
+      findCondition.id = { lt: lastId }
+    }
+    return await this.prismaService.groupChat.findMany({
+      where: findCondition,
+      orderBy: [{ LastSentMessage: { createdAt: 'desc' } }, { id: 'desc' }],
+      take: limit,
+      include: {
+        LastSentMessage: true,
+        Creator: {
+          include: { Profile: true },
+        },
+      },
+    })
   }
 }

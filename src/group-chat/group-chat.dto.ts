@@ -1,3 +1,4 @@
+import { Type } from 'class-transformer'
 import { IsArray, IsNumber, IsOptional, IsString } from 'class-validator'
 
 export class DeleteGroupChatAvatarDTO {
@@ -20,5 +21,17 @@ export class CreateGroupChatDTO {
 
 export class FetchGroupChatDTO {
   @IsNumber()
+  @Type(() => Number)
   groupChatId: number
+}
+
+export class FetchGroupChatsDTO {
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  lastId?: number
+
+  @IsNumber()
+  @Type(() => Number)
+  limit: number
 }

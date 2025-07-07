@@ -5,7 +5,7 @@ import { ERoutes } from '@/utils/enums'
 import { IDirectChatsController } from './direct-chat.interface'
 import { FetchDirectChatDTO, FetchDirectChatsDTO } from './direct-chat.dto'
 import { User } from '@/user/user.decorator'
-import { TUser } from '@/utils/entities/user.entity'
+import { TUserWithProfile } from '@/utils/entities/user.entity'
 import { EDirectChatMessages } from './direct-chat.message'
 
 @Controller(ERoutes.DIRECT_CHAT)
@@ -14,7 +14,7 @@ export class DirectChatController implements IDirectChatsController {
   constructor(private conversationService: DirectChatService) {}
 
   @Get('fetch/:conversationId')
-  async fetchDirectChat(@Param() params: FetchDirectChatDTO, @User() user: TUser) {
+  async fetchDirectChat(@Param() params: FetchDirectChatDTO, @User() user: TUserWithProfile) {
     const directChat = await this.conversationService.findById(params.conversationId, user.id)
     if (!directChat) {
       throw new NotFoundException(EDirectChatMessages.DIRECT_CHAT_NOT_FOUND)
@@ -24,7 +24,7 @@ export class DirectChatController implements IDirectChatsController {
 
   // fetch all direct chats of user
   @Get('fetch-direct-chats')
-  async fetchAllDirectChats(@Query() query: FetchDirectChatsDTO, @User() user: TUser) {
+  async fetchAllDirectChats(@Query() query: FetchDirectChatsDTO, @User() user: TUserWithProfile) {
     const directChats = await this.conversationService.findDirectChatsByUser(
       user.id,
       query.lastId,

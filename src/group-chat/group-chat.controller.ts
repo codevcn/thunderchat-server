@@ -9,17 +9,25 @@ import {
   UseInterceptors,
   Body,
   Get,
+  UseGuards,
 } from '@nestjs/common'
 import { GroupChatService } from './group-chat.service'
 import { FileInterceptor } from '@nestjs/platform-express'
 import { IGroupChatsController } from './group-chat.interface'
-import { CreateGroupChatDTO, DeleteGroupChatAvatarDTO, FetchGroupChatDTO } from './group-chat.dto'
+import {
+  CreateGroupChatDTO,
+  DeleteGroupChatAvatarDTO,
+  FetchGroupChatDTO,
+  FetchGroupChatsDTO,
+} from './group-chat.dto'
 import { ERoutes } from '@/utils/enums'
 import { join } from 'path'
 import { User } from '@/user/user.decorator'
-import type { TUser } from '@/utils/entities/user.entity'
+import type { TUserWithProfile } from '@/utils/entities/user.entity'
+import { AuthGuard } from '@/auth/auth.guard'
 
 @Controller(ERoutes.GROUP_CHAT)
+@UseGuards(AuthGuard)
 export class GroupChatController implements IGroupChatsController {
   static readonly tempImagesDir = join(process.cwd(), 'src', 'upload', 'temp-images')
 
@@ -47,14 +55,20 @@ export class GroupChatController implements IGroupChatsController {
   }
 
   @Post('create-group-chat')
-  async createGroupChat(@Body() body: CreateGroupChatDTO) {
+  async createGroupChat(@Body() body: CreateGroupChatDTO, @User() user: TUserWithProfile) {
     const { groupName, memberIds, avatarUrl } = body
-    return await this.groupChatService.createGroupChat(groupName, memberIds, avatarUrl)
+    return await this.groupChatService.createGroupChat(user.id, groupName, memberIds, avatarUrl)
   }
 
   @Get('fetch-group-chat')
-  async fetchGroupChat(@Query() query: FetchGroupChatDTO, @User() user: TUser) {
+  async fetchGroupChat(@Query() query: FetchGroupChatDTO, @User() user: TUserWithProfile) {
     const { groupChatId } = query
     return await this.groupChatService.fetchGroupChat(groupChatId, user.id)
+  }
+
+  @Get('fetch-group-chats')
+  async fetchGroupChats(@Query() query: FetchGroupChatsDTO, @User() user: TUserWithProfile) {
+    const { lastId, limit } = query
+    return await this.groupChatService.findGroupChatsByUser(user.id, lastId, limit)
   }
 }

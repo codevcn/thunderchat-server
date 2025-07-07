@@ -56,7 +56,7 @@ export class DirectChatService {
     }
     return await this.PrismaService.directChat.findMany({
       where: findCondition,
-      orderBy: { id: 'desc' },
+      orderBy: [{ LastSentMessage: { createdAt: 'desc' } }, { id: 'desc' }],
       take: limit,
       include: {
         LastSentMessage: true,
