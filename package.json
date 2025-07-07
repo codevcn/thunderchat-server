@@ -34,7 +34,6 @@
     "@nestjs/platform-express": "^10.0.0",
     "@prisma/client": "^6.7.0",
     "@types/bcrypt": "^5.0.0",
-    "aws-sdk": "^2.1692.0",
     "axios": "^1.9.0",
     "bcrypt": "^5.1.1",
     "class-transformer": "^0.5.1",
