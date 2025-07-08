@@ -240,4 +240,5 @@ enum MessageType {
     IMAGE
     VIDEO
     DOCUMENT
+    AUDIO
 }
