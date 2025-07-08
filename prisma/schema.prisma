@@ -87,12 +87,15 @@ model DirectMessage {
     createdAt    DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
     mediaUrl     String?           @map("media_url")
     fileName     String?           @map("file_name")
+    replyToId    Int?              @map("reply_to_id")
 
-    Chat                    DirectChat  @relation("MessagesOnDirectChat", fields: [directChatId], references: [id])
-    Author                  User        @relation("DirectMessagesAsSender", fields: [authorId], references: [id])
-    DirectChatOfLastSentMsg DirectChat? @relation("LastSentMessageOnDirectChat")
-    Sticker                 Sticker?    @relation("StickerOnDirectMessage", fields: [stickerUrl], references: [imageUrl])
-    Recipient               User        @relation("DirectMessagesAsRecipient", fields: [recipientId], references: [id])
+    Chat                    DirectChat      @relation("MessagesOnDirectChat", fields: [directChatId], references: [id])
+    Author                  User            @relation("DirectMessagesAsSender", fields: [authorId], references: [id])
+    DirectChatOfLastSentMsg DirectChat?     @relation("LastSentMessageOnDirectChat")
+    Sticker                 Sticker?        @relation("StickerOnDirectMessage", fields: [stickerUrl], references: [imageUrl])
+    Recipient               User            @relation("DirectMessagesAsRecipient", fields: [recipientId], references: [id])
+    ReplyTo                 DirectMessage?  @relation("RepliesOnDirectMessage", fields: [replyToId], references: [id])
+    RepliedBy               DirectMessage[] @relation("RepliesOnDirectMessage")
 
     @@unique([directChatId, createdAt])
     @@index(fields: [createdAt(sort: Desc), directChatId], type: BTree)
@@ -200,10 +203,11 @@ model GroupMessage {
 }
 
 model GroupChatMember {
-    id          Int      @id @default(autoincrement())
-    groupChatId Int      @map("group_chat_id")
-    userId      Int      @map("user_id")
-    joinedAt    DateTime @default(now()) @map("joined_at") @db.Timestamptz(3)
+    id          Int           @id @default(autoincrement())
+    groupChatId Int           @map("group_chat_id")
+    userId      Int           @map("user_id")
+    joinedAt    DateTime      @default(now()) @map("joined_at") @db.Timestamptz(3)
+    role        GroupChatRole @default(MEMBER)
 
     GroupChat GroupChat @relation("GroupChatMembers", fields: [groupChatId], references: [id])
     User      User      @relation("GroupChatMembers", fields: [userId], references: [id])
@@ -241,4 +245,9 @@ enum MessageType {
     VIDEO
     DOCUMENT
     AUDIO
+}
+
+enum GroupChatRole {
+    ADMIN
+    MEMBER
 }
