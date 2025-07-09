@@ -213,7 +213,7 @@ export class AppGateway
 
     await this.checkUniqueMessage(token, clientId)
     await this.checkFriendship(clientId, receiverId)
-    const { directChatId, timestamp, content } = msgPayload
+    const { directChatId, timestamp, content, replyToId } = msgPayload
 
     // Content đã được mã hóa bởi interceptor
     switch (type) {
@@ -226,7 +226,7 @@ export class AppGateway
             directChatId,
             receiverId,
             type: EMessageTypes.TEXT,
-            replyToId: msgPayload.replyToId,
+            replyToId,
           }
         )
         break
@@ -240,7 +240,7 @@ export class AppGateway
             receiverId,
             type: EMessageTypes.STICKER,
             stickerUrl: content,
-            replyToId: msgPayload.replyToId,
+            replyToId,
           }
         )
         break
@@ -254,7 +254,7 @@ export class AppGateway
             receiverId,
             type: EMessageTypes.IMAGE,
             mediaUrl: msgPayload.mediaUrl,
-            replyToId: msgPayload.replyToId,
+            replyToId,
           }
         )
         break
@@ -268,7 +268,7 @@ export class AppGateway
             receiverId,
             type: EMessageTypes.VIDEO,
             mediaUrl: msgPayload.mediaUrl,
-            replyToId: msgPayload.replyToId,
+            replyToId,
           }
         )
         break
@@ -279,7 +279,7 @@ export class AppGateway
           fileName: msgPayload.fileName,
           receiverId,
           directChatId,
-          replyToId: msgPayload.replyToId,
+          replyToId,
         })
         await this.handleMessage(
           { id: clientId, socket: client },
@@ -291,7 +291,7 @@ export class AppGateway
             type: EMessageTypes.DOCUMENT,
             mediaUrl: msgPayload.mediaUrl,
             fileName: msgPayload.fileName,
-            replyToId: msgPayload.replyToId,
+            replyToId,
           }
         )
         break
