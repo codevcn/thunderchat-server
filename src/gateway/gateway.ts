@@ -166,11 +166,21 @@ export class AppGateway
       stickerUrl?: string
       mediaUrl?: string
       fileName?: string
+      replyToId?: number
     }
   ): Promise<void> {
     const { id, socket } = client
-    const { content, timestamp, directChatId, receiverId, stickerUrl, type, fileName, mediaUrl } =
-      message
+    const {
+      content,
+      timestamp,
+      directChatId,
+      receiverId,
+      stickerUrl,
+      type,
+      fileName,
+      mediaUrl,
+      replyToId,
+    } = message
     const newMessage = await this.DirectMessageService.createNewMessage(
       content,
       id,
@@ -180,7 +190,8 @@ export class AppGateway
       type as any,
       stickerUrl,
       mediaUrl,
-      fileName
+      fileName,
+      replyToId
     )
     await this.directChatService.addLastSentMessage(directChatId, newMessage.id)
     const recipientSocket = this.socketService.getConnectedClient<IEmitSocketEvents>(receiverId)
@@ -215,6 +226,7 @@ export class AppGateway
             directChatId,
             receiverId,
             type: EMessageTypes.TEXT,
+            replyToId: msgPayload.replyToId,
           }
         )
         break
@@ -228,6 +240,7 @@ export class AppGateway
             receiverId,
             type: EMessageTypes.STICKER,
             stickerUrl: content,
+            replyToId: msgPayload.replyToId,
           }
         )
         break
@@ -241,6 +254,7 @@ export class AppGateway
             receiverId,
             type: EMessageTypes.IMAGE,
             mediaUrl: msgPayload.mediaUrl,
+            replyToId: msgPayload.replyToId,
           }
         )
         break
@@ -254,6 +268,7 @@ export class AppGateway
             receiverId,
             type: EMessageTypes.VIDEO,
             mediaUrl: msgPayload.mediaUrl,
+            replyToId: msgPayload.replyToId,
           }
         )
         break
@@ -264,6 +279,7 @@ export class AppGateway
           fileName: msgPayload.fileName,
           receiverId,
           directChatId,
+          replyToId: msgPayload.replyToId,
         })
         await this.handleMessage(
           { id: clientId, socket: client },
@@ -275,6 +291,7 @@ export class AppGateway
             type: EMessageTypes.DOCUMENT,
             mediaUrl: msgPayload.mediaUrl,
             fileName: msgPayload.fileName,
+            replyToId: msgPayload.replyToId,
           }
         )
         break

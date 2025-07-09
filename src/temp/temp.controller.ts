@@ -71,7 +71,7 @@ export class TempController {
   async test(@Query() query: any) {
     try {
       console.log('>>> run this test api create new message')
-      const { content, authorId, recipientId, directChatId, type, stickerUrl } = query
+      const { content, authorId, recipientId, directChatId, type, stickerUrl, replyToId } = query
       if (!content || !authorId || !recipientId || !directChatId) {
         console.log('>>> input data is required')
         return { success: false, error: 'input data is required' }
@@ -83,10 +83,44 @@ export class TempController {
         Number(directChatId),
         Number(recipientId),
         type,
-        stickerUrl
+        stickerUrl,
+        undefined,
+        undefined,
+        replyToId ? Number(replyToId) : undefined
       )
       console.log('>>> res:', res)
-      return { success: true }
+      return { success: true, data: res }
+    } catch (error) {
+      console.log('>>> error:', error)
+      return { success: false, error: error.message }
+    }
+  }
+
+  @Get('test-reply')
+  async testReply(@Query() query: any) {
+    try {
+      console.log('>>> Test reply functionality')
+      const { directChatId, limit = 10 } = query
+      if (!directChatId) {
+        console.log('>>> directChatId is required')
+        return { success: false, error: 'directChatId is required' }
+      }
+
+      // Lấy danh sách tin nhắn có include ReplyTo
+      const messages = await this.DirectMessageService.getOlderDirectMessages(
+        999999, // offset lớn để lấy tin nhắn mới nhất
+        Number(directChatId),
+        Number(limit),
+        true
+      )
+
+      console.log('>>> Messages with ReplyTo:', messages)
+      return {
+        success: true,
+        data: messages,
+        count: messages.length,
+        messagesWithReply: messages.filter((msg) => msg.replyToId).length,
+      }
     } catch (error) {
       console.log('>>> error:', error)
       return { success: false, error: error.message }

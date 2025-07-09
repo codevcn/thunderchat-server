@@ -39,6 +39,11 @@ export class SendDirectMessagePayloadDTO {
 
   @IsOptional()
   fileName?: string
+
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  replyToId?: number
 }
 
 export class SendDirectMessageDTO {
