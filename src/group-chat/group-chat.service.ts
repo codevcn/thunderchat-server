@@ -2,12 +2,16 @@ import { PrismaService } from '@/configs/db/prisma.service'
 import { S3UploadService } from '@/upload/s3-upload.service'
 import { EProviderTokens } from '@/utils/enums'
 import { Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common'
-import type { GroupChat, Prisma } from '@prisma/client'
+import type { Prisma } from '@prisma/client'
 import type {
   TFetchGroupChatData,
   TFetchGroupChatsData,
   TUploadGroupChatAvatar,
 } from './group-chat.type'
+import { UpdateGroupChatDTO } from './group-chat.dto'
+import { EGroupChatMessages } from './group-chat.message'
+import { EGroupChatRoles } from './group-chat.enum'
+import type { TGroupChat } from '@/utils/entities/group-chat.entity'
 
 @Injectable()
 export class GroupChatService {
@@ -20,7 +24,7 @@ export class GroupChatService {
     const uploadedFile = await this.s3UploadService.uploadGroupChatAvatar(avatar)
     const avatarUrl = uploadedFile.url
     if (!avatarUrl) {
-      throw new InternalServerErrorException('Failed to update group chat avatar')
+      throw new InternalServerErrorException(EGroupChatMessages.FAILED_TO_UPDATE_GROUP_CHAT_AVATAR)
     }
     return { avatarUrl }
   }
@@ -34,15 +38,17 @@ export class GroupChatService {
     groupName: string,
     memberIds: number[],
     avatarUrl?: string
-  ): Promise<GroupChat> {
+  ): Promise<TGroupChat> {
+    const allMemberIds = [creatorId, ...memberIds]
     const groupChat = await this.prismaService.groupChat.create({
       data: {
         name: groupName,
         avatarUrl,
         creatorId,
         Members: {
-          create: memberIds.map((memberId) => ({
+          create: allMemberIds.map((memberId) => ({
             userId: memberId,
+            role: memberId === creatorId ? EGroupChatRoles.ADMIN : EGroupChatRoles.MEMBER,
           })),
         },
       },
@@ -60,16 +66,9 @@ export class GroupChatService {
           },
         },
       },
-      include: {
-        Members: {
-          include: {
-            User: true,
-          },
-        },
-      },
     })
     if (!groupChat) {
-      throw new NotFoundException('Group chat not found')
+      throw new NotFoundException(EGroupChatMessages.GROUP_CHAT_NOT_FOUND)
     }
     return groupChat
   }
@@ -98,5 +97,18 @@ export class GroupChatService {
         },
       },
     })
+  }
+
+  async updateGroupChat(
+    groupChatId: number,
+    userId: number,
+    updates: Partial<UpdateGroupChatDTO>
+  ): Promise<TGroupChat> {
+    const { avatarUrl, groupName } = updates
+    const groupChat = await this.prismaService.groupChat.update({
+      where: { id: groupChatId, creatorId: userId },
+      data: { avatarUrl, name: groupName },
+    })
+    return groupChat
   }
 }

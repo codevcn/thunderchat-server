@@ -1,4 +1,4 @@
-import { Friend, FriendRequest } from '@prisma/client'
+import type { Friend, FriendRequest } from '@prisma/client'
 
 export type TFriend = Friend
 

@@ -50,7 +50,7 @@ export class DevLogger {
     return String(msg)
   }
 
-  static logInfo(...messages: (string | object | number)[]) {
+  static logInfo(...messages: any[]) {
     queueMicrotask(() => {
       if (!existsSync(this.logDir)) {
         mkdirSync(this.logDir, { recursive: true })
@@ -91,7 +91,7 @@ export class DevLogger {
     })
   }
 
-  static logError(...messages: (string | object | number)[]) {
+  static logError(...messages: any[]) {
     queueMicrotask(() => {
       if (!existsSync(this.logDir)) {
         mkdirSync(this.logDir, { recursive: true })

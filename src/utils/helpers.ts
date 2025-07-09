@@ -2,6 +2,7 @@ import crypto from 'crypto'
 import path from 'path'
 import { Worker } from 'worker_threads'
 import type { TOnPreRetry, TRetryRequestExecutor, TRetryRequestOptions } from './types'
+import validator from 'validator'
 
 /**
  * Mã hóa tên file, đầu ra có độ dài tối đa 64 ký tự
@@ -10,16 +11,16 @@ import type { TOnPreRetry, TRetryRequestExecutor, TRetryRequestOptions } from '.
  * @returns {string} Tên file đã mã hóa, bao gồm UUID và mã băm
  */
 export function encodeFilename(originalFilename: string, length: number): string {
-   // Lấy phần mở rộng của file
-   const ext = path.extname(encodeURIComponent(originalFilename))
+  // Lấy phần mở rộng của file
+  const ext = path.extname(encodeURIComponent(originalFilename))
 
-   // Tạo hash SHA-256 từ tên file gốc
-   const hash = crypto.createHash('sha256').update(originalFilename).digest('hex').slice(0, length)
+  // Tạo hash SHA-256 từ tên file gốc
+  const hash = crypto.createHash('sha256').update(originalFilename).digest('hex').slice(0, length)
 
-   // Kết hợp UUID và hash để tạo tên file duy nhất
-   const uniqueId = crypto.randomBytes(16).toString('hex')
+  // Kết hợp UUID và hash để tạo tên file duy nhất
+  const uniqueId = crypto.randomBytes(16).toString('hex')
 
-   return `${uniqueId}-${hash}${ext}`
+  return `${uniqueId}-${hash}${ext}`
 }
 
 /**
@@ -29,7 +30,7 @@ export function encodeFilename(originalFilename: string, length: number): string
  * @returns Đối tượng đã được ép kiểu
  */
 export function typeToRawObject<T>(rawObject: T): T {
-   return rawObject
+  return rawObject
 }
 
 /**
@@ -38,7 +39,7 @@ export function typeToRawObject<T>(rawObject: T): T {
  * @returns {Worker} Một worker mới
  */
 export function createWorker(workerPath: string): Worker {
-   return new Worker(workerPath)
+  return new Worker(workerPath)
 }
 
 /**
@@ -48,30 +49,34 @@ export function createWorker(workerPath: string): Worker {
  * @returns {R} Kết quả của yêu cầu
  */
 export function retryRequest<R>(
-   requestExecutor: TRetryRequestExecutor<R>,
-   options?: TRetryRequestOptions
+  requestExecutor: TRetryRequestExecutor<R>,
+  options?: TRetryRequestOptions
 ): R {
-   let retriesCount = 0
-   function retryHandler(): R {
-      let maxRetries: number | undefined = undefined
-      let onPreRetry: TOnPreRetry | undefined = undefined
-      if (options) {
-         maxRetries = options.maxRetries
-         onPreRetry = options.onPreRetry
+  let retriesCount = 0
+  function retryHandler(): R {
+    let maxRetries: number | undefined = undefined
+    let onPreRetry: TOnPreRetry | undefined = undefined
+    if (options) {
+      maxRetries = options.maxRetries
+      onPreRetry = options.onPreRetry
+    }
+    try {
+      return requestExecutor()
+    } catch (error) {
+      if (maxRetries && retriesCount <= maxRetries) {
+        if (onPreRetry) {
+          onPreRetry(error, retriesCount)
+        }
+        retriesCount++
+        return retryHandler()
+      } else {
+        throw error
       }
-      try {
-         return requestExecutor()
-      } catch (error) {
-         if (maxRetries && retriesCount <= maxRetries) {
-            if (onPreRetry) {
-               onPreRetry(error, retriesCount)
-            }
-            retriesCount++
-            return retryHandler()
-         } else {
-            throw error
-         }
-      }
-   }
-   return retryHandler()
+    }
+  }
+  return retryHandler()
+}
+
+export const checkIsEmail = (text: string): boolean => {
+  return validator.isEmail(text)
 }

@@ -4,6 +4,7 @@ import type {
   DeleteGroupChatAvatarDTO,
   FetchGroupChatDTO,
   FetchGroupChatsDTO,
+  UpdateGroupChatDTO,
 } from './group-chat.dto'
 import type {
   TFetchGroupChatData,
@@ -19,4 +20,5 @@ export interface IGroupChatsController {
   createGroupChat(body: CreateGroupChatDTO, user: TUser): Promise<TGroupChat>
   fetchGroupChat(query: FetchGroupChatDTO, user: TUser): Promise<TFetchGroupChatData>
   fetchGroupChats(query: FetchGroupChatsDTO, user: TUser): Promise<TFetchGroupChatsData[]>
+  updateGroupChat(body: UpdateGroupChatDTO, user: TUser): Promise<TSuccess>
 }

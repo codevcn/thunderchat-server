@@ -1,3 +1,3 @@
-import { GroupChat } from '@prisma/client'
+import type { GroupChat } from '@prisma/client'
 
 export type TGroupChat = GroupChat

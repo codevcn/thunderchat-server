@@ -10,6 +10,7 @@ import {
   Body,
   Get,
   UseGuards,
+  Put,
 } from '@nestjs/common'
 import { GroupChatService } from './group-chat.service'
 import { FileInterceptor } from '@nestjs/platform-express'
@@ -19,12 +20,16 @@ import {
   DeleteGroupChatAvatarDTO,
   FetchGroupChatDTO,
   FetchGroupChatsDTO,
+  UpdateGroupChatDTO,
 } from './group-chat.dto'
 import { ERoutes } from '@/utils/enums'
 import { join } from 'path'
 import { User } from '@/user/user.decorator'
 import type { TUserWithProfile } from '@/utils/entities/user.entity'
 import { AuthGuard } from '@/auth/auth.guard'
+import { GroupChatRoles } from '@/auth/role/group-chat/group-chat-role.decorator'
+import { EGroupChatRoles } from './group-chat.enum'
+import { GroupChatRoleGuard } from '@/auth/role/group-chat/group-chat-role.guard'
 
 @Controller(ERoutes.GROUP_CHAT)
 @UseGuards(AuthGuard)
@@ -70,5 +75,19 @@ export class GroupChatController implements IGroupChatsController {
   async fetchGroupChats(@Query() query: FetchGroupChatsDTO, @User() user: TUserWithProfile) {
     const { lastId, limit } = query
     return await this.groupChatService.findGroupChatsByUser(user.id, lastId, limit)
+  }
+
+  @Put('update-group-chat')
+  @UseGuards(GroupChatRoleGuard)
+  @GroupChatRoles(EGroupChatRoles.ADMIN)
+  async updateGroupChat(@Body() body: UpdateGroupChatDTO, @User() user: TUserWithProfile) {
+    const { groupChatId, avatarUrl, groupName } = body
+    await this.groupChatService.updateGroupChat(groupChatId, user.id, {
+      avatarUrl,
+      groupName,
+    })
+    return {
+      success: true,
+    }
   }
 }

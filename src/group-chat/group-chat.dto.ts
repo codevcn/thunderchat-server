@@ -35,3 +35,26 @@ export class FetchGroupChatsDTO {
   @Type(() => Number)
   limit: number
 }
+
+export class UpdateGroupChatDTO {
+  @IsNumber()
+  @Type(() => Number)
+  groupChatId: number
+
+  @IsString()
+  @IsOptional()
+  avatarUrl?: string
+
+  @IsString()
+  @IsOptional()
+  groupName?: string
+}
+
+export class SearchGroupChatMembersDTO {
+  @IsNumber()
+  @Type(() => Number)
+  groupChatId: number
+
+  @IsString()
+  keyword: string
+}

@@ -10,6 +10,7 @@ import { TJWTToken, TSignatureObject } from '@/utils/types'
 import { SearchUsersDTO } from './user.dto'
 import { EUserMessages } from '@/user/user.message'
 import { SyncDataToESService } from '@/configs/elasticsearch/sync-data-to-ES/sync-data-to-ES.service'
+import { checkIsEmail } from '@/utils/helpers'
 
 @Injectable()
 export class UserService {
@@ -90,6 +91,17 @@ export class UserService {
   async searchUsers(searchUsersPayload: SearchUsersDTO): Promise<TSearchUsersData[]> {
     // Tìm kiếm các user dựa trên keyword
     const { keyword, lastUserId, limit } = searchUsersPayload
+    if (checkIsEmail(keyword)) {
+      const user = await this.PrismaService.user.findUnique({
+        where: { email: keyword },
+        include: {
+          Profile: true,
+        },
+      })
+      if (user) {
+        return [user]
+      }
+    }
     let cursor: TSignatureObject = {}
     if (lastUserId) {
       cursor = {
