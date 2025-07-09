@@ -14,9 +14,12 @@ export class DirectMessageService {
     private syncDataToESService: SyncDataToESService
   ) {}
 
-  async findMsgById(msgId: number): Promise<TDirectMessage | null> {
+  async fidMsgById(msgId: number): Promise<TDirectMessage | null> {
     return await this.PrismaService.directMessage.findUnique({
       where: { id: msgId },
+      include: {
+        ReplyTo: true,
+      },
     })
   }
 
@@ -29,7 +32,8 @@ export class DirectMessageService {
     type: EMessageTypes = EMessageTypes.TEXT,
     stickerUrl?: string,
     mediaUrl?: string,
-    fileName?: string
+    fileName?: string,
+    replyToId?: number
   ): Promise<TDirectMessage> {
     const message = await this.PrismaService.directMessage.create({
       data: {
@@ -43,8 +47,14 @@ export class DirectMessageService {
         recipientId,
         ...(mediaUrl && { mediaUrl: mediaUrl as any }),
         ...(fileName && { fileName }),
+        ...(replyToId && { replyToId }),
+      },
+      include: {
+        ReplyTo: true,
       },
     })
+    console.log('replyToId:', replyToId)
+    console.log('ReplyTo data:', message.ReplyTo)
     // this.syncDataToESService.syncDataToES(authorId, {
     //    type: ESyncDataToESWorkerType.CREATE_MESSAGE,
     //    data: message,
@@ -79,6 +89,9 @@ export class DirectMessageService {
       orderBy: {
         id: 'asc',
       },
+      include: {
+        ReplyTo: true,
+      },
     })
   }
 
@@ -109,6 +122,9 @@ export class DirectMessageService {
         id: 'desc',
       },
       take: limit,
+      include: {
+        ReplyTo: true,
+      },
     })
   }
 

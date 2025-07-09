@@ -8,12 +8,12 @@ import { AuthGuard } from '@/auth/auth.guard'
 @Controller(ERoutes.MESSAGE)
 @UseGuards(AuthGuard)
 export class DirectMessageController implements IDirectMessageController {
-  constructor(private DirectMessageService: DirectMessageService) {}
+  constructor(private directMessageService: DirectMessageService) {}
 
   @Get('get-direct-messages')
   async fetchMessages(@Query() params: FetchMsgsParamsDTO) {
     const { directChatId, msgOffset, limit, sortType, isFirstTime } = params
-    return await this.DirectMessageService.getOlderDirectMessagesHandler(
+    return await this.directMessageService.getOlderDirectMessagesHandler(
       msgOffset,
       directChatId,
       limit,
