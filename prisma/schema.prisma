@@ -42,6 +42,7 @@ model User {
     GroupChatMembers          GroupChatMember[] @relation("GroupChatMembers")
     // UserOnlineStatus          UserOnlineStatus[] @relation("UserOnlineStatus")
 
+    @@index([email], type: BTree)
     @@map("users")
 }
 
