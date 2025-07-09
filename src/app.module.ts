@@ -38,7 +38,7 @@ import { StickersModule } from './direct-message/stickers/stickers.module'
 import { FriendRequestModule } from './friend-request/friend-request.module'
 import { SearchModule } from './search/search.module'
 import { GroupChatModule } from './group-chat/group-chat.module'
-import { UploadModule } from './utils/upload/upload.module'
+import { UploadModule } from './upload/upload.module'
 import { StatisticsModule } from './statistics/statistics.module'
 import { GroupMemberModule } from './group-member/group-member.module'
 
