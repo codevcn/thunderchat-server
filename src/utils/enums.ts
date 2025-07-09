@@ -9,6 +9,7 @@ export enum ERoutes {
   STICKER = 'sticker',
   SEARCH = 'search',
   GROUP_CHAT = 'group-chat',
+  PROFILE = 'profile',
 }
 
 export enum EClientCookieNames {
