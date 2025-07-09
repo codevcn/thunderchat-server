@@ -10,6 +10,7 @@ import { UserModule } from './user/user.module'
 import ms from 'ms'
 import { EventEmitterModule } from '@nestjs/event-emitter'
 import { LoggerModule } from './configs/logger/logger.module'
+import { ProfileModule } from './profile/profile.module'
 
 const globalConfigModules = [
   ConfigModule.forRoot({
@@ -58,6 +59,7 @@ import { GroupMemberModule } from './group-member/group-member.module'
     StatisticsModule,
     GroupMemberModule,
     DevModule,
+    ProfileModule,
   ],
 })
 export class AppModule implements NestModule {

@@ -278,6 +278,27 @@ export class AppGateway
           }
         )
         break
+      case EMessageTypes.AUDIO:
+        console.log('🎵 Gateway - Xử lý tin nhắn AUDIO:', {
+          content: msgPayload.content,
+          mediaUrl: msgPayload.mediaUrl,
+          fileName: msgPayload.fileName,
+          receiverId,
+          directChatId,
+        })
+        await this.handleMessage(
+          { id: clientId, socket: client },
+          {
+            content: msgPayload.content || '', // Caption nếu có
+            timestamp,
+            directChatId,
+            receiverId,
+            type: EMessageTypes.AUDIO,
+            mediaUrl: msgPayload.mediaUrl,
+            fileName: msgPayload.fileName,
+          }
+        )
+        break
     }
     return { success: true }
   }

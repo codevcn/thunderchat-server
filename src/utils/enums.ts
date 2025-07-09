@@ -10,6 +10,7 @@ export enum ERoutes {
   SEARCH = 'search',
   GROUP_CHAT = 'group-chat',
   GROUP_MEMBER = 'group-member',
+  PROFILE = 'profile',
 }
 
 export enum EClientCookieNames {

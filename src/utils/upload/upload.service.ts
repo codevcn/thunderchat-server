@@ -32,6 +32,12 @@ export class UploadService {
     'application/vnd.ms-powerpoint': 'document', // .ppt
     'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'document', // .pptx
     'text/plain': 'document', // .txt
+
+    // Audio
+    'audio/mpeg': 'audio',
+    'audio/mp3': 'audio',
+    'audio/wav': 'audio',
+    'audio/webm': 'audio',
   }
 
   async uploadFile(file: any): Promise<{ url: string; fileType: string; fileName: string }> {
