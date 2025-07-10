@@ -1,4 +1,7 @@
-import { TDirectMessage } from '@/utils/entities/direct-message.entity'
+import type {
+  TDirectMessage,
+  TDirectMessageWithAuthorAndReplyTo,
+} from '@/utils/entities/direct-message.entity'
 import type { EMessageStatus } from '@/utils/types'
 import type { EMessageTypes } from './direct-message.enum'
 
@@ -12,7 +15,7 @@ export type TNewGroupMessage = {
 
 export type TGetDirectMessagesData = {
   hasMoreMessages: boolean
-  directMessages: TDirectMessage[]
+  directMessages: TGetDirectMessagesMessage[]
 }
 
 export type TMsgStatusPayload = {
@@ -31,3 +34,5 @@ export type TSendMessageDto = {
   type: EMessageTypes
   mediaUrl?: string
 }
+
+export type TGetDirectMessagesMessage = TDirectMessageWithAuthorAndReplyTo

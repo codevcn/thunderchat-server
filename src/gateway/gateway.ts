@@ -28,10 +28,9 @@ import { AuthService } from '@/auth/auth.service'
 import { MessageTokensManager } from '@/gateway/helpers/message-tokens.helper'
 import { EMessageStatus, EMessageTypes } from '@/direct-message/direct-message.enum'
 import { DirectChatService } from '@/direct-chat/direct-chat.service'
-import type { TDirectMessage } from '@/utils/entities/direct-message.entity'
 import { ConversationTypingManager } from './helpers/conversation-typing.helper'
 import { SyncDataToESService } from '@/configs/elasticsearch/sync-data-to-ES/sync-data-to-ES.service'
-import { GatewayInterceptor } from './gateway.interceptor'
+// import { GatewayInterceptor } from './gateway.interceptor'
 import { DevLogger } from '@/dev/dev-logger'
 
 @WebSocketGateway({
@@ -137,7 +136,7 @@ export class AppGateway
         directChatId
       )
       if (messages && messages.length > 0) {
-        clientSocket.emit(EClientSocketEvents.recovered_connection, messages as TDirectMessage[])
+        clientSocket.emit(EClientSocketEvents.recovered_connection, messages)
       }
     }
   }
