@@ -29,7 +29,8 @@ export class DirectMessageService {
     type: EMessageTypes = EMessageTypes.TEXT,
     stickerUrl?: string,
     mediaUrl?: string,
-    fileName?: string
+    fileName?: string,
+    thumbnailUrl?: string
   ): Promise<TDirectMessage> {
     const message = await this.PrismaService.directMessage.create({
       data: {
@@ -43,6 +44,7 @@ export class DirectMessageService {
         recipientId,
         ...(mediaUrl && { mediaUrl: mediaUrl as any }),
         ...(fileName && { fileName }),
+        ...(thumbnailUrl && { thumbnailUrl }),
       },
     })
     // this.syncDataToESService.syncDataToES(authorId, {

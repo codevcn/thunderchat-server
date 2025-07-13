@@ -39,6 +39,9 @@ export class SendDirectMessagePayloadDTO {
 
   @IsOptional()
   fileName?: string
+
+  @IsOptional()
+  thumbnailUrl?: string
 }
 
 export class SendDirectMessageDTO {

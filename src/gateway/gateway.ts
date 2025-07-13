@@ -166,11 +166,21 @@ export class AppGateway
       stickerUrl?: string
       mediaUrl?: string
       fileName?: string
+      thumbnailUrl?: string
     }
   ): Promise<void> {
     const { id, socket } = client
-    const { content, timestamp, directChatId, receiverId, stickerUrl, type, fileName, mediaUrl } =
-      message
+    const {
+      content,
+      timestamp,
+      directChatId,
+      receiverId,
+      stickerUrl,
+      type,
+      fileName,
+      mediaUrl,
+      thumbnailUrl,
+    } = message
     const newMessage = await this.DirectMessageService.createNewMessage(
       content,
       id,
@@ -180,7 +190,8 @@ export class AppGateway
       type as any,
       stickerUrl,
       mediaUrl,
-      fileName
+      fileName,
+      thumbnailUrl
     )
     await this.directChatService.addLastSentMessage(directChatId, newMessage.id)
     const recipientSocket = this.socketService.getConnectedClient<IEmitSocketEvents>(receiverId)
@@ -254,6 +265,7 @@ export class AppGateway
             receiverId,
             type: EMessageTypes.VIDEO,
             mediaUrl: msgPayload.mediaUrl,
+            thumbnailUrl: msgPayload.thumbnailUrl,
           }
         )
         break

@@ -18,12 +18,14 @@ export class UploadController {
       url: result.url,
       fileType: result.fileType,
       fileName: result.fileName,
+      thumbnailUrl: result.thumbnailUrl,
     })
 
     return {
       url: result.url,
       fileType: result.fileType,
       fileName: result.fileName,
+      thumbnailUrl: result.thumbnailUrl,
     }
   }
 }
