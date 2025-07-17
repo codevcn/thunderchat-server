@@ -58,7 +58,15 @@ export class UserService {
   }
 
   async registerUser(createUserData: TCreateUserParams): Promise<TJWTToken> {
+    const { fullName, birthday } = createUserData
     const user = await this.createUser(createUserData)
+    await this.PrismaService.profile.create({
+      data: {
+        userId: user.id,
+        fullName: fullName,
+        birthday: birthday,
+      },
+    })
     return this.jwtService.createJWT({ email: user.email, user_id: user.id })
   }
 

@@ -66,6 +66,7 @@ model DirectChat {
     recipientId       Int      @map("recipient_id")
     createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
     lastSentMessageId Int?     @unique @map("last_sent_message_id")
+    pinIndex          Int?     @map("pin_index")
 
     Recipient       User            @relation("DirectChatsAsRecipient", fields: [recipientId], references: [id])
     Creator         User            @relation("DirectChatsAsSender", fields: [creatorId], references: [id])
@@ -89,6 +90,7 @@ model DirectMessage {
     mediaUrl     String?           @map("media_url")
     fileName     String?           @map("file_name")
     replyToId    Int?              @map("reply_to_id")
+    isPinned     Boolean?          @map("is_pinned")
 
     Chat                    DirectChat      @relation("MessagesOnDirectChat", fields: [directChatId], references: [id])
     Author                  User            @relation("DirectMessagesAsSender", fields: [authorId], references: [id])
