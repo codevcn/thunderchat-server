@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common'
 import { PrismaService } from '../configs/db/prisma.service'
 import { EProviderTokens, ESyncDataToESWorkerType } from '@/utils/enums'
 import type { TDirectMessage } from '@/utils/entities/direct-message.entity'
-import { EMessageStatus, EMessageTypes, ESortTypes } from '@/utils/types'
+import { EMessageStatus, EMessageTypes, ESortTypes } from '@/direct-message/direct-message.enum'
 import dayjs from 'dayjs'
 import type { TGetDirectMessagesData, TMessageOffset, TMessageUpdates } from './direct-message.type'
 import { SyncDataToESService } from '@/configs/elasticsearch/sync-data-to-ES/sync-data-to-ES.service'
@@ -144,5 +144,55 @@ export class DirectMessageService {
     return await this.updateMsg(msgId, {
       status,
     })
+  }
+
+  async getMediaMessages(
+    directChatId: number,
+    limit: number,
+    offset: number,
+    sortType: ESortTypes = ESortTypes.TIME_ASC
+  ) {
+    // Lấy tất cả message KHÔNG PHẢI TEXT
+    return this.PrismaService.directMessage.findMany({
+      where: {
+        directChatId,
+        type: {
+          not: EMessageTypes.TEXT,
+        },
+      },
+      orderBy: {
+        createdAt: sortType === ESortTypes.TIME_ASC ? 'asc' : 'desc',
+      },
+      take: limit,
+      skip: offset,
+    })
+  }
+
+  async getVoiceMessages(
+    directChatId: number,
+    limit: number,
+    offset: number,
+    sortType: ESortTypes = ESortTypes.TIME_ASC
+  ) {
+    // Lấy chỉ voice messages
+    const voiceMessages = await this.PrismaService.directMessage.findMany({
+      where: {
+        directChatId,
+        type: EMessageTypes.AUDIO,
+        mediaUrl: {
+          not: null,
+        },
+      },
+      orderBy: {
+        createdAt: sortType === ESortTypes.TIME_ASC ? 'asc' : 'desc',
+      },
+      take: limit,
+      skip: offset,
+    })
+
+    return {
+      hasMoreMessages: voiceMessages.length === limit,
+      directMessages: voiceMessages,
+    }
   }
 }

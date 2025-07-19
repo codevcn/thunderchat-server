@@ -68,4 +68,8 @@ export enum EMessageStatus {
 export enum EMessageTypes {
   TEXT = 'TEXT',
   STICKER = 'STICKER',
+  IMAGE = 'IMAGE',
+  VIDEO = 'VIDEO',
+  DOCUMENT = 'DOCUMENT',
+  AUDIO = 'AUDIO',
 }
