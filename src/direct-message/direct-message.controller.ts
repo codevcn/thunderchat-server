@@ -9,12 +9,12 @@ import { ESortTypes } from './direct-message.enum'
 @Controller(ERoutes.MESSAGE)
 @UseGuards(AuthGuard)
 export class DirectMessageController implements IDirectMessageController {
-  constructor(private DirectMessageService: DirectMessageService) {}
+  constructor(private directMessageService: DirectMessageService) {}
 
   @Get('get-direct-messages')
   async fetchMessages(@Query() params: FetchMsgsParamsDTO) {
     const { directChatId, msgOffset, limit, sortType, isFirstTime } = params
-    return await this.DirectMessageService.getOlderDirectMessagesHandler(
+    return await this.directMessageService.getOlderDirectMessagesHandler(
       msgOffset,
       directChatId,
       limit,
@@ -30,7 +30,7 @@ export class DirectMessageController implements IDirectMessageController {
     @Query('offset') offset?: number,
     @Query('sortType') sortType?: string
   ) {
-    return this.DirectMessageService.getMediaMessages(
+    return this.directMessageService.getMediaMessages(
       directChatId,
       limit ? Number(limit) : 100,
       offset ? Number(offset) : 0,
@@ -45,7 +45,7 @@ export class DirectMessageController implements IDirectMessageController {
     @Query('offset') offset?: number,
     @Query('sortType') sortType?: string
   ) {
-    return this.DirectMessageService.getVoiceMessages(
+    return this.directMessageService.getVoiceMessages(
       directChatId,
       limit ? Number(limit) : 100,
       offset ? Number(offset) : 0,

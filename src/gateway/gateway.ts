@@ -28,10 +28,9 @@ import { AuthService } from '@/auth/auth.service'
 import { MessageTokensManager } from '@/gateway/helpers/message-tokens.helper'
 import { EMessageStatus, EMessageTypes } from '@/direct-message/direct-message.enum'
 import { DirectChatService } from '@/direct-chat/direct-chat.service'
-import type { TDirectMessage } from '@/utils/entities/direct-message.entity'
 import { ConversationTypingManager } from './helpers/conversation-typing.helper'
 import { SyncDataToESService } from '@/configs/elasticsearch/sync-data-to-ES/sync-data-to-ES.service'
-import { GatewayInterceptor } from './gateway.interceptor'
+// import { GatewayInterceptor } from './gateway.interceptor'
 import { DevLogger } from '@/dev/dev-logger'
 
 @WebSocketGateway({
@@ -137,7 +136,7 @@ export class AppGateway
         directChatId
       )
       if (messages && messages.length > 0) {
-        clientSocket.emit(EClientSocketEvents.recovered_connection, messages as TDirectMessage[])
+        clientSocket.emit(EClientSocketEvents.recovered_connection, messages)
       }
     }
   }
@@ -167,6 +166,7 @@ export class AppGateway
       mediaUrl?: string
       fileName?: string
       thumbnailUrl?: string
+      replyToId?: number
     }
   ): Promise<void> {
     const { id, socket } = client
@@ -180,6 +180,7 @@ export class AppGateway
       fileName,
       mediaUrl,
       thumbnailUrl,
+      replyToId,
     } = message
     const newMessage = await this.DirectMessageService.createNewMessage(
       content,
@@ -191,7 +192,8 @@ export class AppGateway
       stickerUrl,
       mediaUrl,
       fileName,
-      thumbnailUrl
+      thumbnailUrl,
+      replyToId
     )
     await this.directChatService.addLastSentMessage(directChatId, newMessage.id)
     const recipientSocket = this.socketService.getConnectedClient<IEmitSocketEvents>(receiverId)
@@ -213,7 +215,7 @@ export class AppGateway
 
     await this.checkUniqueMessage(token, clientId)
     await this.checkFriendship(clientId, receiverId)
-    const { directChatId, timestamp, content } = msgPayload
+    const { directChatId, timestamp, content, replyToId } = msgPayload
 
     // Content đã được mã hóa bởi interceptor
     switch (type) {
@@ -226,6 +228,7 @@ export class AppGateway
             directChatId,
             receiverId,
             type: EMessageTypes.TEXT,
+            replyToId,
           }
         )
         break
@@ -239,6 +242,7 @@ export class AppGateway
             receiverId,
             type: EMessageTypes.STICKER,
             stickerUrl: content,
+            replyToId,
           }
         )
         break
@@ -252,6 +256,7 @@ export class AppGateway
             receiverId,
             type: EMessageTypes.IMAGE,
             mediaUrl: msgPayload.mediaUrl,
+            replyToId,
           }
         )
         break
@@ -266,6 +271,7 @@ export class AppGateway
             type: EMessageTypes.VIDEO,
             mediaUrl: msgPayload.mediaUrl,
             thumbnailUrl: msgPayload.thumbnailUrl,
+            replyToId,
           }
         )
         break
@@ -276,6 +282,7 @@ export class AppGateway
           fileName: msgPayload.fileName,
           receiverId,
           directChatId,
+          replyToId,
         })
         await this.handleMessage(
           { id: clientId, socket: client },
@@ -287,6 +294,7 @@ export class AppGateway
             type: EMessageTypes.DOCUMENT,
             mediaUrl: msgPayload.mediaUrl,
             fileName: msgPayload.fileName,
+            replyToId,
           }
         )
         break

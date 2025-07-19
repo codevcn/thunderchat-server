@@ -42,6 +42,9 @@ export class SendDirectMessagePayloadDTO {
 
   @IsOptional()
   thumbnailUrl?: string
+  @IsNumber()
+  @Type(() => Number)
+  replyToId?: number
 }
 
 export class SendDirectMessageDTO {

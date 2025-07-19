@@ -4,19 +4,44 @@ import { EProviderTokens, ESyncDataToESWorkerType } from '@/utils/enums'
 import type { TDirectMessage } from '@/utils/entities/direct-message.entity'
 import { EMessageStatus, EMessageTypes, ESortTypes } from '@/direct-message/direct-message.enum'
 import dayjs from 'dayjs'
-import type { TGetDirectMessagesData, TMessageOffset, TMessageUpdates } from './direct-message.type'
+import type {
+  TGetDirectMessagesData,
+  TGetDirectMessagesMessage,
+  TMessageOffset,
+  TMessageUpdates,
+} from './direct-message.type'
 import { SyncDataToESService } from '@/configs/elasticsearch/sync-data-to-ES/sync-data-to-ES.service'
 
 @Injectable()
 export class DirectMessageService {
+  private readonly messageIncludeReplyToAndAuthor = {
+    ReplyTo: {
+      include: {
+        Author: {
+          include: {
+            Profile: true,
+          },
+        },
+      },
+    },
+    Author: {
+      include: {
+        Profile: true,
+      },
+    },
+  }
+
   constructor(
     @Inject(EProviderTokens.PRISMA_CLIENT) private PrismaService: PrismaService,
     private syncDataToESService: SyncDataToESService
   ) {}
 
-  async findMsgById(msgId: number): Promise<TDirectMessage | null> {
+  async fidMsgById(msgId: number): Promise<TDirectMessage | null> {
     return await this.PrismaService.directMessage.findUnique({
       where: { id: msgId },
+      include: {
+        ReplyTo: true,
+      },
     })
   }
 
@@ -30,8 +55,9 @@ export class DirectMessageService {
     stickerUrl?: string,
     mediaUrl?: string,
     fileName?: string,
-    thumbnailUrl?: string
-  ): Promise<TDirectMessage> {
+    thumbnailUrl?: string,
+    replyToId?: number
+  ): Promise<TGetDirectMessagesMessage> {
     const message = await this.PrismaService.directMessage.create({
       data: {
         content: encryptedContent,
@@ -45,7 +71,9 @@ export class DirectMessageService {
         ...(mediaUrl && { mediaUrl: mediaUrl as any }),
         ...(fileName && { fileName }),
         ...(thumbnailUrl && { thumbnailUrl }),
+        ...(replyToId && { replyToId }),
       },
+      include: this.messageIncludeReplyToAndAuthor,
     })
     // this.syncDataToESService.syncDataToES(authorId, {
     //    type: ESyncDataToESWorkerType.CREATE_MESSAGE,
@@ -70,7 +98,7 @@ export class DirectMessageService {
   async getNewerDirectMessages(
     messageOffset: TMessageOffset,
     directChatId: number
-  ): Promise<TDirectMessage[]> {
+  ): Promise<TGetDirectMessagesMessage[]> {
     return await this.PrismaService.directMessage.findMany({
       where: {
         directChatId,
@@ -81,10 +109,14 @@ export class DirectMessageService {
       orderBy: {
         id: 'asc',
       },
+      include: this.messageIncludeReplyToAndAuthor,
     })
   }
 
-  private sortFetchedMessages(messages: TDirectMessage[], sortType: ESortTypes): TDirectMessage[] {
+  private sortFetchedMessages(
+    messages: TGetDirectMessagesMessage[],
+    sortType: ESortTypes
+  ): TGetDirectMessagesMessage[] {
     const msgs = [...messages]
     switch (sortType) {
       case ESortTypes.TIME_ASC:
@@ -99,7 +131,7 @@ export class DirectMessageService {
     directChatId: number,
     limit: number,
     equalOffset: boolean
-  ): Promise<TDirectMessage[]> {
+  ): Promise<TGetDirectMessagesMessage[]> {
     return await this.PrismaService.directMessage.findMany({
       where: {
         id: {
@@ -111,6 +143,7 @@ export class DirectMessageService {
         id: 'desc',
       },
       take: limit,
+      include: this.messageIncludeReplyToAndAuthor,
     })
   }
 
@@ -127,7 +160,7 @@ export class DirectMessageService {
       limit + 1,
       isFirstTime
     )
-    let sortedMessages: TDirectMessage[] | null = null
+    let sortedMessages: TGetDirectMessagesMessage[] | null = null
     if (messages && messages.length > 0) {
       sortedMessages = messages.slice(0, -1)
       if (sortType) {

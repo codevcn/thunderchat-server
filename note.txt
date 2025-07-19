@@ -11,10 +11,4 @@ Bạn hãy để xuất workflow để triển khai chức năng tìm kiếm nà
 
 
 ====================== thut le =======================
-auth.controller.ts
-auth.dto.ts
-auth.guard.ts
-auth.message.ts
-user.entity.ts
-search.controller.ts
-helpers.ts
+gateway.interface.ts
