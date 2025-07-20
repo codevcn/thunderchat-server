@@ -6,3 +6,13 @@ export class FetchGroupChatMembersDTO {
   @Type(() => Number)
   groupChatId: number
 }
+
+export class RemoveGroupChatMemberDTO {
+  @IsNumber()
+  @Type(() => Number)
+  groupChatId: number
+
+  @IsNumber()
+  @Type(() => Number)
+  memberId: number
+}

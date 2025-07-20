@@ -1,11 +1,11 @@
 import { PrismaService } from '@/configs/db/prisma.service'
-import { EGroupChatMessages } from '@/group-chat/group-chat.message'
+import { DevLogger } from '@/dev/dev-logger'
 import type {
   TGroupChatMember,
   TGroupChatMemberWithUser,
 } from '@/utils/entities/group-chat-member.entity'
 import { EProviderTokens } from '@/utils/enums'
-import { Inject, Injectable, NotFoundException } from '@nestjs/common'
+import { Inject, Injectable, InternalServerErrorException } from '@nestjs/common'
 
 @Injectable()
 export class GroupMemberService {
@@ -43,9 +43,14 @@ export class GroupMemberService {
   }
 
   async removeGroupChatMember(groupChatId: number, memberId: number): Promise<void> {
-    await this.prismaService.groupChatMember.delete({
-      where: { groupChatId_userId: { groupChatId, userId: memberId } },
-    })
+    try {
+      await this.prismaService.groupChatMember.delete({
+        where: { groupChatId_userId: { groupChatId, userId: memberId } },
+      })
+    } catch (error) {
+      DevLogger.logError('Error removing group chat member:', error)
+      throw new InternalServerErrorException('Failed to remove group chat member')
+    }
   }
 
   async getGroupChatMember(groupChatId: number, userId: number): Promise<TGroupChatMember | null> {

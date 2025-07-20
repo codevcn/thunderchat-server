@@ -28,18 +28,20 @@ model User {
     createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
 
     Profile                   Profile?
-    DirectChatsAsSender       DirectChat[]      @relation("DirectChatsAsSender")
-    DirectChatsAsRecipient    DirectChat[]      @relation("DirectChatsAsRecipient")
-    GroupMessages             GroupMessage[]    @relation("GroupMessages")
-    DirectMessages            DirectMessage[]   @relation("DirectMessagesAsSender")
-    FriendsAsRecipient        Friend[]          @relation("FriendsAsRecipient")
-    FriendsAsSender           Friend[]          @relation("FriendsAsSender")
-    FriendRequestsSent        FriendRequest[]   @relation("FriendRequestsSent")
-    FriendRequestsReceived    FriendRequest[]   @relation("FriendRequestsReceived")
-    DirectMessagesAsRecipient DirectMessage[]   @relation("DirectMessagesAsRecipient")
-    MessageMappings           MessageMapping[]  @relation("MessageMappings")
-    GroupChatCreator          GroupChat[]       @relation("GroupChatCreator")
-    GroupChatMembers          GroupChatMember[] @relation("GroupChatMembers")
+    DirectChatsAsSender       DirectChat[]          @relation("DirectChatsAsSender")
+    DirectChatsAsRecipient    DirectChat[]          @relation("DirectChatsAsRecipient")
+    GroupMessages             GroupMessage[]        @relation("GroupMessages")
+    DirectMessages            DirectMessage[]       @relation("DirectMessagesAsSender")
+    FriendsAsRecipient        Friend[]              @relation("FriendsAsRecipient")
+    FriendsAsSender           Friend[]              @relation("FriendsAsSender")
+    FriendRequestsSent        FriendRequest[]       @relation("FriendRequestsSent")
+    FriendRequestsReceived    FriendRequest[]       @relation("FriendRequestsReceived")
+    DirectMessagesAsRecipient DirectMessage[]       @relation("DirectMessagesAsRecipient")
+    MessageMappings           MessageMapping[]      @relation("MessageMappings")
+    GroupChatCreator          GroupChat[]           @relation("GroupChatCreator")
+    GroupChatMembers          GroupChatMember[]     @relation("GroupChatMembers")
+    PinnedMessages            PinnedDirectMessage[] @relation("PinnedMessagesByUser")
+    PinnedDirectChats         PinnedDirectChat[]    @relation("PinnedDirectChatsByUser")
     // UserOnlineStatus          UserOnlineStatus[] @relation("UserOnlineStatus")
 
     @@index([email], type: BTree)
@@ -66,15 +68,28 @@ model DirectChat {
     recipientId       Int      @map("recipient_id")
     createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
     lastSentMessageId Int?     @unique @map("last_sent_message_id")
-    pinIndex          Int?     @map("pin_index")
 
-    Recipient       User            @relation("DirectChatsAsRecipient", fields: [recipientId], references: [id])
-    Creator         User            @relation("DirectChatsAsSender", fields: [creatorId], references: [id])
-    Messages        DirectMessage[] @relation("MessagesOnDirectChat")
-    LastSentMessage DirectMessage?  @relation("LastSentMessageOnDirectChat", fields: [lastSentMessageId], references: [id])
+    Recipient         User                  @relation("DirectChatsAsRecipient", fields: [recipientId], references: [id])
+    Creator           User                  @relation("DirectChatsAsSender", fields: [creatorId], references: [id])
+    Messages          DirectMessage[]       @relation("MessagesOnDirectChat")
+    LastSentMessage   DirectMessage?        @relation("LastSentMessageOnDirectChat", fields: [lastSentMessageId], references: [id])
+    PinnedMessages    PinnedDirectMessage[] @relation("PinnedMessagesOnDirectChat")
+    PinnedDirectChats PinnedDirectChat[]    @relation("PinnedDirectChatsOnDirectChat")
 
     @@unique([creatorId, recipientId])
     @@map("direct_chats")
+}
+
+model PinnedDirectChat {
+    id           Int      @id @default(autoincrement())
+    directChatId Int      @map("direct_chat_id")
+    pinnedBy     Int      @map("pinned_by")
+    pinnedAt     DateTime @default(now()) @map("pinned_at") @db.Timestamptz(3)
+
+    DirectChat DirectChat @relation("PinnedDirectChatsOnDirectChat", fields: [directChatId], references: [id])
+    PinnedBy   User       @relation("PinnedDirectChatsByUser", fields: [pinnedBy], references: [id])
+
+    @@map("pinned_direct_chats")
 }
 
 model DirectMessage {
@@ -90,19 +105,33 @@ model DirectMessage {
     mediaUrl     String?           @map("media_url")
     fileName     String?           @map("file_name")
     replyToId    Int?              @map("reply_to_id")
-    isPinned     Boolean?          @map("is_pinned")
 
-    Chat                    DirectChat      @relation("MessagesOnDirectChat", fields: [directChatId], references: [id])
-    Author                  User            @relation("DirectMessagesAsSender", fields: [authorId], references: [id])
-    DirectChatOfLastSentMsg DirectChat?     @relation("LastSentMessageOnDirectChat")
-    Sticker                 Sticker?        @relation("StickerOnDirectMessage", fields: [stickerUrl], references: [imageUrl])
-    Recipient               User            @relation("DirectMessagesAsRecipient", fields: [recipientId], references: [id])
-    ReplyTo                 DirectMessage?  @relation("RepliesOnDirectMessage", fields: [replyToId], references: [id])
-    RepliedBy               DirectMessage[] @relation("RepliesOnDirectMessage")
+    Chat                    DirectChat            @relation("MessagesOnDirectChat", fields: [directChatId], references: [id])
+    Author                  User                  @relation("DirectMessagesAsSender", fields: [authorId], references: [id])
+    DirectChatOfLastSentMsg DirectChat?           @relation("LastSentMessageOnDirectChat")
+    Sticker                 Sticker?              @relation("StickerOnDirectMessage", fields: [stickerUrl], references: [imageUrl])
+    Recipient               User                  @relation("DirectMessagesAsRecipient", fields: [recipientId], references: [id])
+    ReplyTo                 DirectMessage?        @relation("RepliesOnDirectMessage", fields: [replyToId], references: [id])
+    RepliedBy               DirectMessage[]       @relation("RepliesOnDirectMessage")
+    PinnedMessages          PinnedDirectMessage[] @relation("PinnedMessagesOnDirectMessage")
 
     @@unique([directChatId, createdAt])
     @@index(fields: [createdAt(sort: Desc), directChatId], type: BTree)
     @@map("direct_messages")
+}
+
+model PinnedDirectMessage {
+    id           Int      @id @default(autoincrement())
+    messageId    Int      @map("message_id")
+    directChatId Int      @map("direct_chat_id")
+    pinnedBy     Int      @map("pinned_by")
+    pinnedAt     DateTime @default(now()) @map("pinned_at") @db.Timestamptz(3)
+
+    DirectChat    DirectChat    @relation("PinnedMessagesOnDirectChat", fields: [directChatId], references: [id])
+    DirectMessage DirectMessage @relation("PinnedMessagesOnDirectMessage", fields: [messageId], references: [id])
+    PinnedBy      User          @relation("PinnedMessagesByUser", fields: [pinnedBy], references: [id])
+
+    @@map("pinned_direct_messages")
 }
 
 model Friend {
