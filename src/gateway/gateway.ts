@@ -32,6 +32,7 @@ import { ConversationTypingManager } from './helpers/conversation-typing.helper'
 import { SyncDataToESService } from '@/configs/elasticsearch/sync-data-to-ES/sync-data-to-ES.service'
 // import { GatewayInterceptor } from './gateway.interceptor'
 import { DevLogger } from '@/dev/dev-logger'
+import { Socket } from 'socket.io'
 
 @WebSocketGateway({
   cors: {
@@ -350,5 +351,12 @@ export class AppGateway
         this.convTypingManager.removeTyping(clientId)
       }
     }
+  }
+
+  @SubscribeMessage('join_room')
+  handleJoinRoom(@MessageBody() data: { room: string }, @ConnectedSocket() client: Socket) {
+    client.join(data.room)
+    client.emit('joined_room', data.room)
+    console.log('[SERVER] Socket', client.id, 'joined room', data.room)
   }
 }

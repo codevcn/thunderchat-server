@@ -5,7 +5,10 @@ CREATE TYPE "FriendRequestsStatus" AS ENUM ('PENDING', 'ACCEPTED', 'REJECTED');
 CREATE TYPE "MessageStatusEnum" AS ENUM ('SENT', 'SEEN');
 
 -- CreateEnum
-CREATE TYPE "MessageType" AS ENUM ('TEXT', 'STICKER', 'IMAGE', 'VIDEO', 'DOCUMENT');
+CREATE TYPE "MessageType" AS ENUM ('TEXT', 'STICKER', 'IMAGE', 'VIDEO', 'DOCUMENT', 'AUDIO');
+
+-- CreateEnum
+CREATE TYPE "GroupChatRole" AS ENUM ('ADMIN', 'MEMBER');
 
 -- CreateTable
 CREATE TABLE "message_mappings" (
@@ -53,6 +56,16 @@ CREATE TABLE "direct_chats" (
 );
 
 -- CreateTable
+CREATE TABLE "pinned_direct_chats" (
+    "id" SERIAL NOT NULL,
+    "direct_chat_id" INTEGER NOT NULL,
+    "pinned_by" INTEGER NOT NULL,
+    "pinned_at" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "pinned_direct_chats_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "direct_messages" (
     "id" SERIAL NOT NULL,
     "content" TEXT NOT NULL,
@@ -65,8 +78,20 @@ CREATE TABLE "direct_messages" (
     "created_at" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "media_url" TEXT,
     "file_name" TEXT,
+    "reply_to_id" INTEGER,
 
     CONSTRAINT "direct_messages_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "pinned_direct_messages" (
+    "id" SERIAL NOT NULL,
+    "message_id" INTEGER NOT NULL,
+    "direct_chat_id" INTEGER NOT NULL,
+    "pinned_by" INTEGER NOT NULL,
+    "pinned_at" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "pinned_direct_messages_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -154,6 +179,7 @@ CREATE TABLE "group_chat_members" (
     "group_chat_id" INTEGER NOT NULL,
     "user_id" INTEGER NOT NULL,
     "joined_at" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "role" "GroupChatRole" NOT NULL DEFAULT 'MEMBER',
 
     CONSTRAINT "group_chat_members_pkey" PRIMARY KEY ("id")
 );
@@ -166,6 +192,9 @@ CREATE INDEX "message_mappings_user_id_idx" ON "message_mappings"("user_id");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
+
+-- CreateIndex
+CREATE INDEX "users_email_idx" ON "users"("email");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "profiles_user_id_key" ON "profiles"("user_id");
@@ -231,6 +260,12 @@ ALTER TABLE "direct_chats" ADD CONSTRAINT "direct_chats_creator_id_fkey" FOREIGN
 ALTER TABLE "direct_chats" ADD CONSTRAINT "direct_chats_last_sent_message_id_fkey" FOREIGN KEY ("last_sent_message_id") REFERENCES "direct_messages"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "pinned_direct_chats" ADD CONSTRAINT "pinned_direct_chats_direct_chat_id_fkey" FOREIGN KEY ("direct_chat_id") REFERENCES "direct_chats"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "pinned_direct_chats" ADD CONSTRAINT "pinned_direct_chats_pinned_by_fkey" FOREIGN KEY ("pinned_by") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "direct_messages" ADD CONSTRAINT "direct_messages_direct_chat_id_fkey" FOREIGN KEY ("direct_chat_id") REFERENCES "direct_chats"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -241,6 +276,18 @@ ALTER TABLE "direct_messages" ADD CONSTRAINT "direct_messages_sticker_url_fkey" 
 
 -- AddForeignKey
 ALTER TABLE "direct_messages" ADD CONSTRAINT "direct_messages_recipient_id_fkey" FOREIGN KEY ("recipient_id") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "direct_messages" ADD CONSTRAINT "direct_messages_reply_to_id_fkey" FOREIGN KEY ("reply_to_id") REFERENCES "direct_messages"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "pinned_direct_messages" ADD CONSTRAINT "pinned_direct_messages_direct_chat_id_fkey" FOREIGN KEY ("direct_chat_id") REFERENCES "direct_chats"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "pinned_direct_messages" ADD CONSTRAINT "pinned_direct_messages_message_id_fkey" FOREIGN KEY ("message_id") REFERENCES "direct_messages"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "pinned_direct_messages" ADD CONSTRAINT "pinned_direct_messages_pinned_by_fkey" FOREIGN KEY ("pinned_by") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "friends" ADD CONSTRAINT "friends_recipient_id_fkey" FOREIGN KEY ("recipient_id") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
