@@ -3,6 +3,26 @@ import { PrismaService } from '../../configs/db/prisma.service'
 import { EProviderTokens } from '@/utils/enums'
 import { SocketService } from '@/gateway/socket/socket.service'
 import { EClientSocketEvents } from '@/gateway/gateway.event'
+import { EMessageTypes } from '../direct-message.enum'
+
+// Helper mô tả nội dung tin nhắn
+function getMessageDescription(message: any): string {
+  switch (message.type) {
+    case EMessageTypes.IMAGE:
+      return 'hình ảnh'
+    case EMessageTypes.VIDEO:
+      return 'video'
+    case EMessageTypes.DOCUMENT:
+      return message.fileName ? `file: ${message.fileName}` : 'file'
+    case EMessageTypes.STICKER:
+      return 'sticker'
+    case EMessageTypes.AUDIO:
+      return 'audio'
+    case EMessageTypes.TEXT:
+    default:
+      return message.content || ''
+  }
+}
 
 @Injectable()
 export class PinService {
@@ -71,6 +91,53 @@ export class PinService {
         },
       })
 
+      // Lấy tên người thực hiện
+      const userProfile = await this.prismaService.profile.findUnique({
+        where: { userId },
+      })
+      const fullName = userProfile?.fullName || 'Người dùng'
+
+      // Lấy nội dung tin nhắn gốc
+      const originalMessage = await this.prismaService.directMessage.findUnique({
+        where: { id: messageId },
+      })
+      const originalMessageDescription = originalMessage
+        ? getMessageDescription(originalMessage)
+        : ''
+
+      // Lấy thông tin direct chat để xác định recipientId đúng
+      const directChat = await this.prismaService.directChat.findUnique({
+        where: { id: directChatId },
+      })
+      let recipientId = userId
+      if (directChat) {
+        recipientId =
+          directChat.creatorId === userId ? directChat.recipientId : directChat.creatorId
+      }
+
+      // Tạo message thông báo
+      const pinNoticeMessage = await this.prismaService.directMessage.create({
+        data: {
+          content: `${fullName} đã ghim tin nhắn: ${originalMessageDescription}`,
+          authorId: userId,
+          recipientId,
+          directChatId,
+          type: 'PIN_NOTICE',
+          status: 'SENT',
+        },
+        include: {
+          Author: { include: { Profile: true } },
+          ReplyTo: { include: { Author: { include: { Profile: true } } } },
+        },
+      })
+
+      // Emit socket event gửi message mới cho cả 2 user
+      this.socketService.emitToDirectChat(
+        directChatId,
+        EClientSocketEvents.send_message_direct,
+        pinNoticeMessage
+      )
+
       // PHÁT SOCKET EVENT ĐẾN TẤT CẢ CLIENT CÙNG PHÒNG
       this.socketService.emitToDirectChat(directChatId, EClientSocketEvents.pin_message, {
         messageId,
@@ -89,6 +156,53 @@ export class PinService {
           directChatId,
         },
       })
+
+      // Lấy tên người thực hiện
+      const userProfile = await this.prismaService.profile.findUnique({
+        where: { userId },
+      })
+      const fullName = userProfile?.fullName || 'Người dùng'
+
+      // Lấy nội dung tin nhắn gốc
+      const originalMessage = await this.prismaService.directMessage.findUnique({
+        where: { id: messageId },
+      })
+      const originalMessageDescription = originalMessage
+        ? getMessageDescription(originalMessage)
+        : ''
+
+      // Lấy thông tin direct chat để xác định recipientId đúng
+      const directChat = await this.prismaService.directChat.findUnique({
+        where: { id: directChatId },
+      })
+      let recipientId = userId
+      if (directChat) {
+        recipientId =
+          directChat.creatorId === userId ? directChat.recipientId : directChat.creatorId
+      }
+
+      // Tạo message thông báo
+      const pinNoticeMessage = await this.prismaService.directMessage.create({
+        data: {
+          content: `${fullName} đã bỏ ghim tin nhắn: ${originalMessageDescription}`,
+          authorId: userId,
+          recipientId,
+          directChatId,
+          type: 'PIN_NOTICE',
+          status: 'SENT',
+        },
+        include: {
+          Author: { include: { Profile: true } },
+          ReplyTo: { include: { Author: { include: { Profile: true } } } },
+        },
+      })
+
+      // Emit socket event gửi message mới cho cả 2 user
+      this.socketService.emitToDirectChat(
+        directChatId,
+        EClientSocketEvents.send_message_direct,
+        pinNoticeMessage
+      )
 
       // PHÁT SOCKET EVENT ĐẾN TẤT CẢ CLIENT CÙNG PHÒNG
       this.socketService.emitToDirectChat(directChatId, EClientSocketEvents.pin_message, {

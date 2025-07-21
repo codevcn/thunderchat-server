@@ -250,6 +250,7 @@ enum MessageType {
   VIDEO
   DOCUMENT
   AUDIO
+  PIN_NOTICE // Thông báo ghim/bỏ ghim
 }
 
 enum GroupChatRole {

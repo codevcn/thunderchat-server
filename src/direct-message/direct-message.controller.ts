@@ -1,6 +1,6 @@
 import { DirectMessageService } from '@/direct-message/direct-message.service'
 import { ERoutes } from '@/utils/enums'
-import { Controller, Get, Query, UseGuards } from '@nestjs/common'
+import { Controller, Get, Query, UseGuards, Param } from '@nestjs/common'
 import { IDirectMessageController } from './direct-message.interface'
 import { FetchMsgsParamsDTO } from './direct-message.dto'
 import { AuthGuard } from '@/auth/auth.guard'
@@ -20,5 +20,19 @@ export class DirectMessageController implements IDirectMessageController {
       isFirstTime,
       sortType
     )
+  }
+
+  @Get('context/:messageId')
+  async getMessageContext(@Param('messageId') messageId: string) {
+    console.log('[DirectMessageController] Nhận request GET /context/' + messageId)
+    return this.directMessageService.getMessageContext(Number(messageId))
+  }
+
+  @Get('get-newer-messages')
+  async getNewerMessages(
+    @Query('directChatId') directChatId: number,
+    @Query('msgOffset') msgOffset: number
+  ) {
+    return this.directMessageService.getNewerDirectMessages(Number(msgOffset), Number(directChatId))
   }
 }
