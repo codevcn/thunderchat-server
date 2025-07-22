@@ -25,6 +25,8 @@ export interface IEmitSocketEvents {
   [EClientSocketEvents.message_seen_direct]: (payload: TMsgStatusPayload) => void
   [EClientSocketEvents.typing_direct]: (isTyping: boolean) => void
   [EClientSocketEvents.friend_request_action]: (payload: TFriendRequestPayload) => void
+  [EClientSocketEvents.pin_message]: (payload: any) => void
+  [EClientSocketEvents.pin_direct_chat]: (payload: any) => void
 }
 
 export interface IGateway {

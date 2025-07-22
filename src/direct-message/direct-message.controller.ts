@@ -52,4 +52,17 @@ export class DirectMessageController implements IDirectMessageController {
       sortType as ESortTypes
     )
   }
+  @Get('context/:messageId')
+  async getMessageContext(@Param('messageId') messageId: string) {
+    console.log('[DirectMessageController] Nhận request GET /context/' + messageId)
+    return this.directMessageService.getMessageContext(Number(messageId))
+  }
+
+  @Get('get-newer-messages')
+  async getNewerMessages(
+    @Query('directChatId') directChatId: number,
+    @Query('msgOffset') msgOffset: number
+  ) {
+    return this.directMessageService.getNewerDirectMessages(Number(msgOffset), Number(directChatId))
+  }
 }

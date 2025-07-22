@@ -11,6 +11,8 @@ import ms from 'ms'
 import { EventEmitterModule } from '@nestjs/event-emitter'
 import { LoggerModule } from './configs/logger/logger.module'
 import { ProfileModule } from './profile/profile.module'
+import { PinModule } from './direct-message/pin/pin.module'
+import { PinDirectChatModule } from './direct-chat/pin-direct-chat/pin-direct-chat.module'
 
 const globalConfigModules = [
   ConfigModule.forRoot({
@@ -60,6 +62,8 @@ import { GroupMemberModule } from './group-member/group-member.module'
     GroupMemberModule,
     DevModule,
     ProfileModule,
+    PinModule,
+    PinDirectChatModule,
   ],
 })
 export class AppModule implements NestModule {
