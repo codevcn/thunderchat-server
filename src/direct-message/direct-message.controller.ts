@@ -31,8 +31,13 @@ export class DirectMessageController implements IDirectMessageController {
   @Get('get-newer-messages')
   async getNewerMessages(
     @Query('directChatId') directChatId: number,
-    @Query('msgOffset') msgOffset: number
+    @Query('msgOffset') msgOffset: number,
+    @Query('limit') limit: number
   ) {
-    return this.directMessageService.getNewerDirectMessages(Number(msgOffset), Number(directChatId))
+    return this.directMessageService.getNewerDirectMessages(
+      Number(msgOffset),
+      Number(directChatId),
+      Number(limit)
+    )
   }
 }

@@ -134,7 +134,8 @@ export class AppGateway
     if (directChatId) {
       const messages = await this.DirectMessageService.getNewerDirectMessages(
         messageOffset,
-        directChatId
+        directChatId,
+        20 // limit mặc định
       )
       if (messages && messages.length > 0) {
         clientSocket.emit(EClientSocketEvents.recovered_connection, messages)

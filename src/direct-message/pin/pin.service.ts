@@ -124,6 +124,7 @@ export class PinService {
           directChatId,
           type: 'PIN_NOTICE',
           status: 'SENT',
+          replyToId: messageId, // Liên kết tới tin nhắn gốc
         },
         include: {
           Author: { include: { Profile: true } },
