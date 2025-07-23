@@ -129,12 +129,14 @@ export class AppGateway
     clientSocket: TClientSocket,
     messageOffset: TMessageOffset,
     directChatId?: number,
-    groupChatId?: number
+    groupChatId?: number,
+    limit?: number
   ): Promise<void> {
     if (directChatId) {
       const messages = await this.DirectMessageService.getNewerDirectMessages(
         messageOffset,
-        directChatId
+        directChatId,
+        limit ?? 20
       )
       if (messages && messages.length > 0) {
         clientSocket.emit(EClientSocketEvents.recovered_connection, messages)

@@ -97,7 +97,8 @@ export class DirectMessageService {
 
   async getNewerDirectMessages(
     messageOffset: TMessageOffset,
-    directChatId: number
+    directChatId: number,
+    limit: number
   ): Promise<TGetDirectMessagesMessage[]> {
     console.log(
       '[getNewerDirectMessages] Nhận yêu cầu với directChatId:',
@@ -115,6 +116,7 @@ export class DirectMessageService {
       orderBy: {
         id: 'asc',
       },
+      take: limit,
       include: this.messageIncludeReplyToAndAuthor,
     })
     console.log(
