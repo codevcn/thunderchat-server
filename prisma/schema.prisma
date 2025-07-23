@@ -98,6 +98,7 @@ model DirectMessage {
   createdAt               DateTime              @default(now()) @map("created_at") @db.Timestamptz(3)
   mediaUrl                String?               @map("media_url")
   fileName                String?               @map("file_name")
+  thumbnailUrl            String?               @map("thumbnail_url")
   replyToId               Int?                  @map("reply_to_id")
   DirectChatOfLastSentMsg DirectChat?           @relation("LastSentMessageOnDirectChat")
   Author                  User                  @relation("DirectMessagesAsSender", fields: [authorId], references: [id])
