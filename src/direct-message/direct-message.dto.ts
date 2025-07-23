@@ -29,3 +29,20 @@ export class FetchMsgsParamsDTO {
   @ToBoolean()
   isFirstTime: boolean
 }
+
+export class FetchNewerMsgsParamsDTO {
+  @IsNumber()
+  directChatId: number
+
+  @IsOptional()
+  @IsNumber()
+  msgOffset?: number // ID hoặc createdAt của tin nhắn cuối cùng đã có
+
+  @IsOptional()
+  @IsNumber()
+  limit?: number = 20 // Số lượng tin nhắn mỗi lần lấy, mặc định 20
+
+  @IsOptional()
+  @IsEnum(['ASC', 'DESC'])
+  sortType?: 'ASC' | 'DESC' = 'ASC' // Mặc định lấy cũ nhất trước (tin mới hơn ở cuối)
+}

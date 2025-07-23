@@ -104,7 +104,9 @@ export class DirectMessageService {
       '[getNewerDirectMessages] Nhận yêu cầu với directChatId:',
       directChatId,
       'offset:',
-      messageOffset
+      messageOffset,
+      'limit:',
+      limit
     )
     const messages = await this.PrismaService.directMessage.findMany({
       where: {
@@ -183,10 +185,10 @@ export class DirectMessageService {
       }
     }
     // Thêm log để kiểm tra các type message trả về
-    console.log(
-      '[DEBUG][getOlderDirectMessagesHandler] Message types:',
-      (sortedMessages || messages).map((m) => m.type)
-    )
+    // console.log(
+    //   '[DEBUG][getOlderDirectMessagesHandler] Message types:',
+    //   (sortedMessages || messages).map((m) => m.type)
+    // )
     return {
       hasMoreMessages: messages.length > limit,
       directMessages: sortedMessages || [],
