@@ -46,6 +46,7 @@ export enum ESyncDataToESWorkerType {
   CREATE_PROFILE = 'createProfile',
   UPDATE_PROFILE = 'updateProfile',
   DELETE_PROFILE = 'deleteProfile',
+  ALL_USERS_AND_MESSAGES = 'allUsersAndMessages',
 }
 
 export enum EWorkerEvents {

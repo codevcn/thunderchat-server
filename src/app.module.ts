@@ -33,7 +33,7 @@ const globalConfigModules = [
 import { FriendModule } from './friend/friend.module'
 import { GatewayModule } from './gateway/gateway.module'
 import { RequestLoggerMiddleware } from './app.middleware'
-import { DevModule } from './dev/temp.module'
+import { DevModule } from './dev/dev.module'
 import { StickersModule } from './direct-message/stickers/stickers.module'
 import { FriendRequestModule } from './friend-request/friend-request.module'
 import { SearchModule } from './search/search.module'

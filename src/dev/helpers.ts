@@ -1,6 +1,7 @@
 import { join } from 'path'
 import fs from 'fs/promises'
 import path from 'path'
+import { DevLogger } from './dev-logger'
 
 export async function parseTxtFileToObject(
   relativeOrAbsolutePath: string
@@ -44,4 +45,17 @@ export async function clearLogFiles() {
   } catch (error) {
     console.log(`>>> No logs directory found at ${logsDir}`)
   }
+}
+
+export function measureTime(func: () => Promise<void>) {
+  const startTime = Date.now()
+  func()
+    .then(() => {
+      const endTime = Date.now()
+      const duration = endTime - startTime
+      DevLogger.logInfo(`Time taken: ${duration}ms`)
+    })
+    .catch((error) => {
+      DevLogger.logError('Error: ', error)
+    })
 }

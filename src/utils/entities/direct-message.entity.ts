@@ -7,6 +7,10 @@ export type TDirectMessageWithAuthor = TDirectMessage & {
   Author: TUserWithProfile
 }
 
+export type TDirectMessageWithRecipient = TDirectMessage & {
+  Recipient: TUserWithProfile
+}
+
 export type TDirectMessageWithAuthorAndReplyTo = TDirectMessageWithAuthor & {
   ReplyTo: TDirectMessageWithAuthor | null
 }

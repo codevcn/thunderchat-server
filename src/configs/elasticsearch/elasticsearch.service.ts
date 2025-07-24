@@ -1,11 +1,15 @@
 import { Injectable, OnModuleInit } from '@nestjs/common'
 import { Client } from '@elastic/elasticsearch'
-import type { TDirectMessageMapping, TUserMapping } from './elasticsearch.type'
+import type {
+  TDirectMessageESMapping,
+  TESSearchGeneralResult,
+  TUserESMapping,
+} from './elasticsearch.type'
 import { EESIndexes } from './elasticsearch.enum'
-import { DevLogger } from '@/dev/dev-logger'
+import type { SearchHit, SearchResponse } from '@elastic/elasticsearch/lib/api/types'
 
 export const ESClient = new Client({
-  cloud: { id: process.env.ELASTIC_CLOUD_ID },
+  node: process.env.ELASTICSEARCH_URL,
   auth: { apiKey: process.env.ELASTIC_API_KEY },
 })
 
@@ -13,6 +17,10 @@ export const ESClient = new Client({
 export class ElasticsearchService implements OnModuleInit {
   async onModuleInit(): Promise<void> {
     await this.pingToESServer()
+  }
+
+  extractESHits<T>(searchResult: SearchResponse<T>): SearchHit<T>[] {
+    return searchResult.hits.hits
   }
 
   async pingToESServer(): Promise<void> {
@@ -24,7 +32,22 @@ export class ElasticsearchService implements OnModuleInit {
     }
   }
 
-  async createMessage(messageId: number, message: TDirectMessageMapping): Promise<void> {
+  async deleteAllDataFromES(): Promise<void> {
+    // Xóa tất cả các document trong index DIRECT_MESSAGES
+    await ESClient.deleteByQuery({
+      index: EESIndexes.DIRECT_MESSAGES,
+      query: { match_all: {} },
+      refresh: true,
+    })
+    // Xóa tất cả các document trong index USERS
+    await ESClient.deleteByQuery({
+      index: EESIndexes.USERS,
+      query: { match_all: {} },
+      refresh: true,
+    })
+  }
+
+  async createMessage(messageId: number, message: TDirectMessageESMapping): Promise<void> {
     await ESClient.index({
       index: EESIndexes.DIRECT_MESSAGES,
       id: messageId.toString(),
@@ -33,7 +56,7 @@ export class ElasticsearchService implements OnModuleInit {
     })
   }
 
-  async createUser(userId: number, user: TUserMapping): Promise<void> {
+  async createUser(userId: number, user: TUserESMapping): Promise<void> {
     await ESClient.index({
       index: EESIndexes.USERS,
       id: userId.toString(),
@@ -60,14 +83,14 @@ export class ElasticsearchService implements OnModuleInit {
     keyword: string,
     userId: number,
     limit: number
-  ): Promise<TDirectMessageMapping[]> {
-    const result = await ESClient.search<TDirectMessageMapping>({
+  ): Promise<TESSearchGeneralResult<TDirectMessageESMapping>[]> {
+    const result = await ESClient.search<TDirectMessageESMapping>({
       index: EESIndexes.DIRECT_MESSAGES,
       query: {
         bool: {
           must: [
-            { match: { content: { query: keyword, fuzziness: 'AUTO' } } }, // Tìm kiếm full-text
-            { terms: { valid_user_ids: [userId] } }, // Lọc theo user_ids
+            { match_phrase: { content: { query: keyword } } }, // Tìm kiếm full-text
+            { term: { valid_user_ids: userId } }, // Lọc theo user_ids
           ],
         },
       },
@@ -79,28 +102,23 @@ export class ElasticsearchService implements OnModuleInit {
         },
       },
     })
-    DevLogger.logInfo('result 1:', { result, keyword })
-    return result.hits.hits.map((hit) => hit._source!)
+    console.log('>>> search message result:', { result, keyword })
+    return this.extractESHits(result)
   }
 
-  async searchUsers(keyword: string, limit: number): Promise<TUserMapping[]> {
-    const result = await ESClient.search<TUserMapping>({
+  async searchUsers(
+    keyword: string,
+    limit: number
+  ): Promise<TESSearchGeneralResult<TUserESMapping>[]> {
+    const result = await ESClient.search<TUserESMapping>({
       index: EESIndexes.USERS,
-      // query: {
-      //    bool: {
-      //       should: [
-      //          { match: { email: { query: keyword, fuzziness: 'AUTO' } } },
-      //          { match: { full_name: { query: keyword, fuzziness: 'AUTO' } } },
-      //       ],
-      //       minimum_should_match: 1,
-      //    },
-      // },
       query: {
-        match: {
-          email: {
-            query: keyword,
-            fuzziness: 'AUTO',
-          },
+        bool: {
+          should: [
+            { match: { email: { query: keyword, fuzziness: 'AUTO' } } },
+            { match: { full_name: { query: keyword, fuzziness: 'AUTO' } } },
+          ],
+          minimum_should_match: 1,
         },
       },
       highlight: {
@@ -109,16 +127,10 @@ export class ElasticsearchService implements OnModuleInit {
           full_name: {},
         },
       },
-      sort: [{ 'full_name.keyword': { order: 'asc' } }, { 'email.keyword': { order: 'asc' } }],
+      sort: [{ 'full_name.for_sort': { order: 'asc' } }, { 'email.for_sort': { order: 'asc' } }],
       size: limit,
     })
-    // const result = await ESClient.search<TUserMapping>({
-    //    index: EESIndexes.USERS,
-    //    query: { match_all: {} },
-    //    size: 10,
-    // })
-    console.log('>>> result 2:', { result, keyword })
-    return result.hits.hits.map((hit) => hit._source!)
-    // return []
+    console.log('>>> search user result:', { result, keyword })
+    return this.extractESHits(result)
   }
 }

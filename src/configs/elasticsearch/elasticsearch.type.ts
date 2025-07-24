@@ -1,19 +1,17 @@
-import type { EMessageStatus, EMessageTypes } from '@/direct-message/direct-message.enum'
+import type { EMessageTypes } from '@/direct-message/direct-message.enum'
+import type { SearchHit } from '@elastic/elasticsearch/lib/api/types'
 
-export type TUserMapping = {
-   user_id: number
-   email: string
-   full_name?: string
-   avatar?: string
+export type TUserESMapping = {
+  email: string
+  full_name: string
 }
 
-export type TDirectMessageMapping = {
-   message_id: number
-   content: string
-   created_at: Date
-   status: EMessageStatus
-   type: EMessageTypes
-   valid_user_ids: number[]
-   sender: TUserMapping
-   recipient: TUserMapping
+export type TDirectMessageESMapping = {
+  content: string
+  original_content: string
+  message_type: EMessageTypes
+  valid_user_ids: number[]
+  created_at: string
 }
+
+export type TESSearchGeneralResult<T> = SearchHit<T>

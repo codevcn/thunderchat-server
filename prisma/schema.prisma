@@ -42,7 +42,7 @@ model User {
     GroupChatMembers          GroupChatMember[]     @relation("GroupChatMembers")
     PinnedMessages            PinnedDirectMessage[] @relation("PinnedMessagesByUser")
     PinnedDirectChats         PinnedDirectChat[]    @relation("PinnedDirectChatsByUser")
-    // UserOnlineStatus          UserOnlineStatus[] @relation("UserOnlineStatus")
+    UserSettings              UserSettings?         @relation("UserToUserSettings")
 
     @@index([email], type: BTree)
     @@map("users")
@@ -105,6 +105,8 @@ model DirectMessage {
     mediaUrl     String?           @map("media_url")
     fileName     String?           @map("file_name")
     replyToId    Int?              @map("reply_to_id")
+    thumbnailUrl String?           @map("thumbnail_url")
+    isPinned     Boolean?          @map("is_pinned")
 
     Chat                    DirectChat            @relation("MessagesOnDirectChat", fields: [directChatId], references: [id])
     Author                  User                  @relation("DirectMessagesAsSender", fields: [authorId], references: [id])
@@ -115,8 +117,6 @@ model DirectMessage {
     RepliedBy               DirectMessage[]       @relation("RepliesOnDirectMessage")
     PinnedMessages          PinnedDirectMessage[] @relation("PinnedMessagesOnDirectMessage")
 
-    @@unique([directChatId, createdAt])
-    @@index(fields: [createdAt(sort: Desc), directChatId], type: BTree)
     @@map("direct_messages")
 }
 
@@ -157,7 +157,6 @@ model FriendRequest {
     Sender    User @relation("FriendRequestsSent", fields: [senderId], references: [id])
     Recipient User @relation("FriendRequestsReceived", fields: [recipientId], references: [id])
 
-    @@unique([senderId, recipientId, status])
     @@map("friend_requests")
 }
 
@@ -172,7 +171,6 @@ model Sticker {
     Category StickerCategory  @relation(fields: [categoryId], references: [id])
     Greeting GreetingSticker? @relation("StickerOnGreetingSticker")
 
-    @@index(fields: [categoryId], type: BTree)
     @@map("stickers")
 }
 
@@ -196,6 +194,7 @@ model StickerCategory {
 
     Stickers Sticker[]
 
+    @@index([idName], type: BTree)
     @@map("sticker_categories")
 }
 
@@ -229,8 +228,6 @@ model GroupMessage {
     Author                 User       @relation("GroupMessages", fields: [authorId], references: [id])
     GroupChatOfLastSentMsg GroupChat? @relation("LastSentMessageOnGroupChat")
 
-    @@unique([groupChatId, createdAt])
-    @@index(fields: [createdAt(sort: Desc), groupChatId], type: BTree)
     @@map("group_messages")
 }
 
@@ -248,16 +245,14 @@ model GroupChatMember {
     @@map("group_chat_members")
 }
 
-// model UserOnlineStatus {
-//     id        Int      @id @default(autoincrement())
-//     userId    Int      @unique @map("user_id")
-//     lastSeen  DateTime @default(now()) @map("last_seen") @db.Timestamptz(3)
-//     createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+model UserSettings {
+    id                       Int     @id @default(autoincrement())
+    userId                   Int     @unique @map("user_id")
+    onlyReceiveFriendMessage Boolean @default(false) @map("only_receive_friend_message")
+    User                     User    @relation("UserToUserSettings", fields: [userId], references: [id])
 
-//     User User @relation("UserOnlineStatus", fields: [userId], references: [id])
-
-//     @@map("user_online_statuses")
-// }
+    @@map("user_settings")
+}
 
 enum FriendRequestsStatus {
     PENDING
@@ -277,6 +272,7 @@ enum MessageType {
     VIDEO
     DOCUMENT
     AUDIO
+    PIN_NOTICE
 }
 
 enum GroupChatRole {

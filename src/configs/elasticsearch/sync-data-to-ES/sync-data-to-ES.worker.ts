@@ -1,5 +1,4 @@
 import { PrismaClient } from '@prisma/client'
-import { BaseHttpException } from '@/utils/exceptions/base-http.exception'
 import {
   ConnectionException,
   UnknownException,
@@ -7,32 +6,26 @@ import {
   WorkerResponseException,
 } from '@/utils/exceptions/system.exception'
 import type { TDirectMessage } from '@/utils/entities/direct-message.entity'
-import type { TUser, TUserWithProfile } from '@/utils/entities/user.entity'
-import type { TProfile } from '@/utils/entities/profile.entity'
-import type { TDirectChat } from '@/utils/entities/direct-chat.entity'
-import type { TSignatureObject, TWorkerResponse } from '@/utils/types'
+import type { TUserWithProfile } from '@/utils/entities/user.entity'
+import type { TWorkerResponse } from '@/utils/types'
 import { isMainThread, parentPort } from 'worker_threads'
 import { SyncDataToESWorkerMessageDTO } from './sync-data-to-ES.dto'
 import { validate } from 'class-validator'
 import { plainToInstance } from 'class-transformer'
-import { EMessageStatus, EMessageTypes } from '@/direct-message/direct-message.enum'
+import { EMessageTypes } from '@/direct-message/direct-message.enum'
 import { EMsgEncryptionAlgorithms, ESyncDataToESWorkerType } from '@/utils/enums'
 import { Client } from '@elastic/elasticsearch'
 import { EESIndexes } from '@/configs/elasticsearch/elasticsearch.enum'
 import { ESyncDataToESMessages } from './sync-data-to-ES.message'
-import { retryRequest, typeToRawObject } from '@/utils/helpers'
+import { replaceHTMLTagInMessageContent, retryAsyncRequest, typeToRawObject } from '@/utils/helpers'
 import UserMessageEncryptor from '@/direct-message/security/es-message-encryptor'
 import type {
-  TDirectMessageMapping,
-  TUserMapping,
+  TDirectMessageESMapping,
+  TUserESMapping,
 } from '@/configs/elasticsearch/elasticsearch.type'
 import { SymmetricEncryptor } from '@/utils/crypto/symmetric-encryption.crypto'
 import { DevLogger } from '@/dev/dev-logger'
-
-type TDirectChatWithRelations = TDirectChat & {
-  Creator: TUserWithProfile
-  Recipient: TUserWithProfile
-}
+import { measureTime } from '@/dev/helpers'
 
 type TCheckInputDataResult = {
   messageData: SyncDataToESWorkerMessageDTO
@@ -42,62 +35,22 @@ type TCheckInputDataResult = {
 
 class SyncDataToESHandler {
   private readonly MAX_RETRIES: number = 3
-  private readonly recursiveCounter: TSignatureObject = {}
 
   constructor(private ESClient: Client) {}
 
-  recursiveCreateUpdateMessage = async (
-    prismaClient: PrismaClient,
-    queryResult: TDirectMessage
-  ) => {
-    let chat: TDirectChatWithRelations | null = null
+  recursiveCreateUpdateMessage = async (queryResult: TDirectMessage): Promise<void> => {
     try {
-      await retryRequest(
+      await retryAsyncRequest(
         async () => {
-          if (!chat) {
-            chat = await prismaClient.directChat.findUnique({
-              where: {
-                id: queryResult.directChatId,
-              },
-              include: {
-                Creator: {
-                  include: {
-                    Profile: true,
-                  },
-                },
-                Recipient: {
-                  include: {
-                    Profile: true,
-                  },
-                },
-              },
-            })
-          }
-          if (!chat) {
-            throw new BaseHttpException('Find direct chat failed')
-          }
           await this.ESClient.index({
             index: EESIndexes.DIRECT_MESSAGES,
             id: queryResult.id.toString(),
-            document: typeToRawObject<TDirectMessageMapping>({
-              message_id: queryResult.id,
-              content: queryResult.content,
-              type: queryResult.type as EMessageTypes,
-              status: queryResult.status as EMessageStatus,
-              created_at: queryResult.createdAt as Date,
-              valid_user_ids: [chat.creatorId, chat.recipientId],
-              recipient: {
-                user_id: chat.recipientId,
-                email: chat.Recipient.email,
-                full_name: chat.Recipient.Profile?.fullName || '',
-                avatar: chat.Recipient.Profile?.avatar || '',
-              },
-              sender: {
-                user_id: chat.creatorId,
-                email: chat.Creator.email,
-                full_name: chat.Creator.Profile?.fullName || '',
-                avatar: chat.Creator.Profile?.avatar || '',
-              },
+            document: typeToRawObject<TDirectMessageESMapping>({
+              content: replaceHTMLTagInMessageContent(queryResult.content),
+              original_content: queryResult.content,
+              message_type: queryResult.type as EMessageTypes,
+              valid_user_ids: [queryResult.authorId, queryResult.recipientId],
+              created_at: queryResult.createdAt.toISOString(),
             }),
           })
         },
@@ -108,32 +61,16 @@ class SyncDataToESHandler {
     }
   }
 
-  recursiveCreateUpdateUser = async (prismaClient: PrismaClient, queryResult: TUser) => {
-    let user: TUserWithProfile | null = null
+  recursiveCreateUpdateUser = async (queryResult: TUserWithProfile): Promise<void> => {
     try {
-      await retryRequest(
+      await retryAsyncRequest(
         async () => {
-          if (!user) {
-            user = await prismaClient.user.findUnique({
-              where: {
-                id: queryResult.id,
-              },
-              include: {
-                Profile: true,
-              },
-            })
-          }
-          if (!user) {
-            throw new BaseHttpException('Find user failed')
-          }
           await this.ESClient.index({
             index: EESIndexes.USERS,
-            id: user.id.toString(),
-            document: typeToRawObject<TUserMapping>({
-              user_id: user.id,
-              email: user.email,
-              full_name: user.Profile?.fullName || '',
-              avatar: user.Profile?.avatar || '',
+            id: queryResult.id.toString(),
+            document: typeToRawObject<TUserESMapping>({
+              email: queryResult.email,
+              full_name: queryResult.Profile?.fullName || '',
             }),
           })
         },
@@ -144,35 +81,44 @@ class SyncDataToESHandler {
     }
   }
 
-  recursiveCreateUpdateProfile = async (prismaClient: PrismaClient, queryResult: TProfile) => {
-    const userId = queryResult.userId
-    let user: TUser | null = null
-    try {
-      await retryRequest(async () => {
-        if (!user) {
-          user = await prismaClient.user.findUnique({
-            where: {
-              id: userId,
-            },
-          })
-        }
-        if (!user) {
-          throw new BaseHttpException('Find user failed')
-        }
+  recursiveSyncAllUsersAndMessages = async (prismaClient: PrismaClient): Promise<void> => {
+    const messages = await prismaClient.directMessage.findMany()
+    const users = await prismaClient.user.findMany({
+      include: {
+        Profile: true,
+      },
+    })
+    DevLogger.logInfo('messages count: ', messages.length)
+    DevLogger.logInfo('users count: ', users.length)
+    DevLogger.logInfo('start sync messages')
+    measureTime(async () => {
+      for (const message of messages) {
+        const content = message.content
         await this.ESClient.index({
-          index: EESIndexes.USERS,
-          id: userId.toString(),
-          document: typeToRawObject<TUserMapping>({
-            user_id: userId,
-            full_name: queryResult.fullName,
-            email: user.email,
-            avatar: queryResult.avatar || '',
+          index: EESIndexes.DIRECT_MESSAGES,
+          id: message.id.toString(),
+          document: typeToRawObject<TDirectMessageESMapping>({
+            content: replaceHTMLTagInMessageContent(content),
+            original_content: content,
+            valid_user_ids: [message.authorId, message.recipientId],
+            message_type: message.type as EMessageTypes,
+            created_at: message.createdAt.toISOString(),
           }),
         })
-      })
-    } catch (error) {
-      throw new UnknownException(ESyncDataToESMessages.SYNC_PROFILE_ERROR, error)
-    }
+      }
+    })
+    measureTime(async () => {
+      for (const user of users) {
+        await this.ESClient.index({
+          index: EESIndexes.USERS,
+          id: user.id.toString(),
+          document: typeToRawObject<TUserESMapping>({
+            full_name: user.Profile?.fullName || '',
+            email: user.email,
+          }),
+        })
+      }
+    })
   }
 }
 
@@ -187,8 +133,9 @@ const checkInputData = async (
     )
   }
   const ESClient = new Client({
-    cloud: { id: process.env.ELASTIC_CLOUD_ID },
+    node: process.env.ELASTICSEARCH_URL,
     auth: { apiKey: process.env.ELASTIC_API_KEY },
+    serverMode: 'serverless',
   })
   const prismaClient = new PrismaClient()
   try {
@@ -243,15 +190,15 @@ const encryptMessageContent = (
   return msgEncryptor.encrypt(rawMsgContent)
 }
 
-const launchWorker = async (workerData: SyncDataToESWorkerMessageDTO) => {
-  DevLogger.logInfo('launch worker 1')
+const runWorker = async (workerData: SyncDataToESWorkerMessageDTO): Promise<void> => {
+  DevLogger.logInfo('launch worker 1: ', workerData)
   if (isMainThread) return
   DevLogger.logInfo('launch worker 2')
 
   const { messageData, prismaClient, syncDataToESHandler } = await checkInputData(workerData)
   const { type, data, msgEncryptor } = messageData
 
-  if ('content' in data) {
+  if (data && 'content' in data) {
     if (!msgEncryptor) {
       throw new WorkerInputDataException(ESyncDataToESMessages.SYNC_MESSAGE_ENCRYPTOR_NOT_FOUND)
     }
@@ -268,22 +215,19 @@ const launchWorker = async (workerData: SyncDataToESWorkerMessageDTO) => {
 
   switch (type) {
     case ESyncDataToESWorkerType.CREATE_MESSAGE:
-      await syncDataToESHandler.recursiveCreateUpdateMessage(prismaClient, data as TDirectMessage)
+      await syncDataToESHandler.recursiveCreateUpdateMessage(data as TDirectMessage)
       break
     case ESyncDataToESWorkerType.UPDATE_MESSAGE:
-      await syncDataToESHandler.recursiveCreateUpdateMessage(prismaClient, data as TDirectMessage)
+      await syncDataToESHandler.recursiveCreateUpdateMessage(data as TDirectMessage)
       break
     case ESyncDataToESWorkerType.CREATE_USER:
-      await syncDataToESHandler.recursiveCreateUpdateUser(prismaClient, data as TUser)
+      await syncDataToESHandler.recursiveCreateUpdateUser(data as TUserWithProfile)
       break
     case ESyncDataToESWorkerType.UPDATE_USER:
-      await syncDataToESHandler.recursiveCreateUpdateUser(prismaClient, data as TUser)
+      await syncDataToESHandler.recursiveCreateUpdateUser(data as TUserWithProfile)
       break
-    case ESyncDataToESWorkerType.CREATE_PROFILE:
-      await syncDataToESHandler.recursiveCreateUpdateProfile(prismaClient, data as TProfile)
-      break
-    case ESyncDataToESWorkerType.UPDATE_PROFILE:
-      await syncDataToESHandler.recursiveCreateUpdateProfile(prismaClient, data as TProfile)
+    case ESyncDataToESWorkerType.ALL_USERS_AND_MESSAGES:
+      await syncDataToESHandler.recursiveSyncAllUsersAndMessages(prismaClient)
       break
   }
 
@@ -296,7 +240,9 @@ const launchWorker = async (workerData: SyncDataToESWorkerMessageDTO) => {
 }
 
 parentPort?.on('message', (message) => {
-  launchWorker(message).catch((error) => {
+  runWorker(message).catch((error) => {
+    console.log('>>> sync data to es worker error:', error)
+    DevLogger.logError('sync data to es worker error:', error)
     parentPort?.postMessage(
       typeToRawObject<TWorkerResponse<null>>({
         success: false,

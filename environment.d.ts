@@ -15,7 +15,7 @@ declare global {
       CLIENT_HOST_DEV: string
       CLIENT_DOMAIN: string
       CLIENT_HOST: string
-      ELASTIC_CLOUD_ID: string
+      ELASTICSEARCH_URL: string
       ELASTIC_API_KEY: string
       DECRYPT_USER_KEY_MASTER_KEY: string
       AWS_ACCESS_KEY_ID: string

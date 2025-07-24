@@ -1,7 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common'
 import { PrismaService } from '../configs/db/prisma.service'
 import { EProviderTokens, ESyncDataToESWorkerType } from '@/utils/enums'
-import type { TDirectMessage } from '@/utils/entities/direct-message.entity'
+import type {
+  TDirectMessage,
+  TDirectMessageWithRecipient,
+} from '@/utils/entities/direct-message.entity'
 import { EMessageStatus, EMessageTypes, ESortTypes } from '@/utils/types'
 import dayjs from 'dayjs'
 import type {
@@ -174,6 +177,21 @@ export class DirectMessageService {
   async updateMessageStatus(msgId: number, status: EMessageStatus): Promise<TDirectMessage> {
     return await this.updateMsg(msgId, {
       status,
+    })
+  }
+
+  async findMessagesByIds(ids: number[]): Promise<TDirectMessageWithRecipient[]> {
+    return await this.PrismaService.directMessage.findMany({
+      where: {
+        id: { in: ids },
+      },
+      include: {
+        Recipient: {
+          include: {
+            Profile: true,
+          },
+        },
+      },
     })
   }
 }

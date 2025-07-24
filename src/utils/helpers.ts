@@ -48,35 +48,39 @@ export function createWorker(workerPath: string): Worker {
  * @param {TRetryRequestOptions} options - Các tùy chọn cho việc thực hiện yêu cầu lại
  * @returns {R} Kết quả của yêu cầu
  */
-export function retryRequest<R>(
-  requestExecutor: TRetryRequestExecutor<R>,
+export async function retryAsyncRequest<R>(
+  requestExecutor: () => Promise<R>,
   options?: TRetryRequestOptions
-): R {
+): Promise<R> {
+  const { maxRetries = 3, onPreRetry } = options || {}
   let retriesCount = 0
-  function retryHandler(): R {
-    let maxRetries: number | undefined = undefined
-    let onPreRetry: TOnPreRetry | undefined = undefined
-    if (options) {
-      maxRetries = options.maxRetries
-      onPreRetry = options.onPreRetry
-    }
+  async function retryHandler(): Promise<R> {
     try {
-      return requestExecutor()
+      return await requestExecutor()
     } catch (error) {
-      if (maxRetries && retriesCount <= maxRetries) {
-        if (onPreRetry) {
-          onPreRetry(error, retriesCount)
-        }
+      if (retriesCount < maxRetries) {
+        if (onPreRetry) onPreRetry(error, retriesCount)
         retriesCount++
-        return retryHandler()
+        return await retryHandler()
       } else {
         throw error
       }
     }
   }
-  return retryHandler()
+  return await retryHandler()
 }
 
 export const checkIsEmail = (text: string): boolean => {
   return validator.isEmail(text)
+}
+
+/**
+ * Kiểm tra xem chuỗi input có chứa thẻ HTML hay không
+ * @param {string} input - Chuỗi cần kiểm tra
+ * @returns {string} Chuỗi đã được xử lý, nếu có thẻ HTML thì thay thế bằng '(Media)'
+ */
+export function replaceHTMLTagInMessageContent(input: string): string {
+  // Regex kiểm tra thẻ HTML mở hoặc đóng
+  const htmlTagRegex = /<([a-z][\w-]*)(\s[^>]*)?>.*?<\/\1>|<([a-z][\w-]*)(\s[^>]*)?\/?>/g
+  return input.replace(htmlTagRegex, '(Media)')
 }
