@@ -41,6 +41,7 @@ import { GroupChatModule } from './group-chat/group-chat.module'
 import { UploadModule } from './upload/upload.module'
 import { StatisticsModule } from './statistics/statistics.module'
 import { GroupMemberModule } from './group-member/group-member.module'
+import { GroupMessageModule } from './group-message/group-message.module'
 
 @Module({
   imports: [
@@ -49,6 +50,7 @@ import { GroupMemberModule } from './group-member/group-member.module'
     GatewayModule,
     DirectChatsModule,
     DirectMessageModule,
+    GroupMessageModule,
     UserModule,
     FriendRequestModule,
     FriendModule,

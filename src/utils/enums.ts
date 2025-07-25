@@ -58,3 +58,23 @@ export enum EWorkerEvents {
 export enum EMsgEncryptionAlgorithms {
   AES_256_ECB = 'aes-256-ecb',
 }
+
+export enum EChatType {
+  DIRECT = 'DIRECT',
+  GROUP = 'GROUP',
+}
+
+export enum ESortTypes {
+  TIME_ASC = 'ASC',
+  TIME_DESC = 'DESC',
+}
+
+export enum EMessageStatus {
+  SENT = 'SENT',
+  SEEN = 'SEEN',
+}
+
+export enum EMessageTypes {
+  TEXT = 'TEXT',
+  STICKER = 'STICKER',
+}

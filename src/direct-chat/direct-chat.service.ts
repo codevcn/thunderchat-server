@@ -7,6 +7,7 @@ import { Inject, Injectable } from '@nestjs/common'
 import { PrismaService } from '@/configs/db/prisma.service'
 import { EProviderTokens } from '@/utils/enums'
 import { Prisma } from '@prisma/client'
+import type { TDirectChat } from '@/utils/entities/direct-chat.entity'
 
 @Injectable()
 export class DirectChatService {
@@ -37,7 +38,7 @@ export class DirectChatService {
     })
   }
 
-  async addLastSentMessage(directChatId: number, lastSentMessageId: number): Promise<void> {
+  async updateLastSentMessage(directChatId: number, lastSentMessageId: number): Promise<void> {
     await this.updateDirectChat(directChatId, { lastSentMessageId })
   }
 
@@ -68,5 +69,30 @@ export class DirectChatService {
         },
       },
     })
+  }
+
+  async findConversationWithOtherUser(
+    userId: number,
+    otherUserId: number
+  ): Promise<TDirectChat | null> {
+    const conversation = await this.PrismaService.directChat.findFirst({
+      where: {
+        OR: [
+          { creatorId: userId, recipientId: otherUserId },
+          { creatorId: otherUserId, recipientId: userId },
+        ],
+      },
+    })
+    return conversation
+  }
+
+  async createNewDirectChat(userId: number, otherUserId: number): Promise<TDirectChat> {
+    const conversation = await this.PrismaService.directChat.create({
+      data: {
+        creatorId: userId,
+        recipientId: otherUserId,
+      },
+    })
+    return conversation
   }
 }

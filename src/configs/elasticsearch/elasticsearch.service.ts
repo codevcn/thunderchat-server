@@ -1,8 +1,8 @@
 import { Injectable, OnModuleInit } from '@nestjs/common'
 import { Client } from '@elastic/elasticsearch'
 import type {
-  TDirectMessageESMapping,
   TESSearchGeneralResult,
+  TMessageESMapping,
   TUserESMapping,
 } from './elasticsearch.type'
 import { EESIndexes } from './elasticsearch.enum'
@@ -47,7 +47,7 @@ export class ElasticsearchService implements OnModuleInit {
     })
   }
 
-  async createMessage(messageId: number, message: TDirectMessageESMapping): Promise<void> {
+  async createMessage(messageId: number, message: TMessageESMapping): Promise<void> {
     await ESClient.index({
       index: EESIndexes.DIRECT_MESSAGES,
       id: messageId.toString(),
@@ -79,12 +79,12 @@ export class ElasticsearchService implements OnModuleInit {
     })
   }
 
-  async searchDirectMessages(
+  async searchMessages(
     keyword: string,
     userId: number,
     limit: number
-  ): Promise<TESSearchGeneralResult<TDirectMessageESMapping>[]> {
-    const result = await ESClient.search<TDirectMessageESMapping>({
+  ): Promise<TESSearchGeneralResult<TMessageESMapping>[]> {
+    const result = await ESClient.search<TMessageESMapping>({
       index: EESIndexes.DIRECT_MESSAGES,
       query: {
         bool: {

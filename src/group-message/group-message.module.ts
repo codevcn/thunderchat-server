@@ -2,12 +2,12 @@ import { Module } from '@nestjs/common'
 import { GroupMessageController } from './group-message.controller'
 import { GroupMessageService } from './group-message.service'
 import { SyncDataToESModule } from '@/configs/elasticsearch/sync-data-to-ES/sync-data-to-ES.module'
-import { MessageMappingModule } from '@/message-mapping/message-mapping.module'
+import { UserModule } from '@/user/user.module'
 
 @Module({
-  imports: [SyncDataToESModule, MessageMappingModule],
+  imports: [UserModule, SyncDataToESModule],
   providers: [GroupMessageService],
   controllers: [GroupMessageController],
-  exports: [GroupMessageService],
+  exports: [GroupMessageService, SyncDataToESModule],
 })
 export class GroupMessageModule {}

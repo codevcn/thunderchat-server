@@ -3,8 +3,11 @@ import { SyncDataToESService } from '@/configs/elasticsearch/sync-data-to-ES/syn
 import { EProviderTokens } from '@/utils/enums'
 import { Inject, Injectable } from '@nestjs/common'
 import type { TGetGroupMessagesData, TMessageOffset } from './group-message.type'
-import type { TGroupMessage } from '@/utils/entities/group-message.entity'
-import { ESortTypes } from '@/utils/types'
+import type {
+  TGroupMessage,
+  TGroupMessageWithGroupChat,
+} from '@/utils/entities/group-message.entity'
+import { ESortTypes } from '@/utils/enums'
 import dayjs from 'dayjs'
 
 @Injectable()
@@ -85,5 +88,17 @@ export class GroupMessageService {
       hasMoreMessages: messages.length > limit,
       groupMessages: sortedMessages || [],
     }
+  }
+
+  async findMessagesByIds(ids: number[], limit: number): Promise<TGroupMessageWithGroupChat[]> {
+    return await this.PrismaService.groupMessage.findMany({
+      where: {
+        id: { in: ids },
+      },
+      include: {
+        GroupChat: true,
+      },
+      take: limit,
+    })
   }
 }

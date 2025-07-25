@@ -1,5 +1,5 @@
 import type { TGroupMessage } from '@/utils/entities/group-message.entity'
-import type { EMessageStatus } from '@/utils/types'
+import type { EMessageStatus } from '@/utils/enums'
 
 export type TNewGroupMessage = {
   id: number

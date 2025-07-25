@@ -5,7 +5,7 @@ import type {
   TDirectMessage,
   TDirectMessageWithRecipient,
 } from '@/utils/entities/direct-message.entity'
-import { EMessageStatus, EMessageTypes, ESortTypes } from '@/utils/types'
+import { EMessageStatus, EMessageTypes, ESortTypes } from '@/utils/enums'
 import dayjs from 'dayjs'
 import type {
   TGetDirectMessagesData,
@@ -128,7 +128,7 @@ export class DirectMessageService {
   }
 
   async getOlderDirectMessages(
-    messageOffset: TMessageOffset,
+    messageOffset: TMessageOffset | undefined,
     directChatId: number,
     limit: number,
     equalOffset: boolean
@@ -149,7 +149,7 @@ export class DirectMessageService {
   }
 
   async getOlderDirectMessagesHandler(
-    messageOffset: TMessageOffset,
+    messageOffset: TMessageOffset | undefined,
     directChatId: number,
     limit: number,
     isFirstTime: boolean = false,
@@ -180,7 +180,7 @@ export class DirectMessageService {
     })
   }
 
-  async findMessagesByIds(ids: number[]): Promise<TDirectMessageWithRecipient[]> {
+  async findMessagesByIds(ids: number[], limit: number): Promise<TDirectMessageWithRecipient[]> {
     return await this.PrismaService.directMessage.findMany({
       where: {
         id: { in: ids },
@@ -192,6 +192,7 @@ export class DirectMessageService {
           },
         },
       },
+      take: limit,
     })
   }
 }

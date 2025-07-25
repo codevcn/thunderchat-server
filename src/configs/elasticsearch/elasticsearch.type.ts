@@ -6,7 +6,7 @@ export type TUserESMapping = {
   full_name: string
 }
 
-export type TDirectMessageESMapping = {
+export type TMessageESMapping = {
   content: string
   original_content: string
   message_type: EMessageTypes

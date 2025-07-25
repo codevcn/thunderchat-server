@@ -192,7 +192,7 @@ export class AppGateway
       fileName,
       replyToId
     )
-    await this.directChatService.addLastSentMessage(directChatId, newMessage.id)
+    await this.directChatService.updateLastSentMessage(directChatId, newMessage.id)
     const recipientSocket = this.socketService.getConnectedClient<IEmitSocketEvents>(receiverId)
     if (recipientSocket) {
       recipientSocket.emit(EClientSocketEvents.send_message_direct, newMessage)

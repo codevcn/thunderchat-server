@@ -3,7 +3,11 @@ import { DirectChatService } from '@/direct-chat/direct-chat.service'
 import { Controller, Get, UseGuards, Param, Query, NotFoundException } from '@nestjs/common'
 import { ERoutes } from '@/utils/enums'
 import { IDirectChatsController } from './direct-chat.interface'
-import { FetchDirectChatDTO, FetchDirectChatsDTO } from './direct-chat.dto'
+import {
+  FetchDirectChatDTO,
+  FetchDirectChatsDTO,
+  FindConversationWithOtherUserDTO,
+} from './direct-chat.dto'
 import { User } from '@/user/user.decorator'
 import { TUserWithProfile } from '@/utils/entities/user.entity'
 import { EDirectChatMessages } from './direct-chat.message'
@@ -31,5 +35,17 @@ export class DirectChatController implements IDirectChatsController {
       query.limit
     )
     return directChats
+  }
+
+  @Get('find-conversation-with-other-user/:otherUserId')
+  async findConversationWithOtherUser(
+    @Param() params: FindConversationWithOtherUserDTO,
+    @User() user: TUserWithProfile
+  ) {
+    const conversation = await this.conversationService.findConversationWithOtherUser(
+      user.id,
+      params.otherUserId
+    )
+    return conversation
   }
 }

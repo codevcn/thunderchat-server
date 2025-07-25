@@ -2,8 +2,8 @@ import type {
   TDirectMessage,
   TDirectMessageWithAuthorAndReplyTo,
 } from '@/utils/entities/direct-message.entity'
-import type { EMessageStatus } from '@/utils/types'
-import type { EMessageTypes } from './direct-message.enum'
+import type { EMessageStatus } from '@/utils/enums'
+import type { EMessageTypes } from '@/utils/enums'
 
 export type TNewGroupMessage = {
   id: number

@@ -162,12 +162,13 @@ export class UserService {
     return searchResult
   }
 
-  async findUsersByIds(ids: number[]): Promise<TUserWithProfile[]> {
+  async findUsersByIds(ids: number[], limit: number): Promise<TUserWithProfile[]> {
     return await this.PrismaService.user.findMany({
       where: { id: { in: ids } },
       include: {
         Profile: true,
       },
+      take: limit,
     })
   }
 }

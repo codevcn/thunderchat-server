@@ -1,6 +1,6 @@
 import { Type } from 'class-transformer'
 import { IsBoolean, IsEnum, IsNotEmpty, IsNumber, IsOptional } from 'class-validator'
-import { ESortTypes } from '@/utils/types'
+import { ESortTypes } from '@/utils/enums'
 import type { TMessageOffset } from './group-message.type'
 import { ToBoolean } from '@/utils/validation/transformers'
 

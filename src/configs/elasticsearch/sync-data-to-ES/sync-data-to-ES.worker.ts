@@ -19,10 +19,7 @@ import { EESIndexes } from '@/configs/elasticsearch/elasticsearch.enum'
 import { ESyncDataToESMessages } from './sync-data-to-ES.message'
 import { replaceHTMLTagInMessageContent, retryAsyncRequest, typeToRawObject } from '@/utils/helpers'
 import UserMessageEncryptor from '@/direct-message/security/es-message-encryptor'
-import type {
-  TDirectMessageESMapping,
-  TUserESMapping,
-} from '@/configs/elasticsearch/elasticsearch.type'
+import type { TMessageESMapping, TUserESMapping } from '@/configs/elasticsearch/elasticsearch.type'
 import { SymmetricEncryptor } from '@/utils/crypto/symmetric-encryption.crypto'
 import { DevLogger } from '@/dev/dev-logger'
 import { measureTime } from '@/dev/helpers'
@@ -45,7 +42,7 @@ class SyncDataToESHandler {
           await this.ESClient.index({
             index: EESIndexes.DIRECT_MESSAGES,
             id: queryResult.id.toString(),
-            document: typeToRawObject<TDirectMessageESMapping>({
+            document: typeToRawObject<TMessageESMapping>({
               content: replaceHTMLTagInMessageContent(queryResult.content),
               original_content: queryResult.content,
               message_type: queryResult.type as EMessageTypes,
@@ -97,7 +94,7 @@ class SyncDataToESHandler {
         await this.ESClient.index({
           index: EESIndexes.DIRECT_MESSAGES,
           id: message.id.toString(),
-          document: typeToRawObject<TDirectMessageESMapping>({
+          document: typeToRawObject<TMessageESMapping>({
             content: replaceHTMLTagInMessageContent(content),
             original_content: content,
             valid_user_ids: [message.authorId, message.recipientId],
