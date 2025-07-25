@@ -46,3 +46,10 @@ export class FetchNewerMsgsParamsDTO {
   @IsEnum(['ASC', 'DESC'])
   sortType?: 'ASC' | 'DESC' = 'ASC' // Mặc định lấy cũ nhất trước (tin mới hơn ở cuối)
 }
+
+export class CheckCanSendMessageDto {
+  @IsNumber()
+  @Type(() => Number)
+  @IsNotEmpty()
+  receiverId: number
+}

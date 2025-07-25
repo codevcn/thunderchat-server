@@ -217,7 +217,7 @@ export class AppGateway
     const { receiverId, token } = msgPayload
 
     await this.checkUniqueMessage(token, clientId)
-    await this.checkFriendship(clientId, receiverId)
+    // await this.checkFriendship(clientId, receiverId)
     const { directChatId, timestamp, content, replyToId } = msgPayload
 
     // Content đã được mã hóa bởi interceptor

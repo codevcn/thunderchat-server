@@ -5,6 +5,10 @@ import { IDirectMessageController } from './direct-message.interface'
 import { FetchMsgsParamsDTO } from './direct-message.dto'
 import { AuthGuard } from '@/auth/auth.guard'
 import { ESortTypes } from './direct-message.enum'
+import { canSendDirectMessage } from './can-send-message.helper'
+import { User } from '@/user/user.decorator'
+import { CheckCanSendMessageDto } from './direct-message.dto'
+import { ValidationPipe } from '@nestjs/common'
 
 @Controller(ERoutes.MESSAGE)
 @UseGuards(AuthGuard)
@@ -69,5 +73,18 @@ export class DirectMessageController implements IDirectMessageController {
       Number(directChatId),
       Number(limit)
     )
+  }
+
+  @Get('can-send-message')
+  async canSendMessage(
+    @Query(new ValidationPipe({ transform: true, whitelist: true })) query: CheckCanSendMessageDto,
+    @User('id') userId: number
+  ) {
+    const canSend = await canSendDirectMessage(
+      this.directMessageService['PrismaService'],
+      userId,
+      query.receiverId
+    )
+    return { canSend }
   }
 }

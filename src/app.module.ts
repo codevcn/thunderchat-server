@@ -13,6 +13,7 @@ import { LoggerModule } from './configs/logger/logger.module'
 import { ProfileModule } from './profile/profile.module'
 import { PinModule } from './direct-message/pin/pin.module'
 import { PinDirectChatModule } from './direct-chat/pin-direct-chat/pin-direct-chat.module'
+import { UserSettingsModule } from './user-settings/user-settings.module'
 
 const globalConfigModules = [
   ConfigModule.forRoot({
@@ -64,6 +65,7 @@ import { GroupMemberModule } from './group-member/group-member.module'
     ProfileModule,
     PinModule,
     PinDirectChatModule,
+    UserSettingsModule,
   ],
 })
 export class AppModule implements NestModule {
