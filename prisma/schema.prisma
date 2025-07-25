@@ -117,6 +117,8 @@ model DirectMessage {
     RepliedBy               DirectMessage[]       @relation("RepliesOnDirectMessage")
     PinnedMessages          PinnedDirectMessage[] @relation("PinnedMessagesOnDirectMessage")
 
+    isDeleted   Boolean     @default(false) @map("is_deleted")
+    
     @@map("direct_messages")
 }
 
