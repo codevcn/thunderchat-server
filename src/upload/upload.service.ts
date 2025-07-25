@@ -157,4 +157,23 @@ export class UploadService {
       // Không throw error vì đây là cleanup, không nên làm fail toàn bộ process
     }
   }
+
+  /**
+   * Xoá file bất kỳ trên S3 theo url
+   */
+  public async deleteFileByUrl(fileUrl: string): Promise<void> {
+    try {
+      const objectKey = fileUrl.split('.amazonaws.com/')[1]
+      if (!objectKey) throw new Error('Không tìm thấy object key trong url')
+      const params = {
+        Bucket: process.env.AWS_S3_BUCKET,
+        Key: objectKey,
+      }
+      await this.s3.deleteObject(params).promise()
+      console.log('✅ Đã xoá file trên S3:', objectKey)
+    } catch (err: any) {
+      console.error('❌ Lỗi xoá file trên S3:', err.message)
+      // Không throw để không làm fail process chính
+    }
+  }
 }
