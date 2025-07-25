@@ -19,3 +19,7 @@ export class FetchDirectChatsDTO {
   @Type(() => Number)
   limit: number
 }
+
+export class CreateDirectChatDTO {
+  recipientId: number // id của user muốn tạo chat cùng
+}

@@ -1,9 +1,18 @@
 import { AuthGuard } from '@/auth/auth.guard'
 import { DirectChatService } from '@/direct-chat/direct-chat.service'
-import { Controller, Get, UseGuards, Param, Query, NotFoundException } from '@nestjs/common'
+import {
+  Controller,
+  Get,
+  UseGuards,
+  Param,
+  Query,
+  NotFoundException,
+  Body,
+  Post,
+} from '@nestjs/common'
 import { ERoutes } from '@/utils/enums'
 import { IDirectChatsController } from './direct-chat.interface'
-import { FetchDirectChatDTO, FetchDirectChatsDTO } from './direct-chat.dto'
+import { FetchDirectChatDTO, FetchDirectChatsDTO, CreateDirectChatDTO } from './direct-chat.dto'
 import { User } from '@/user/user.decorator'
 import { TUserWithProfile } from '@/utils/entities/user.entity'
 import { EDirectChatMessages } from './direct-chat.message'
@@ -31,5 +40,10 @@ export class DirectChatController implements IDirectChatsController {
       query.limit
     )
     return directChats
+  }
+
+  @Post('create')
+  async createDirectChat(@Body() body: CreateDirectChatDTO, @User('id') userId: number) {
+    return await this.conversationService.createDirectChat(userId, body.recipientId)
   }
 }

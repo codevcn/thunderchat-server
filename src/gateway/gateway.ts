@@ -146,14 +146,21 @@ export class AppGateway
 
   async checkUniqueMessage(token: string, clientId: number): Promise<void> {
     if (!this.messageTokensManager.isUniqueToken(clientId, token)) {
+      console.error('[SOCKET][ERROR] Token bị trùng:', { clientId, token })
       throw new BaseWsException(EMsgMessages.MESSAGE_OVERLAPS)
     }
   }
 
   async checkFriendship(clientId: number, receiverId: number): Promise<void> {
-    const isFriend = await this.friendService.isFriend(clientId, receiverId)
-    if (!isFriend) {
-      throw new BaseWsException(EFriendMessages.IS_NOT_FRIEND, HttpStatus.BAD_REQUEST)
+    try {
+      const isFriend = await this.friendService.isFriend(clientId, receiverId)
+      if (!isFriend) {
+        console.error('[SOCKET][ERROR] Không phải bạn bè:', { clientId, receiverId })
+        throw new BaseWsException(EFriendMessages.IS_NOT_FRIEND, HttpStatus.BAD_REQUEST)
+      }
+    } catch (err) {
+      console.error('[SOCKET][ERROR] checkFriendship exception:', err)
+      throw err
     }
   }
 
@@ -185,6 +192,18 @@ export class AppGateway
       thumbnailUrl,
       replyToId,
     } = message
+    console.log('[SOCKET][DEBUG] handleMessage - tạo message mới:', {
+      id,
+      directChatId,
+      receiverId,
+      type,
+      content,
+      stickerUrl,
+      mediaUrl,
+      fileName,
+      thumbnailUrl,
+      replyToId,
+    })
     const newMessage = await this.DirectMessageService.createNewMessage(
       content,
       id,
@@ -201,8 +220,12 @@ export class AppGateway
     await this.directChatService.addLastSentMessage(directChatId, newMessage.id)
     const recipientSocket = this.socketService.getConnectedClient<IEmitSocketEvents>(receiverId)
     if (recipientSocket) {
+      console.log('[SOCKET][DEBUG] handleMessage - emit tới recipientSocket:', receiverId)
       recipientSocket.emit(EClientSocketEvents.send_message_direct, newMessage)
+    } else {
+      console.log('[SOCKET][DEBUG] handleMessage - recipientSocket KHÔNG online:', receiverId)
     }
+    console.log('[SOCKET][DEBUG] handleMessage - emit tới senderSocket:', id)
     socket.emit(EClientSocketEvents.send_message_direct, newMessage)
   }
 
@@ -212,118 +235,160 @@ export class AppGateway
     @MessageBody() payload: SendDirectMessageDTO,
     @ConnectedSocket() client: TClientSocket
   ) {
-    const { clientId } = await this.authService.validateSocketAuth(client)
-    const { type, msgPayload } = payload
-    const { receiverId, token } = msgPayload
+    try {
+      console.log('[SOCKET][DEBUG] Nhận sự kiện send_message_direct:', JSON.stringify(payload))
+      const { clientId } = await this.authService.validateSocketAuth(client)
+      const { type, msgPayload } = payload
+      const { receiverId, token } = msgPayload
 
-    await this.checkUniqueMessage(token, clientId)
-    await this.checkFriendship(clientId, receiverId)
-    const { directChatId, timestamp, content, replyToId } = msgPayload
+      await this.checkUniqueMessage(token, clientId)
+      await this.checkFriendship(clientId, receiverId)
+      const { directChatId, timestamp, content, replyToId } = msgPayload
 
-    // Content đã được mã hóa bởi interceptor
-    switch (type) {
-      case EMessageTypes.TEXT:
-        await this.handleMessage(
-          { id: clientId, socket: client },
-          {
-            content, // Content đã được mã hóa
-            timestamp,
+      // Content đã được mã hóa bởi interceptor
+      switch (type) {
+        case EMessageTypes.TEXT:
+          console.log('[SOCKET][DEBUG] Gửi tin nhắn TEXT:', {
+            clientId,
             directChatId,
             receiverId,
-            type: EMessageTypes.TEXT,
+            content,
+            timestamp,
             replyToId,
-          }
-        )
-        break
-      case EMessageTypes.STICKER:
-        await this.handleMessage(
-          { id: clientId, socket: client },
-          {
-            content: '',
-            timestamp,
+          })
+          await this.handleMessage(
+            { id: clientId, socket: client },
+            {
+              content, // Content đã được mã hóa
+              timestamp,
+              directChatId,
+              receiverId,
+              type: EMessageTypes.TEXT,
+              replyToId,
+            }
+          )
+          break
+        case EMessageTypes.STICKER:
+          console.log('[SOCKET][DEBUG] Gửi tin nhắn STICKER:', {
+            clientId,
             directChatId,
             receiverId,
-            type: EMessageTypes.STICKER,
-            stickerUrl: content,
+            content,
+            timestamp,
             replyToId,
-          }
-        )
-        break
-      case EMessageTypes.IMAGE:
-        await this.handleMessage(
-          { id: clientId, socket: client },
-          {
-            content: '',
-            timestamp,
+          })
+          await this.handleMessage(
+            { id: clientId, socket: client },
+            {
+              content: '',
+              timestamp,
+              directChatId,
+              receiverId,
+              type: EMessageTypes.STICKER,
+              stickerUrl: content,
+              replyToId,
+            }
+          )
+          break
+        case EMessageTypes.IMAGE:
+          console.log('[SOCKET][DEBUG] Gửi tin nhắn IMAGE:', {
+            clientId,
             directChatId,
             receiverId,
-            type: EMessageTypes.IMAGE,
             mediaUrl: msgPayload.mediaUrl,
-            replyToId,
-          }
-        )
-        break
-      case EMessageTypes.VIDEO:
-        await this.handleMessage(
-          { id: clientId, socket: client },
-          {
-            content: '',
             timestamp,
+            replyToId,
+          })
+          await this.handleMessage(
+            { id: clientId, socket: client },
+            {
+              content: '',
+              timestamp,
+              directChatId,
+              receiverId,
+              type: EMessageTypes.IMAGE,
+              mediaUrl: msgPayload.mediaUrl,
+              replyToId,
+            }
+          )
+          break
+        case EMessageTypes.VIDEO:
+          console.log('[SOCKET][DEBUG] Gửi tin nhắn VIDEO:', {
+            clientId,
             directChatId,
             receiverId,
-            type: EMessageTypes.VIDEO,
             mediaUrl: msgPayload.mediaUrl,
             thumbnailUrl: msgPayload.thumbnailUrl,
-            replyToId,
-          }
-        )
-        break
-      case EMessageTypes.DOCUMENT:
-        console.log('📄 Gateway - Xử lý tin nhắn DOCUMENT:', {
-          content: msgPayload.content,
-          mediaUrl: msgPayload.mediaUrl,
-          fileName: msgPayload.fileName,
-          receiverId,
-          directChatId,
-          replyToId,
-        })
-        await this.handleMessage(
-          { id: clientId, socket: client },
-          {
-            content: msgPayload.content || '', // Tên file
             timestamp,
+            replyToId,
+          })
+          await this.handleMessage(
+            { id: clientId, socket: client },
+            {
+              content: '',
+              timestamp,
+              directChatId,
+              receiverId,
+              type: EMessageTypes.VIDEO,
+              mediaUrl: msgPayload.mediaUrl,
+              thumbnailUrl: msgPayload.thumbnailUrl,
+              replyToId,
+            }
+          )
+          break
+        case EMessageTypes.DOCUMENT:
+          console.log('📄 [SOCKET][DEBUG] Gửi tin nhắn DOCUMENT:', {
+            clientId,
             directChatId,
             receiverId,
-            type: EMessageTypes.DOCUMENT,
+            content: msgPayload.content,
             mediaUrl: msgPayload.mediaUrl,
             fileName: msgPayload.fileName,
             replyToId,
-          }
-        )
-        break
-      case EMessageTypes.AUDIO:
-        console.log('🎵 Gateway - Xử lý tin nhắn AUDIO:', {
-          content: msgPayload.content,
-          mediaUrl: msgPayload.mediaUrl,
-          fileName: msgPayload.fileName,
-          receiverId,
-          directChatId,
-        })
-        await this.handleMessage(
-          { id: clientId, socket: client },
-          {
-            content: msgPayload.content || '', // Caption nếu có
-            timestamp,
+          })
+          await this.handleMessage(
+            { id: clientId, socket: client },
+            {
+              content: msgPayload.content || '', // Tên file
+              timestamp,
+              directChatId,
+              receiverId,
+              type: EMessageTypes.DOCUMENT,
+              mediaUrl: msgPayload.mediaUrl,
+              fileName: msgPayload.fileName,
+              replyToId,
+            }
+          )
+          break
+        case EMessageTypes.AUDIO:
+          console.log('🎵 [SOCKET][DEBUG] Gửi tin nhắn AUDIO:', {
+            clientId,
             directChatId,
             receiverId,
-            type: EMessageTypes.AUDIO,
+            content: msgPayload.content,
             mediaUrl: msgPayload.mediaUrl,
             fileName: msgPayload.fileName,
-          }
-        )
-        break
+          })
+          await this.handleMessage(
+            { id: clientId, socket: client },
+            {
+              content: msgPayload.content || '', // Caption nếu có
+              timestamp,
+              directChatId,
+              receiverId,
+              type: EMessageTypes.AUDIO,
+              mediaUrl: msgPayload.mediaUrl,
+              fileName: msgPayload.fileName,
+            }
+          )
+          break
+      }
+      console.log('[SOCKET][DEBUG] Đã xử lý xong send_message_direct, trả về { success: true }')
+      return { success: true }
+    } catch (err) {
+      console.error('[SOCKET][ERROR] handleSendDirectMessage:', err)
+      throw err
     }
-    return { success: true }
   }
 
   @SubscribeMessage(EClientSocketEvents.message_seen_direct)

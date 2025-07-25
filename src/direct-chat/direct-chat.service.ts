@@ -69,4 +69,29 @@ export class DirectChatService {
       },
     })
   }
+
+  async createDirectChat(creatorId: number, recipientId: number) {
+    // Kiểm tra đã có direct chat chưa
+    const existing = await this.PrismaService.directChat.findFirst({
+      where: {
+        OR: [
+          { creatorId, recipientId },
+          { creatorId: recipientId, recipientId: creatorId },
+        ],
+      },
+    })
+    if (existing) return existing // Nếu đã có thì trả về luôn
+
+    // Nếu chưa có thì tạo mới
+    return await this.PrismaService.directChat.create({
+      data: {
+        creatorId,
+        recipientId,
+      },
+      include: {
+        Recipient: { include: { Profile: true } },
+        Creator: { include: { Profile: true } },
+      },
+    })
+  }
 }
