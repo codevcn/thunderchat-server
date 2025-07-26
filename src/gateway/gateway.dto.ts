@@ -20,11 +20,6 @@ export class SendDirectMessagePayloadDTO {
   @IsNotEmpty()
   content: string
 
-  @IsNumber()
-  @IsNotEmpty()
-  @Type(() => Number)
-  directChatId: number
-
   @IsNotEmpty()
   @IsUUID()
   token: string

@@ -32,6 +32,7 @@ import { ConversationTypingManager } from './helpers/conversation-typing.helper'
 import { SyncDataToESService } from '@/configs/elasticsearch/sync-data-to-ES/sync-data-to-ES.service'
 // import { GatewayInterceptor } from './gateway.interceptor'
 import { DevLogger } from '@/dev/dev-logger'
+import type { TDirectChat } from '@/utils/entities/direct-chat.entity'
 
 @WebSocketGateway({
   cors: {
@@ -147,11 +148,15 @@ export class AppGateway
     }
   }
 
-  async checkFriendship(clientId: number, receiverId: number): Promise<void> {
-    const isFriend = await this.friendService.isFriend(clientId, receiverId)
-    if (!isFriend) {
-      throw new BaseWsException(EFriendMessages.IS_NOT_FRIEND, HttpStatus.BAD_REQUEST)
+  async handleDirectChatNotExists(creatorId: number, recipientId: number): Promise<TDirectChat> {
+    let directChat = await this.directChatService.findConversationWithOtherUser(
+      creatorId,
+      recipientId
+    )
+    if (!directChat) {
+      directChat = await this.directChatService.createNewDirectChat(creatorId, recipientId)
     }
+    return directChat
   }
 
   async handleMessage(
@@ -211,8 +216,10 @@ export class AppGateway
     const { receiverId, token } = msgPayload
 
     await this.checkUniqueMessage(token, clientId)
-    await this.checkFriendship(clientId, receiverId)
-    const { directChatId, timestamp, content, replyToId } = msgPayload
+    const { timestamp, content, replyToId } = msgPayload
+
+    const directChat = await this.handleDirectChatNotExists(clientId, receiverId)
+    const { id: directChatId } = directChat
 
     // Content đã được mã hóa bởi interceptor
     switch (type) {
