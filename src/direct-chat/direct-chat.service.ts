@@ -56,7 +56,76 @@ export class DirectChatService {
     }
     return await this.PrismaService.directChat.findMany({
       where: findCondition,
-      orderBy: [{ LastSentMessage: { createdAt: 'desc' } }, { id: 'desc' }],
+      orderBy: [
+        { LastSentMessage: { createdAt: 'desc' } }, // Ưu tiên cuộc trò chuyện có tin nhắn gần đây nhất
+        { createdAt: 'desc' }, // Nếu không có tin nhắn thì sắp xếp theo thời gian tạo
+        { id: 'desc' },
+      ],
+      take: limit,
+      include: {
+        LastSentMessage: true,
+        Recipient: {
+          include: { Profile: true },
+        },
+        Creator: {
+          include: { Profile: true },
+        },
+      },
+    })
+  }
+
+  async searchDirectChatsByUser(
+    userId: number,
+    search?: string,
+    lastId?: number,
+    limit: number = 20
+  ): Promise<TFetchDirectChatsData[]> {
+    // Lấy các direct chat mà user là creator hoặc recipient
+    const findCondition: Prisma.DirectChatWhereInput = {
+      OR: [{ creatorId: userId }, { recipientId: userId }],
+    }
+
+    // Thêm điều kiện tìm kiếm nếu có search term
+    if (search && search.trim()) {
+      findCondition.OR = [
+        {
+          AND: [
+            { OR: [{ creatorId: userId }, { recipientId: userId }] },
+            {
+              OR: [
+                {
+                  Creator: {
+                    Profile: {
+                      fullName: { contains: search, mode: 'insensitive' },
+                    },
+                  },
+                },
+                {
+                  Recipient: {
+                    Profile: {
+                      fullName: { contains: search, mode: 'insensitive' },
+                    },
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      ]
+    }
+
+    if (lastId) {
+      // Giả sử muốn lấy các direct chat có id < lastId (phân trang lùi)
+      findCondition.id = { lt: lastId }
+    }
+
+    return await this.PrismaService.directChat.findMany({
+      where: findCondition,
+      orderBy: [
+        { LastSentMessage: { createdAt: 'desc' } }, // Ưu tiên cuộc trò chuyện có tin nhắn gần đây nhất
+        { createdAt: 'desc' }, // Nếu không có tin nhắn thì sắp xếp theo thời gian tạo
+        { id: 'desc' },
+      ],
       take: limit,
       include: {
         LastSentMessage: true,

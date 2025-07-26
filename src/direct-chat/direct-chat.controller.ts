@@ -12,7 +12,12 @@ import {
 } from '@nestjs/common'
 import { ERoutes } from '@/utils/enums'
 import { IDirectChatsController } from './direct-chat.interface'
-import { FetchDirectChatDTO, FetchDirectChatsDTO, CreateDirectChatDTO } from './direct-chat.dto'
+import {
+  FetchDirectChatDTO,
+  FetchDirectChatsDTO,
+  CreateDirectChatDTO,
+  SearchDirectChatsDTO,
+} from './direct-chat.dto'
 import { User } from '@/user/user.decorator'
 import { TUserWithProfile } from '@/utils/entities/user.entity'
 import { EDirectChatMessages } from './direct-chat.message'
@@ -28,6 +33,11 @@ export class DirectChatController implements IDirectChatsController {
     if (!directChat) {
       throw new NotFoundException(EDirectChatMessages.DIRECT_CHAT_NOT_FOUND)
     }
+    console.log('🔍 [fetchDirectChat] Result:', {
+      conversationId: params.conversationId,
+      userId: user.id,
+      result: directChat,
+    })
     return directChat
   }
 
@@ -39,11 +49,61 @@ export class DirectChatController implements IDirectChatsController {
       query.lastId,
       query.limit
     )
+    console.log('📋 [fetchAllDirectChats] Result:', {
+      userId: user.id,
+      query: { lastId: query.lastId, limit: query.limit },
+      totalResults: directChats.length,
+      results: directChats.map((chat) => ({
+        id: chat.id,
+        creatorId: chat.creatorId,
+        recipientId: chat.recipientId,
+        creatorName: chat.Creator?.Profile?.fullName,
+        recipientName: chat.Recipient?.Profile?.fullName,
+        lastMessage: chat.LastSentMessage?.content,
+      })),
+    })
+    return directChats
+  }
+
+  // search direct chats with keyword
+  @Get('search-direct-chats')
+  async searchDirectChats(@Query() query: SearchDirectChatsDTO, @User() user: TUserWithProfile) {
+    const directChats = await this.conversationService.searchDirectChatsByUser(
+      user.id,
+      query.search,
+      query.lastId,
+      query.limit
+    )
+    console.log('🔎 [searchDirectChats] Result:', {
+      userId: user.id,
+      query: { search: query.search, lastId: query.lastId, limit: query.limit },
+      totalResults: directChats.length,
+      results: directChats.map((chat) => ({
+        id: chat.id,
+        creatorId: chat.creatorId,
+        recipientId: chat.recipientId,
+        creatorName: chat.Creator?.Profile?.fullName,
+        recipientName: chat.Recipient?.Profile?.fullName,
+        lastMessage: chat.LastSentMessage?.content,
+      })),
+    })
     return directChats
   }
 
   @Post('create')
   async createDirectChat(@Body() body: CreateDirectChatDTO, @User('id') userId: number) {
-    return await this.conversationService.createDirectChat(userId, body.recipientId)
+    const result = await this.conversationService.createDirectChat(userId, body.recipientId)
+    console.log('➕ [createDirectChat] Result:', {
+      creatorId: userId,
+      recipientId: body.recipientId,
+      result: {
+        id: result.id,
+        creatorId: result.creatorId,
+        recipientId: result.recipientId,
+        creatorName: (result as any)?.Creator?.Profile?.fullName,
+        recipientName: (result as any)?.Recipient?.Profile?.fullName,
+      },
+    })
+    return result
   }
 }
