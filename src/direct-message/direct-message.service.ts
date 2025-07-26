@@ -5,7 +5,7 @@ import type {
   TDirectMessage,
   TDirectMessageWithRecipient,
 } from '@/utils/entities/direct-message.entity'
-import { EMessageStatus, EMessageTypes, ESortTypes } from '@/utils/enums'
+import { EMessageStatus, EMessageTypes, ESortTypes } from '@/direct-message/direct-message.enum'
 import dayjs from 'dayjs'
 import type {
   TGetDirectMessagesData,
@@ -14,6 +14,7 @@ import type {
   TMessageUpdates,
 } from './direct-message.type'
 import { SyncDataToESService } from '@/configs/elasticsearch/sync-data-to-ES/sync-data-to-ES.service'
+import { canSendDirectMessage } from './can-send-message.helper'
 
 @Injectable()
 export class DirectMessageService {
@@ -58,8 +59,11 @@ export class DirectMessageService {
     stickerUrl?: string,
     mediaUrl?: string,
     fileName?: string,
+    thumbnailUrl?: string,
     replyToId?: number
   ): Promise<TGetDirectMessagesMessage> {
+    // Kiểm tra quyền gửi tin nhắn 1-1
+    await canSendDirectMessage(this.PrismaService, authorId, recipientId)
     const message = await this.PrismaService.directMessage.create({
       data: {
         content: encryptedContent,
@@ -72,6 +76,7 @@ export class DirectMessageService {
         recipientId,
         ...(mediaUrl && { mediaUrl: mediaUrl as any }),
         ...(fileName && { fileName }),
+        ...(thumbnailUrl && { thumbnailUrl }),
         ...(replyToId && { replyToId }),
       },
       include: this.messageIncludeReplyToAndAuthor,
@@ -98,9 +103,18 @@ export class DirectMessageService {
 
   async getNewerDirectMessages(
     messageOffset: TMessageOffset,
-    directChatId: number
+    directChatId: number,
+    limit: number
   ): Promise<TGetDirectMessagesMessage[]> {
-    return await this.PrismaService.directMessage.findMany({
+    console.log(
+      '[getNewerDirectMessages] Nhận yêu cầu với directChatId:',
+      directChatId,
+      'offset:',
+      messageOffset,
+      'limit:',
+      limit
+    )
+    const messages = await this.PrismaService.directMessage.findMany({
       where: {
         directChatId,
         id: {
@@ -110,8 +124,16 @@ export class DirectMessageService {
       orderBy: {
         id: 'asc',
       },
+      take: limit,
       include: this.messageIncludeReplyToAndAuthor,
     })
+    console.log(
+      '[getNewerDirectMessages] Trả về',
+      messages.length,
+      'tin nhắn:',
+      messages.map((m) => m.id)
+    )
+    return messages
   }
 
   private sortFetchedMessages(
@@ -168,6 +190,11 @@ export class DirectMessageService {
         sortedMessages = this.sortFetchedMessages(sortedMessages, sortType)
       }
     }
+    // Thêm log để kiểm tra các type message trả về
+    // console.log(
+    //   '[DEBUG][getOlderDirectMessagesHandler] Message types:',
+    //   (sortedMessages || messages).map((m) => m.type)
+    // )
     return {
       hasMoreMessages: messages.length > limit,
       directMessages: sortedMessages || [],
@@ -194,5 +221,121 @@ export class DirectMessageService {
       },
       take: limit,
     })
+  }
+  async getMediaMessages(
+    directChatId: number,
+    limit: number,
+    offset: number,
+    sortType: ESortTypes = ESortTypes.TIME_ASC
+  ) {
+    // Lấy tất cả message KHÔNG PHẢI TEXT
+    return this.PrismaService.directMessage.findMany({
+      where: {
+        directChatId,
+        type: {
+          not: EMessageTypes.TEXT,
+        },
+      },
+      orderBy: {
+        createdAt: sortType === ESortTypes.TIME_ASC ? 'asc' : 'desc',
+      },
+      take: limit,
+      skip: offset,
+    })
+  }
+
+  async getVoiceMessages(
+    directChatId: number,
+    limit: number,
+    offset: number,
+    sortType: ESortTypes = ESortTypes.TIME_ASC
+  ) {
+    // Lấy chỉ voice messages
+    const voiceMessages = await this.PrismaService.directMessage.findMany({
+      where: {
+        directChatId,
+        type: EMessageTypes.AUDIO,
+        mediaUrl: {
+          not: null,
+        },
+      },
+      orderBy: {
+        createdAt: sortType === ESortTypes.TIME_ASC ? 'asc' : 'desc',
+      },
+      take: limit,
+      skip: offset,
+    })
+
+    return {
+      hasMoreMessages: voiceMessages.length === limit,
+      directMessages: voiceMessages,
+    }
+  }
+
+  async getMessageContext(messageId: number) {
+    console.log('[getMessageContext] Nhận yêu cầu lấy context cho messageId:', messageId)
+    // 1. Lấy tin nhắn trung tâm (tin nhắn muốn dẫn tới)
+    const centerMsg = await this.PrismaService.directMessage.findUnique({
+      where: { id: messageId },
+      include: this.messageIncludeReplyToAndAuthor,
+    })
+    if (!centerMsg) {
+      console.error('[getMessageContext] Không tìm thấy messageId:', messageId)
+      throw new Error('Message not found')
+    }
+    console.log(
+      '[getMessageContext] Tìm thấy messageId:',
+      messageId,
+      'directChatId:',
+      centerMsg.directChatId
+    )
+
+    // 2. Lấy 10 tin nhắn trước
+    const prevMsgs = await this.PrismaService.directMessage.findMany({
+      where: {
+        directChatId: centerMsg.directChatId,
+        createdAt: { lt: centerMsg.createdAt },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 10,
+      include: this.messageIncludeReplyToAndAuthor,
+    })
+    // 3. Lấy 10 tin nhắn sau
+    const nextMsgs = await this.PrismaService.directMessage.findMany({
+      where: {
+        directChatId: centerMsg.directChatId,
+        createdAt: { gt: centerMsg.createdAt },
+      },
+      orderBy: { createdAt: 'asc' },
+      take: 10,
+      include: this.messageIncludeReplyToAndAuthor,
+    })
+    console.log(
+      '[getMessageContext] prevMsgs:',
+      prevMsgs.map((m) => m.id),
+      'center:',
+      centerMsg.id,
+      'nextMsgs:',
+      nextMsgs.map((m) => m.id)
+    )
+    // 4. Ghép lại đúng thứ tự thời gian
+    const messages: (TGetDirectMessagesMessage & { isLastMsgInList?: boolean })[] = [
+      ...prevMsgs.reverse(),
+      centerMsg,
+      ...nextMsgs,
+    ]
+    // 5. Đánh dấu isLastMsgInList cho tin cuối cùng
+    if (messages.length > 0) {
+      messages[messages.length - 1].isLastMsgInList = true
+    }
+    console.log(
+      '[getMessageContext] Trả về',
+      messages.length,
+      'tin nhắn cho messageId:',
+      messageId,
+      'Các id:',
+      messages.map((m) => m.id)
+    )
+    return messages
   }
 }

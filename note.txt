@@ -13,3 +13,6 @@ Bạn hãy để xuất workflow để triển khai chức năng tìm kiếm nà
 ====================== thut le =======================
 gateway.interface.ts
 search.service.ts
+
+==================== sửa sau khi merge =================
+xóa các enum khỏi file types.ts

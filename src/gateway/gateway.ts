@@ -33,6 +33,7 @@ import { SyncDataToESService } from '@/configs/elasticsearch/sync-data-to-ES/syn
 // import { GatewayInterceptor } from './gateway.interceptor'
 import { DevLogger } from '@/dev/dev-logger'
 import type { TDirectChat } from '@/utils/entities/direct-chat.entity'
+import { Socket } from 'socket.io'
 
 @WebSocketGateway({
   cors: {
@@ -129,12 +130,14 @@ export class AppGateway
     clientSocket: TClientSocket,
     messageOffset: TMessageOffset,
     directChatId?: number,
-    groupChatId?: number
+    groupChatId?: number,
+    limit?: number
   ): Promise<void> {
     if (directChatId) {
       const messages = await this.DirectMessageService.getNewerDirectMessages(
         messageOffset,
-        directChatId
+        directChatId,
+        limit ?? 20
       )
       if (messages && messages.length > 0) {
         clientSocket.emit(EClientSocketEvents.recovered_connection, messages)
@@ -170,6 +173,7 @@ export class AppGateway
       stickerUrl?: string
       mediaUrl?: string
       fileName?: string
+      thumbnailUrl?: string
       replyToId?: number
     }
   ): Promise<void> {
@@ -183,6 +187,7 @@ export class AppGateway
       type,
       fileName,
       mediaUrl,
+      thumbnailUrl,
       replyToId,
     } = message
     const newMessage = await this.DirectMessageService.createNewMessage(
@@ -195,6 +200,7 @@ export class AppGateway
       stickerUrl,
       mediaUrl,
       fileName,
+      thumbnailUrl,
       replyToId
     )
     await this.directChatService.updateLastSentMessage(directChatId, newMessage.id)
@@ -274,6 +280,7 @@ export class AppGateway
             receiverId,
             type: EMessageTypes.VIDEO,
             mediaUrl: msgPayload.mediaUrl,
+            thumbnailUrl: msgPayload.thumbnailUrl,
             replyToId,
           }
         )
@@ -357,5 +364,12 @@ export class AppGateway
         this.convTypingManager.removeTyping(clientId)
       }
     }
+  }
+
+  @SubscribeMessage('join_room')
+  handleJoinRoom(@MessageBody() data: { room: string }, @ConnectedSocket() client: Socket) {
+    client.join(data.room)
+    client.emit('joined_room', data.room)
+    console.log('[SERVER] Socket', client.id, 'joined room', data.room)
   }
 }

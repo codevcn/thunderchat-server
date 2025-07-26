@@ -36,6 +36,8 @@ export class SendDirectMessagePayloadDTO {
   fileName?: string
 
   @IsOptional()
+  thumbnailUrl?: string
+
   @IsNumber()
   @Type(() => Number)
   replyToId?: number

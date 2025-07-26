@@ -39,3 +39,12 @@ export class SearchUsersDTO {
   @Type(() => Number)
   lastUserId?: number
 }
+
+export class ChangePasswordDTO {
+  @IsNotEmpty()
+  oldPassword: string
+
+  @IsNotEmpty()
+  @MinLength(8, { message: 'Mật khẩu mới phải từ 8 ký tự trở lên' })
+  newPassword: string
+}

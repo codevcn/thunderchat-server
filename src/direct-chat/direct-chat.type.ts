@@ -22,3 +22,7 @@ export type TFetchDirectChatsData = TDirectChat & {
   Recipient: TUserWithProfile
   Creator: TUserWithProfile
 }
+
+export type TDeleteDirectChatData = {
+  isDeleted: boolean
+}

@@ -69,4 +69,38 @@ export class SocketService {
   checkUserOnlineStatus(userId: TUserId): boolean {
     return this.connectedClients.has(userId)
   }
+
+  async emitToDirectChat(directChatId: number, event: EClientSocketEvents, payload: any) {
+    if (this.server) {
+      const room = `direct_chat_${directChatId}`
+      const sockets = await this.server.in(room).fetchSockets()
+      const socketIds = sockets.map((s) => s.id)
+      console.log(
+        '[SOCKET][PIN_MESSAGE] Emit',
+        event,
+        'to room:',
+        room,
+        '| socketIds:',
+        socketIds,
+        '| payload:',
+        payload
+      )
+      this.server.to(room).emit(event, payload)
+    }
+  }
+
+  emitToUser(userId: TUserId, event: EClientSocketEvents, payload: any): void {
+    const userSocket = this.getConnectedClient<IEmitSocketEvents>(userId)
+    if (userSocket) {
+      console.log(
+        '[SOCKET][PIN_DIRECT_CHAT] Emit',
+        event,
+        'to user:',
+        userId,
+        '| payload:',
+        payload
+      )
+      userSocket.emit(event, payload)
+    }
+  }
 }

@@ -108,6 +108,7 @@ model DirectMessage {
     replyToId    Int?              @map("reply_to_id")
     thumbnailUrl String?           @map("thumbnail_url")
     isPinned     Boolean?          @map("is_pinned")
+    isDeleted    Boolean           @default(false) @map("is_deleted")
 
     Chat                    DirectChat            @relation("MessagesOnDirectChat", fields: [directChatId], references: [id])
     Author                  User                  @relation("DirectMessagesAsSender", fields: [authorId], references: [id])

@@ -11,6 +11,9 @@ import ms from 'ms'
 import { EventEmitterModule } from '@nestjs/event-emitter'
 import { LoggerModule } from './configs/logger/logger.module'
 import { ProfileModule } from './profile/profile.module'
+import { PinModule } from './direct-message/pin/pin.module'
+import { PinDirectChatModule } from './direct-chat/pin-direct-chat/pin-direct-chat.module'
+import { UserSettingsModule } from './user-settings/user-settings.module'
 
 const globalConfigModules = [
   ConfigModule.forRoot({
@@ -42,6 +45,7 @@ import { UploadModule } from './upload/upload.module'
 import { StatisticsModule } from './statistics/statistics.module'
 import { GroupMemberModule } from './group-member/group-member.module'
 import { GroupMessageModule } from './group-message/group-message.module'
+import { DeleteMessageModule } from './direct-message/delete-message/delete-message.module'
 
 @Module({
   imports: [
@@ -62,6 +66,10 @@ import { GroupMessageModule } from './group-message/group-message.module'
     GroupMemberModule,
     DevModule,
     ProfileModule,
+    PinModule,
+    PinDirectChatModule,
+    UserSettingsModule,
+    DeleteMessageModule,
   ],
 })
 export class AppModule implements NestModule {

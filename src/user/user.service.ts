@@ -1,4 +1,10 @@
-import { Injectable, ConflictException, NotFoundException, Inject } from '@nestjs/common'
+import {
+  Injectable,
+  ConflictException,
+  NotFoundException,
+  Inject,
+  BadRequestException,
+} from '@nestjs/common'
 import type { TCreateUserParams, TSearchUsersData, TSearchProfilesData } from './user.type'
 import { PrismaService } from '../configs/db/prisma.service'
 import { EProviderTokens, ESyncDataToESWorkerType } from '@/utils/enums'
@@ -173,6 +179,22 @@ export class UserService {
         Profile: true,
       },
       take: limit,
+    })
+  }
+
+  async changePassword(userId: number, oldPassword: string, newPassword: string) {
+    const user = await this.findUserWithProfileById(userId)
+    if (!user) throw new BadRequestException('User not found')
+
+    // Kiểm tra mật khẩu cũ
+    const isMatch = await this.credentialService.compareHashedPassword(oldPassword, user.password)
+    if (!isMatch) throw new BadRequestException('Mật khẩu cũ không đúng')
+
+    // Hash mật khẩu mới
+    const hashed = await this.credentialService.getHashedPassword(newPassword)
+    await this.PrismaService.user.update({
+      where: { id: userId },
+      data: { password: hashed },
     })
   }
 }
