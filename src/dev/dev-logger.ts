@@ -5,6 +5,7 @@ import { join } from 'path'
 export class DevLogger {
   private static logDir: string = join(process.cwd(), 'logs')
   private static infoLogFile: string = join(this.logDir, 'info.log')
+  private static esQueryLogFile: string = join(this.logDir, 'es-search.log')
   private static incomingRequestsLogFile: string = join(this.logDir, 'incoming-requests.log')
   private static errorsLogFile: string = join(this.logDir, 'errors.log')
   private static sqlQueriesLogFile: string = join(this.logDir, 'sql-queries.log')
@@ -60,6 +61,25 @@ export class DevLogger {
         '>>> ' + messages.map((msg) => this.safeStringifyMessage(msg)).join('\n') + '\n'
 
       appendFile(this.infoLogFile, logMessage, { encoding: 'utf8' }, (err) => {
+        if (err) {
+          console.error('>>> Error writing to log file:', err)
+        } else {
+          console.log(`>>> [${new Date().toISOString()}]: Log file written successfully`)
+        }
+      })
+    })
+  }
+
+  static logESQuery(...messages: any[]) {
+    queueMicrotask(() => {
+      if (!existsSync(this.logDir)) {
+        mkdirSync(this.logDir, { recursive: true })
+      }
+
+      const logMessage =
+        '>>> ' + messages.map((msg) => this.safeStringifyMessage(msg)).join('\n') + '\n'
+
+      appendFile(this.esQueryLogFile, logMessage, { encoding: 'utf8' }, (err) => {
         if (err) {
           console.error('>>> Error writing to log file:', err)
         } else {

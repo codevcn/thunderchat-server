@@ -13,5 +13,17 @@ export type TGlobalSearchData = {
     highlights: string[]
     chatType: EChatType
     chatId: number
+    createdAt: string
   }[]
+}
+
+export type TMessageSearchOffset = {
+  created_at: string
+  id: string
+}
+
+export type TUserSearchOffset = {
+  full_name: string
+  email: string
+  id: string
 }

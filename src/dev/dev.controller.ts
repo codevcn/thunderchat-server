@@ -48,6 +48,7 @@ export class TempController {
     for (const user of users) {
       DevLogger.logInfo('user:', user)
       await this.elasticsearchService.createUser(user.id, {
+        doc_id: user.id,
         full_name: user.Profile?.fullName || '',
         email: user.email,
       })

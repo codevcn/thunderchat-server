@@ -43,6 +43,7 @@ class SyncDataToESHandler {
             index: EESIndexes.DIRECT_MESSAGES,
             id: queryResult.id.toString(),
             document: typeToRawObject<TMessageESMapping>({
+              doc_id: queryResult.id,
               content: replaceHTMLTagInMessageContent(queryResult.content),
               original_content: queryResult.content,
               message_type: queryResult.type as EMessageTypes,
@@ -66,6 +67,7 @@ class SyncDataToESHandler {
             index: EESIndexes.USERS,
             id: queryResult.id.toString(),
             document: typeToRawObject<TUserESMapping>({
+              doc_id: queryResult.id,
               email: queryResult.email,
               full_name: queryResult.Profile?.fullName || '',
             }),
@@ -95,6 +97,7 @@ class SyncDataToESHandler {
           index: EESIndexes.DIRECT_MESSAGES,
           id: message.id.toString(),
           document: typeToRawObject<TMessageESMapping>({
+            doc_id: message.id,
             content: replaceHTMLTagInMessageContent(content),
             original_content: content,
             valid_user_ids: [message.authorId, message.recipientId],
@@ -110,6 +113,7 @@ class SyncDataToESHandler {
           index: EESIndexes.USERS,
           id: user.id.toString(),
           document: typeToRawObject<TUserESMapping>({
+            doc_id: user.id,
             full_name: user.Profile?.fullName || '',
             email: user.email,
           }),

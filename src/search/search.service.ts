@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common'
-import { TGlobalSearchData } from './search.type'
+import type { TGlobalSearchData, TMessageSearchOffset, TUserSearchOffset } from './search.type'
 import { ElasticsearchService } from '@/configs/elasticsearch/elasticsearch.service'
 import { DirectMessageService } from '@/direct-message/direct-message.service'
 import { UserService } from '@/user/user.service'
@@ -10,8 +10,6 @@ import { SocketService } from '@/gateway/socket/socket.service'
 
 @Injectable()
 export class SearchService {
-  private readonly SEARCH_LIMIT = 10
-
   constructor(
     private elasticSearchService: ElasticsearchService,
     private directMessageService: DirectMessageService,
@@ -20,10 +18,27 @@ export class SearchService {
     private socketService: SocketService
   ) {}
 
-  async searchGlobally(keyword: string, userId: number): Promise<TGlobalSearchData> {
+  async searchGlobally(
+    keyword: string,
+    userId: number,
+    isFirstSearch: boolean,
+    limit: number,
+    selfUserId: number,
+    messageSearchOffset?: TMessageSearchOffset,
+    userSearchOffset?: TUserSearchOffset
+  ): Promise<TGlobalSearchData> {
     const [messageHits, userHits] = await Promise.all([
-      this.elasticSearchService.searchMessages(keyword, userId, this.SEARCH_LIMIT),
-      this.elasticSearchService.searchUsers(keyword, this.SEARCH_LIMIT),
+      this.elasticSearchService.searchMessages(
+        keyword,
+        userId,
+        limit,
+        isFirstSearch ? undefined : messageSearchOffset
+      ),
+      this.elasticSearchService.searchUsers(
+        keyword,
+        limit,
+        isFirstSearch ? undefined : userSearchOffset
+      ),
     ])
     const messageIdObjects = messageHits
       .filter((message) => !!message._source)
@@ -35,12 +50,12 @@ export class SearchService {
     const userIds = userHits.filter((user) => !!user._source).map((user) => parseInt(user._id!))
     // find direct messages and users by ids in database
     const [directMessages, groupMessages, users] = await Promise.all([
-      this.directMessageService.findMessagesByIds(messageIds, this.SEARCH_LIMIT),
-      this.groupMessageService.findMessagesByIds(messageIds, this.SEARCH_LIMIT),
-      this.userService.findUsersByIds(userIds, this.SEARCH_LIMIT),
+      this.directMessageService.findMessagesByIds(messageIds, limit),
+      this.groupMessageService.findMessagesByIds(messageIds, limit),
+      this.userService.findUsersByIdsNotSelfUser(userIds, selfUserId, limit),
     ])
     const finalMessages = [
-      ...directMessages.map(({ id, Recipient, content, directChatId }) => ({
+      ...directMessages.map(({ id, Recipient, content, directChatId, createdAt }) => ({
         id,
         avatarUrl: Recipient.Profile!.avatar || undefined,
         conversationName: Recipient.Profile!.fullName,
@@ -48,8 +63,9 @@ export class SearchService {
         highlights: messageIdObjects.find((m) => m.id === id)!.highlight?.content || [],
         chatType: EChatType.DIRECT,
         chatId: directChatId,
+        createdAt: createdAt.toISOString(),
       })),
-      ...groupMessages.map(({ id, GroupChat, content, groupChatId }) => ({
+      ...groupMessages.map(({ id, GroupChat, content, groupChatId, createdAt }) => ({
         id,
         avatarUrl: GroupChat.avatarUrl || undefined,
         conversationName: GroupChat.name,
@@ -57,6 +73,7 @@ export class SearchService {
         highlights: messageIdObjects.find((m) => m.id === id)!.highlight?.content || [],
         chatType: EChatType.GROUP,
         chatId: groupChatId,
+        createdAt: createdAt.toISOString(),
       })),
     ]
     const finalUsers = users.map((user) => ({

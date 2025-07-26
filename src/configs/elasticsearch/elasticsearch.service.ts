@@ -7,6 +7,8 @@ import type {
 } from './elasticsearch.type'
 import { EESIndexes } from './elasticsearch.enum'
 import type { SearchHit, SearchResponse } from '@elastic/elasticsearch/lib/api/types'
+import type { TMessageSearchOffset, TUserSearchOffset } from '@/search/search.type'
+import { DevLogger } from '@/dev/dev-logger'
 
 export const ESClient = new Client({
   node: process.env.ELASTICSEARCH_URL,
@@ -16,6 +18,10 @@ export const ESClient = new Client({
 @Injectable()
 export class ElasticsearchService implements OnModuleInit {
   async onModuleInit(): Promise<void> {
+    ESClient.diagnostic.on('request', (err, event) => {
+      if (err) DevLogger.logESQuery('ES Request Error:', err)
+      else DevLogger.logESQuery('ES Request:', event?.meta?.request?.params)
+    })
     await this.pingToESServer()
   }
 
@@ -82,41 +88,43 @@ export class ElasticsearchService implements OnModuleInit {
   async searchMessages(
     keyword: string,
     userId: number,
-    limit: number
+    limit: number,
+    searchOffset?: TMessageSearchOffset
   ): Promise<TESSearchGeneralResult<TMessageESMapping>[]> {
     const result = await ESClient.search<TMessageESMapping>({
       index: EESIndexes.DIRECT_MESSAGES,
       query: {
         bool: {
           must: [
-            { match_phrase: { content: { query: keyword } } }, // Tìm kiếm full-text
-            { term: { valid_user_ids: userId } }, // Lọc theo user_ids
+            { match_phrase: { content: { query: keyword } } },
+            { term: { valid_user_ids: userId } },
           ],
         },
       },
-      sort: [{ created_at: { order: 'desc' } }], // Sắp xếp theo created_at giảm dần
-      size: limit, // Giới hạn kết quả theo tham số limit
+      sort: [{ created_at: { order: 'desc' } }, { doc_id: { order: 'desc' } }],
+      size: limit,
+      ...(searchOffset ? { search_after: [searchOffset.created_at, searchOffset.id] } : {}),
       highlight: {
         fields: {
-          content: {}, // Highlight keyword trong content
+          content: {},
         },
       },
     })
-    console.log('>>> search message result:', { result, keyword })
     return this.extractESHits(result)
   }
 
   async searchUsers(
     keyword: string,
-    limit: number
+    limit: number,
+    searchOffset?: TUserSearchOffset
   ): Promise<TESSearchGeneralResult<TUserESMapping>[]> {
     const result = await ESClient.search<TUserESMapping>({
       index: EESIndexes.USERS,
       query: {
         bool: {
           should: [
-            { match: { email: { query: keyword, fuzziness: 'AUTO' } } },
-            { match: { full_name: { query: keyword, fuzziness: 'AUTO' } } },
+            { match_phrase: { email: { query: keyword } } },
+            { match_phrase: { full_name: { query: keyword } } },
           ],
           minimum_should_match: 1,
         },
@@ -127,10 +135,22 @@ export class ElasticsearchService implements OnModuleInit {
           full_name: {},
         },
       },
-      sort: [{ 'full_name.for_sort': { order: 'asc' } }, { 'email.for_sort': { order: 'asc' } }],
+      sort: [
+        { 'full_name.for_sort': { order: 'asc' } },
+        { 'email.for_sort': { order: 'asc' } },
+        { doc_id: { order: 'asc' } },
+      ],
       size: limit,
+      ...(searchOffset
+        ? {
+            search_after: [
+              searchOffset.full_name.toLocaleLowerCase(),
+              searchOffset.email.toLocaleLowerCase(),
+              searchOffset.id,
+            ],
+          }
+        : {}),
     })
-    console.log('>>> search user result:', { result, keyword })
     return this.extractESHits(result)
   }
 }
