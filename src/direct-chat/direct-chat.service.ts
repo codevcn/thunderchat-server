@@ -86,11 +86,11 @@ export class DirectChatService {
     return conversation
   }
 
-  async createNewDirectChat(userId: number, otherUserId: number): Promise<TDirectChat> {
+  async createNewDirectChat(creatorId: number, recipientId: number): Promise<TDirectChat> {
     const conversation = await this.PrismaService.directChat.create({
       data: {
-        creatorId: userId,
-        recipientId: otherUserId,
+        creatorId,
+        recipientId,
       },
     })
     return conversation
