@@ -1,0 +1,37 @@
+[33ma88f201[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mhy/share[m[33m, [m[1;31morigin/hy/share[m[33m)[m new
+[33m498a2da[m[33m ([m[1;31morigin/trung_/chat_1_1[m[33m, [m[1;32mtrung_/chat_1_1[m[33m)[m Merge branch 'hy/pin-chat' into trung_/chat_1_1
+[33m451530f[m fix reply v1
+[33mc1c5094[m fix load tin nhan moi
+[33m155c5f5[m Merge branch 'hy/pin-chat' into trung_/chat_1_1
+[33m043f88f[m load tin nhan moi
+[33m1053636[m ghim tin nhan cuộc trò chuyện
+[33mb07892b[m merge main
+[33m19300ff[m prisma update  add pinned chats and messages
+[33m072e071[m Search Image/Video, File, Voice
+[33m4b4f999[m fix login / register
+[33m1cb9f27[m create thumbnail column and push thumbnail image to aws
+[33ma01c7b1[m[33m ([m[1;31morigin/trung_/update_profile[m[33m)[m update proffile, update password
+[33mc18e841[m[33m ([m[1;32mmain[m[33m)[m fix UI
+[33mad28f71[m Merge branch 'caohy2'
+[33m707db82[m merge trung_voice_chat
+[33m9c7b136[m merge trung_chat_voice
+[33m086ce2d[m[33m ([m[1;31morigin/caohy2[m[33m)[m update prisma
+[33mc0a2b24[m[33m ([m[1;31morigin/trung_chat_voice[m[33m)[m prisma update
+[33md4fdaf3[m fix reply
+[33md0e9ab4[m fix load memebers in group chat
+[33mb7f9899[m tai anh va file,reply tin nhan
+[33md00e2cf[m update profile
+[33mc5c9e45[m update migration
+[33md72ff45[m chat voice done
+[33m4a84a97[m fix conv name, santize msg content
+[33m63dcbc2[m merge caohy2
+[33m1e027fa[m nang len v3
+[33m41389ad[m init branch
+[33mc8518a2[m data chinh sua chay app 14h ngay 7/7
+[33m434f0fa[m merge caohy gui anh, video, file, statics
+[33m04bdf93[m init group chat feature
+[33m96a16b5[m[33m ([m[1;31morigin/caohy[m[33m)[m Cập nhật thong ke và gui file
+[33m01e53e9[m new group section
+[33m4d3a171[m fix errors
+[33m14285de[m gui anh va video
+[33md5cd159[m init

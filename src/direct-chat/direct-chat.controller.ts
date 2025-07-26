@@ -1,11 +1,21 @@
 import { AuthGuard } from '@/auth/auth.guard'
 import { DirectChatService } from '@/direct-chat/direct-chat.service'
-import { Controller, Get, UseGuards, Param, Query, NotFoundException } from '@nestjs/common'
+import {
+  Controller,
+  Get,
+  UseGuards,
+  Param,
+  Query,
+  NotFoundException,
+  Body,
+  Post,
+} from '@nestjs/common'
 import { ERoutes } from '@/utils/enums'
 import { IDirectChatsController } from './direct-chat.interface'
 import {
   FetchDirectChatDTO,
   FetchDirectChatsDTO,
+  CreateDirectChatDTO,
   FindConversationWithOtherUserDTO,
 } from './direct-chat.dto'
 import { User } from '@/user/user.decorator'
