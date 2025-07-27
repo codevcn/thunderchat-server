@@ -27,3 +27,15 @@ export type TUserSearchOffset = {
   email: string
   id: string
 }
+
+export type TConversationSearchResult = {
+  id: number
+  type: EChatType
+  title: string
+  avatar?: {
+    src: string
+  }
+  subtitle?: {
+    content: string
+  }
+}

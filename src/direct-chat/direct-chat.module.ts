@@ -6,8 +6,9 @@ import { CredentialService } from '@/auth/credentials/credentials.service'
 import { UserModule } from '@/user/user.module'
 
 @Module({
-   imports: [UserModule],
-   controllers: [DirectChatController],
-   providers: [DirectChatService, JWTService, CredentialService],
+  imports: [UserModule],
+  controllers: [DirectChatController],
+  providers: [DirectChatService, JWTService, CredentialService],
+  exports: [DirectChatService],
 })
 export class DirectChatsModule {}

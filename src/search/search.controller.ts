@@ -1,7 +1,7 @@
 import { Body, Controller, Post, UseGuards } from '@nestjs/common'
 import { SearchService } from './search.service'
 import type { ISearchController } from './search.interface'
-import { GlobalSearchPayloadDTO } from './search.dto'
+import { GlobalSearchPayloadDTO, SearchConversationsPayloadDTO } from './search.dto'
 import { User } from '@/user/user.decorator'
 import type { TUserWithProfile } from '@/utils/entities/user.entity'
 import { AuthGuard } from '@/auth/auth.guard'
@@ -54,5 +54,16 @@ export class SearchController implements ISearchController {
         : undefined
     )
     return searchResult
+  }
+
+  @Post('conversations')
+  async searchConversations(
+    @Body() searchPayload: SearchConversationsPayloadDTO,
+    @User() user: TUserWithProfile
+  ) {
+    const { keyword, limit = 10 } = searchPayload
+    DevLogger.logInfo('searchConversationsPayload:', searchPayload)
+
+    return await this.searchService.searchConversations(keyword, user.id, limit)
   }
 }

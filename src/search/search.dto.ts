@@ -39,3 +39,14 @@ export class GlobalSearchPayloadDTO {
   @IsString()
   userOffsetEmail?: string
 }
+
+export class SearchConversationsPayloadDTO {
+  @IsNotEmpty()
+  @IsString()
+  keyword: string
+
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  limit?: number
+}
