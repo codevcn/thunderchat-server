@@ -80,11 +80,15 @@ export class DirectMessageController implements IDirectMessageController {
     @Query(new ValidationPipe({ transform: true, whitelist: true })) query: CheckCanSendMessageDto,
     @User('id') userId: number
   ) {
-    const canSend = await canSendDirectMessage(
-      this.directMessageService['PrismaService'],
-      userId,
-      query.receiverId
-    )
-    return { canSend }
+    try {
+      await canSendDirectMessage(
+        this.directMessageService['PrismaService'],
+        userId,
+        query.receiverId
+      )
+      return { canSend: true }
+    } catch (error) {
+      return { canSend: false }
+    }
   }
 }
