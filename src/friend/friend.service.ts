@@ -100,4 +100,57 @@ export class FriendService {
       },
     })
   }
+
+  async getFriendsByKeyword(keyword: string, userId: number): Promise<TGetFriendsData[]> {
+    return await this.PrismaService.friend.findMany({
+      where: {
+        OR: [
+          {
+            senderId: userId,
+            Recipient: {
+              OR: [
+                { Profile: { fullName: { contains: keyword, mode: 'insensitive' } } },
+                { email: { equals: keyword, mode: 'insensitive' } },
+              ],
+            },
+          },
+          {
+            recipientId: userId,
+            Sender: {
+              OR: [
+                { Profile: { fullName: { contains: keyword, mode: 'insensitive' } } },
+                { email: { equals: keyword, mode: 'insensitive' } },
+              ],
+            },
+          },
+        ],
+      },
+      select: {
+        id: true,
+        senderId: true,
+        Recipient: { include: { Profile: true } },
+        Sender: { include: { Profile: true } },
+        createdAt: true,
+      },
+    })
+  }
+
+  async removeFriend(userId: number, friendId: number): Promise<void> {
+    await this.PrismaService.friend.deleteMany({
+      where: {
+        OR: [
+          { senderId: userId, recipientId: friendId },
+          { senderId: friendId, recipientId: userId },
+        ],
+      },
+    })
+    await this.PrismaService.friendRequest.deleteMany({
+      where: {
+        OR: [
+          { senderId: userId, recipientId: friendId },
+          { senderId: friendId, recipientId: userId },
+        ],
+      },
+    })
+  }
 }

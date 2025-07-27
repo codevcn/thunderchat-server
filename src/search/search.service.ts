@@ -21,24 +21,14 @@ export class SearchService {
   async searchGlobally(
     keyword: string,
     userId: number,
-    isFirstSearch: boolean,
     limit: number,
     selfUserId: number,
     messageSearchOffset?: TMessageSearchOffset,
     userSearchOffset?: TUserSearchOffset
   ): Promise<TGlobalSearchData> {
     const [messageHits, userHits] = await Promise.all([
-      this.elasticSearchService.searchMessages(
-        keyword,
-        userId,
-        limit,
-        isFirstSearch ? undefined : messageSearchOffset
-      ),
-      this.elasticSearchService.searchUsers(
-        keyword,
-        limit,
-        isFirstSearch ? undefined : userSearchOffset
-      ),
+      this.elasticSearchService.searchMessages(keyword, userId, limit, messageSearchOffset),
+      this.elasticSearchService.searchUsers(keyword, limit, userSearchOffset),
     ])
     const messageIdObjects = messageHits
       .filter((message) => !!message._source)
@@ -80,9 +70,14 @@ export class SearchService {
       ...user,
       isOnline: this.socketService.checkUserOnlineStatus(user.id),
     }))
+    const nextSearchOffset: TGlobalSearchData['nextSearchOffset'] = {
+      messageSearchOffset: messageHits.at(-1)?.sort,
+      userSearchOffset: userHits.at(-1)?.sort,
+    }
     return {
       messages: finalMessages,
       users: finalUsers,
+      nextSearchOffset,
     }
   }
 }

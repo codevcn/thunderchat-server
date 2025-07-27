@@ -42,7 +42,7 @@ export class UserService {
     })
   }
 
-  async createUser({ email, password }: TCreateUserParams): Promise<TUser> {
+  async createUser({ email, password, fullName, birthday }: TCreateUserParams): Promise<TUser> {
     const hashedPassword = await this.credentialService.getHashedPassword(password)
     const existUser = await this.PrismaService.user.findUnique({
       where: { email },
@@ -54,25 +54,26 @@ export class UserService {
       data: {
         email: email,
         password: hashedPassword,
+        Profile: {
+          create: {
+            fullName: fullName,
+            birthday: birthday,
+          },
+        },
+      },
+      include: {
+        Profile: true,
       },
     })
-    // this.syncDataToESService.syncDataToES(user.id, {
-    //    type: ESyncDataToESWorkerType.CREATE_USER,
-    //    data: user,
-    // })
+    this.syncDataToESService.syncDataToES({
+      type: ESyncDataToESWorkerType.CREATE_USER,
+      data: user,
+    })
     return user
   }
 
   async registerUser(createUserData: TCreateUserParams): Promise<TJWTToken> {
-    const { fullName, birthday } = createUserData
     const user = await this.createUser(createUserData)
-    await this.PrismaService.profile.create({
-      data: {
-        userId: user.id,
-        fullName: fullName,
-        birthday: birthday,
-      },
-    })
     return this.jwtService.createJWT({ email: user.email, user_id: user.id })
   }
 
@@ -150,7 +151,7 @@ export class UserService {
       ...cursor,
       where: {
         id: { notIn: userFilter },
-        email: { contains: keyword, mode: 'insensitive' },
+        email: { equals: keyword, mode: 'insensitive' },
       },
       select: {
         id: true,

@@ -103,7 +103,7 @@ export class ElasticsearchService implements OnModuleInit {
       },
       sort: [{ created_at: { order: 'desc' } }, { doc_id: { order: 'desc' } }],
       size: limit,
-      ...(searchOffset ? { search_after: [searchOffset.created_at, searchOffset.id] } : {}),
+      ...(searchOffset ? { search_after: searchOffset } : {}),
       highlight: {
         fields: {
           content: {},
@@ -141,15 +141,7 @@ export class ElasticsearchService implements OnModuleInit {
         { doc_id: { order: 'asc' } },
       ],
       size: limit,
-      ...(searchOffset
-        ? {
-            search_after: [
-              searchOffset.full_name.toLocaleLowerCase(),
-              searchOffset.email.toLocaleLowerCase(),
-              searchOffset.id,
-            ],
-          }
-        : {}),
+      ...(searchOffset ? { search_after: searchOffset } : {}),
     })
     return this.extractESHits(result)
   }

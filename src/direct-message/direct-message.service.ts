@@ -81,11 +81,11 @@ export class DirectMessageService {
       },
       include: this.messageIncludeReplyToAndAuthor,
     })
-    // this.syncDataToESService.syncDataToES(authorId, {
-    //    type: ESyncDataToESWorkerType.CREATE_MESSAGE,
-    //    data: message,
-    //    msgEncryptor: this.syncDataToESService.getESMessageEncryptor(authorId),
-    // })
+    this.syncDataToESService.syncDataToES({
+      type: ESyncDataToESWorkerType.CREATE_MESSAGE,
+      data: message,
+      msgEncryptor: this.syncDataToESService.getESMessageEncryptor(authorId),
+    })
     return message
   }
 
@@ -94,7 +94,7 @@ export class DirectMessageService {
       where: { id: msgId },
       data: updates,
     })
-    this.syncDataToESService.syncDataToES(message.authorId, {
+    this.syncDataToESService.syncDataToES({
       type: ESyncDataToESWorkerType.UPDATE_MESSAGE,
       data: message,
     })
@@ -185,7 +185,11 @@ export class DirectMessageService {
     )
     let sortedMessages: TGetDirectMessagesMessage[] | null = null
     if (messages && messages.length > 0) {
-      sortedMessages = messages.slice(0, -1)
+      if (messages.length > limit) {
+        sortedMessages = messages.slice(0, -1)
+      } else {
+        sortedMessages = messages
+      }
       if (sortType) {
         sortedMessages = this.sortFetchedMessages(sortedMessages, sortType)
       }

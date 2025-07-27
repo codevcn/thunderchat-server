@@ -16,9 +16,6 @@ import { MessageMappingService } from '@/message-mapping/message-mapping.service
 import { EWorkerEvents, EMsgEncryptionAlgorithms, ESyncDataToESWorkerType } from '@/utils/enums'
 import { SystemException } from '@/utils/exceptions/system.exception'
 import { BaseHttpException } from '@/utils/exceptions/base-http.exception'
-import { Client } from '@elastic/elasticsearch'
-import { TDirectMessage } from '@/utils/entities/direct-message.entity'
-import { TUserWithProfile } from '@/utils/entities/user.entity'
 
 @Injectable()
 export class SyncDataToESService {
@@ -50,13 +47,9 @@ export class SyncDataToESService {
     this.terminateWorker()
   }
 
-  syncDataToES(userId: TUserId, data: SyncDataToESWorkerMessageDTO) {
-    const ESMsgEncryptor = this.getESMessageEncryptor(userId)
-    if (!ESMsgEncryptor) {
-      throw new SystemException(ESyncDataToESMessages.MESSAGE_ENCRYPTOR_NOT_SET)
-    }
+  syncDataToES(data: SyncDataToESWorkerMessageDTO) {
     this.initWorker()
-    this.syncDataToESWorker.postMessage({ ...data, msgEncryptor: ESMsgEncryptor })
+    this.syncDataToESWorker.postMessage(data)
   }
 
   async initESMessageEncryptor(userId: TUserId): Promise<void> {

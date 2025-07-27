@@ -91,11 +91,12 @@ export class DevLogger {
 
   static logIncomingRequest(req: Request) {
     queueMicrotask(() => {
-      const logMessage = `Coming Request: ${req.method} ${req.url}
-         '+) Headers:' + JSON.stringify(req.headers)
-         '+) Params:' + JSON.stringify(req.params)
-         '+) Query:' + JSON.stringify(req.query)
-         '+) Body:' + JSON.stringify(req.body)`
+      const logMessage =
+        `Coming Request: ${req.method} ${req.url}
+          +) Headers: ${JSON.stringify(req.headers, null, 2)}
+          +) Params: ${JSON.stringify(req.params, null, 2)}
+          +) Query: ${JSON.stringify(req.query, null, 2)}
+          +) Body: ${JSON.stringify(req.body, null, 2)}` + '\n'
 
       if (!existsSync(this.logDir)) {
         mkdirSync(this.logDir, { recursive: true })
@@ -133,9 +134,10 @@ export class DevLogger {
 
   static logSQLQuery(queryStatement: string, params: any, duration: number) {
     queueMicrotask(() => {
-      const logMessage = `>>> SQL Query: ${queryStatement}
-         '+) Params:' + JSON.stringify(params)
-         '+) Duration:' + duration + 'ms'`
+      const logMessage =
+        `>>> SQL Query: ${queryStatement}
+          +) Params: ${JSON.stringify(params, null, 2)}
+          +) Duration: ${duration}ms` + '\n'
 
       if (!existsSync(this.logDir)) {
         mkdirSync(this.logDir, { recursive: true })

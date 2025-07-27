@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer'
-import { IsNotEmpty, IsNumber, IsOptional } from 'class-validator'
+import { IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator'
 
 export class GetFriendsDTO {
   @IsNotEmpty()
@@ -19,4 +19,17 @@ export class GetFriendsDTO {
 
   @IsOptional()
   search?: string // Thêm trường search để hỗ trợ tìm kiếm
+}
+
+export class GetFriendsByKeywordDTO {
+  @IsNotEmpty()
+  @IsString()
+  keyword: string
+}
+
+export class RemoveFriendDTO {
+  @IsNotEmpty()
+  @IsNumber()
+  @Type(() => Number)
+  friendId: number
 }

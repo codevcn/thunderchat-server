@@ -1,5 +1,6 @@
-import { IsBoolean, IsISO8601, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator'
+import { IsArray, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator'
 import { Type } from 'class-transformer'
+import type { TMessageSearchOffset, TUserSearchOffset } from './search.type'
 
 export class GlobalSearchPayloadDTO {
   @IsNotEmpty()
@@ -7,35 +8,17 @@ export class GlobalSearchPayloadDTO {
   keyword: string
 
   @IsNotEmpty()
-  @IsBoolean()
-  @Type(() => Boolean)
-  isFirstSearch: boolean
-
-  @IsNotEmpty()
   @IsNumber()
   @Type(() => Number)
   limit: number
 
   @IsOptional()
-  @IsNumber()
-  @Type(() => Number)
-  messageOffsetId?: number
+  @IsArray()
+  @IsNotEmpty({ each: true })
+  messageSearchOffset?: TMessageSearchOffset
 
   @IsOptional()
-  @IsString()
-  @IsISO8601()
-  messageOffsetCreatedAt?: string
-
-  @IsOptional()
-  @IsNumber()
-  @Type(() => Number)
-  userOffsetId?: number
-
-  @IsOptional()
-  @IsString()
-  userOffsetFullName?: string
-
-  @IsOptional()
-  @IsString()
-  userOffsetEmail?: string
+  @IsArray()
+  @IsNotEmpty({ each: true })
+  userSearchOffset?: TUserSearchOffset
 }
