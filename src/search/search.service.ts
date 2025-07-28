@@ -197,6 +197,7 @@ export class SearchService {
         id: chat.id,
         type: EChatType.DIRECT,
         title: otherUser.Profile?.fullName || otherUser.email,
+        email: otherUser.email,
         avatar: otherUser.Profile?.avatar ? { src: otherUser.Profile.avatar } : undefined,
         subtitle: chat.LastSentMessage ? { content: chat.LastSentMessage.content } : undefined,
       }

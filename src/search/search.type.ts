@@ -32,6 +32,7 @@ export type TConversationSearchResult = {
   id: number
   type: EChatType
   title: string
+  email?: string
   avatar?: {
     src: string
   }
