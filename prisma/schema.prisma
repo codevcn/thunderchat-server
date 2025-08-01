@@ -22,10 +22,13 @@ model MessageMapping {
 }
 
 model User {
-    id        Int      @id @default(autoincrement())
-    email     String   @unique @db.VarChar(255)
-    password  String   @db.VarChar(255)
-    createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+    id         Int      @id @default(autoincrement())
+    email      String   @unique @db.VarChar(255)
+    password   String   @db.VarChar(255)
+    createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+    role       AppRole  @default(USER)
+    isActive   Boolean  @default(true) @map("is_active")
+    inActiveAt DateTime @default(now()) @map("inactive_at") @db.Timestamptz(3)
 
     Profile                   Profile?
     DirectChatsAsSender       DirectChat[]          @relation("DirectChatsAsSender")
@@ -107,7 +110,6 @@ model DirectMessage {
     fileName     String?           @map("file_name")
     replyToId    Int?              @map("reply_to_id")
     thumbnailUrl String?           @map("thumbnail_url")
-    isPinned     Boolean?          @map("is_pinned")
     isDeleted    Boolean           @default(false) @map("is_deleted")
 
     Chat                    DirectChat            @relation("MessagesOnDirectChat", fields: [directChatId], references: [id])
@@ -304,4 +306,9 @@ enum MessageType {
 enum GroupChatRole {
     ADMIN
     MEMBER
+}
+
+enum AppRole {
+    USER
+    ADMIN
 }

@@ -17,6 +17,9 @@ export class CheckAuthDataDTO implements TUserWithProfile {
   id: number
   createdAt: Date
   email: string
+  role: import('@prisma/client').AppRole
+  isActive: boolean
+  inActiveAt: Date
   Profile: Omit<TProfile, 'userId'> // this prop cannot be null, if null, it is a bug
 
   @Exclude()
