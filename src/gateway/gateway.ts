@@ -234,109 +234,105 @@ export class AppGateway
     @MessageBody() payload: SendDirectMessageDTO,
     @ConnectedSocket() client: TClientSocket
   ) {
-    try {
-      const { clientId } = await this.authService.validateSocketAuth(client)
-      const { type, msgPayload } = payload
-      const { receiverId, token } = msgPayload
+    const { clientId } = await this.authService.validateSocketAuth(client)
+    const { type, msgPayload } = payload
+    const { receiverId, token } = msgPayload
 
-      await this.checkUniqueMessage(token, clientId)
-      const { timestamp, content, replyToId } = msgPayload
+    await this.checkUniqueMessage(token, clientId)
+    const { timestamp, content, replyToId } = msgPayload
 
-      const directChat = await this.handleDirectChatNotExists(clientId, receiverId)
-      const { id: directChatId } = directChat
+    const directChat = await this.handleDirectChatNotExists(clientId, receiverId)
+    const { id: directChatId } = directChat
 
-      // Content đã được mã hóa bởi interceptor
-      switch (type) {
-        case EMessageTypes.TEXT:
-          await this.handleMessage(
-            { id: clientId, socket: client },
-            {
-              content, // Content đã được mã hóa
-              timestamp,
-              directChatId,
-              receiverId,
-              type: EMessageTypes.TEXT,
-              replyToId,
-            }
-          )
-          break
-        case EMessageTypes.STICKER:
-          await this.handleMessage(
-            { id: clientId, socket: client },
-            {
-              content: '',
-              timestamp,
-              directChatId,
-              receiverId,
-              type: EMessageTypes.STICKER,
-              stickerUrl: content,
-              replyToId,
-            }
-          )
-          break
-        case EMessageTypes.IMAGE:
-          await this.handleMessage(
-            { id: clientId, socket: client },
-            {
-              content: '',
-              timestamp,
-              directChatId,
-              receiverId,
-              type: EMessageTypes.IMAGE,
-              mediaUrl: msgPayload.mediaUrl,
-              replyToId,
-            }
-          )
-          break
-        case EMessageTypes.VIDEO:
-          await this.handleMessage(
-            { id: clientId, socket: client },
-            {
-              content: '',
-              timestamp,
-              directChatId,
-              receiverId,
-              type: EMessageTypes.VIDEO,
-              mediaUrl: msgPayload.mediaUrl,
-              thumbnailUrl: msgPayload.thumbnailUrl,
-              replyToId,
-            }
-          )
-          break
-        case EMessageTypes.DOCUMENT:
-          await this.handleMessage(
-            { id: clientId, socket: client },
-            {
-              content: msgPayload.content || '', // Tên file
-              timestamp,
-              directChatId,
-              receiverId,
-              type: EMessageTypes.DOCUMENT,
-              mediaUrl: msgPayload.mediaUrl,
-              fileName: msgPayload.fileName,
-              replyToId,
-            }
-          )
-          break
-        case EMessageTypes.AUDIO:
-          await this.handleMessage(
-            { id: clientId, socket: client },
-            {
-              content: msgPayload.content || '', // Caption nếu có
-              timestamp,
-              directChatId,
-              receiverId,
-              type: EMessageTypes.AUDIO,
-              mediaUrl: msgPayload.mediaUrl,
-              fileName: msgPayload.fileName,
-            }
-          )
-          break
-      }
-      return { success: true }
-    } catch (err) {
-      throw err
+    // Content đã được mã hóa bởi interceptor
+    switch (type) {
+      case EMessageTypes.TEXT:
+        await this.handleMessage(
+          { id: clientId, socket: client },
+          {
+            content, // Content đã được mã hóa
+            timestamp,
+            directChatId,
+            receiverId,
+            type: EMessageTypes.TEXT,
+            replyToId,
+          }
+        )
+        break
+      case EMessageTypes.STICKER:
+        await this.handleMessage(
+          { id: clientId, socket: client },
+          {
+            content: '',
+            timestamp,
+            directChatId,
+            receiverId,
+            type: EMessageTypes.STICKER,
+            stickerUrl: content,
+            replyToId,
+          }
+        )
+        break
+      case EMessageTypes.IMAGE:
+        await this.handleMessage(
+          { id: clientId, socket: client },
+          {
+            content: '',
+            timestamp,
+            directChatId,
+            receiverId,
+            type: EMessageTypes.IMAGE,
+            mediaUrl: msgPayload.mediaUrl,
+            replyToId,
+          }
+        )
+        break
+      case EMessageTypes.VIDEO:
+        await this.handleMessage(
+          { id: clientId, socket: client },
+          {
+            content: '',
+            timestamp,
+            directChatId,
+            receiverId,
+            type: EMessageTypes.VIDEO,
+            mediaUrl: msgPayload.mediaUrl,
+            thumbnailUrl: msgPayload.thumbnailUrl,
+            replyToId,
+          }
+        )
+        break
+      case EMessageTypes.DOCUMENT:
+        await this.handleMessage(
+          { id: clientId, socket: client },
+          {
+            content: msgPayload.content || '', // Tên file
+            timestamp,
+            directChatId,
+            receiverId,
+            type: EMessageTypes.DOCUMENT,
+            mediaUrl: msgPayload.mediaUrl,
+            fileName: msgPayload.fileName,
+            replyToId,
+          }
+        )
+        break
+      case EMessageTypes.AUDIO:
+        await this.handleMessage(
+          { id: clientId, socket: client },
+          {
+            content: msgPayload.content || '', // Caption nếu có
+            timestamp,
+            directChatId,
+            receiverId,
+            type: EMessageTypes.AUDIO,
+            mediaUrl: msgPayload.mediaUrl,
+            fileName: msgPayload.fileName,
+          }
+        )
+        break
     }
+    return { success: true, newDirectChat: directChat }
   }
 
   @SubscribeMessage(EClientSocketEvents.message_seen_direct)

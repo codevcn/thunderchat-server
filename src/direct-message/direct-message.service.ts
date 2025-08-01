@@ -84,7 +84,7 @@ export class DirectMessageService {
     this.syncDataToESService.syncDataToES({
       type: ESyncDataToESWorkerType.CREATE_MESSAGE,
       data: message,
-      msgEncryptor: this.syncDataToESService.getESMessageEncryptor(authorId),
+      // msgEncryptor: this.syncDataToESService.getESMessageEncryptor(authorId),
     })
     return message
   }

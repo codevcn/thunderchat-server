@@ -21,7 +21,6 @@ import { replaceHTMLTagInMessageContent, retryAsyncRequest, typeToRawObject } fr
 import UserMessageEncryptor from '@/direct-message/security/es-message-encryptor'
 import type { TMessageESMapping, TUserESMapping } from '@/configs/elasticsearch/elasticsearch.type'
 import { SymmetricEncryptor } from '@/utils/crypto/symmetric-encryption.crypto'
-import { DevLogger } from '@/dev/dev-logger'
 import { measureTime } from '@/dev/helpers'
 
 type TCheckInputDataResult = {
@@ -87,9 +86,9 @@ class SyncDataToESHandler {
         Profile: true,
       },
     })
-    DevLogger.logInfo('messages count: ', messages.length)
-    DevLogger.logInfo('users count: ', users.length)
-    DevLogger.logInfo('start sync messages')
+    console.log('messages count: ', messages.length)
+    console.log('users count: ', users.length)
+    console.log('start sync messages')
     measureTime(async () => {
       for (const message of messages) {
         const content = message.content
@@ -192,27 +191,28 @@ const encryptMessageContent = (
 }
 
 const runWorker = async (workerData: SyncDataToESWorkerMessageDTO): Promise<void> => {
-  DevLogger.logInfo('launch worker 1: ', workerData)
+  console.log('launch worker 1: ', workerData)
   if (isMainThread) return
-  DevLogger.logInfo('launch worker 2')
+  console.log('launch worker 2')
 
   const { messageData, prismaClient, syncDataToESHandler } = await checkInputData(workerData)
-  const { type, data, msgEncryptor } = messageData
+  // const { type, data, msgEncryptor } = messageData
+  const { type, data } = messageData
 
-  if (data && 'content' in data) {
-    if (!msgEncryptor) {
-      throw new WorkerInputDataException(ESyncDataToESMessages.SYNC_MESSAGE_ENCRYPTOR_NOT_FOUND)
-    }
-    const rawMsgContent = data.content
-    await createOrUpdateMessageMapping(
-      rawMsgContent,
-      prismaClient,
-      data.authorId,
-      msgEncryptor.getMappings(),
-      msgEncryptor.getSecretKey()
-    )
-    data.content = encryptMessageContent(rawMsgContent, msgEncryptor)
-  }
+  // if (data && 'content' in data) {
+  //   if (!msgEncryptor) {
+  //     throw new WorkerInputDataException(ESyncDataToESMessages.SYNC_MESSAGE_ENCRYPTOR_NOT_FOUND)
+  //   }
+  //   const rawMsgContent = data.content
+  //   await createOrUpdateMessageMapping(
+  //     rawMsgContent,
+  //     prismaClient,
+  //     data.authorId,
+  //     msgEncryptor.getMappings(),
+  //     msgEncryptor.getSecretKey()
+  //   )
+  //   data.content = encryptMessageContent(rawMsgContent, msgEncryptor)
+  // }
 
   switch (type) {
     case ESyncDataToESWorkerType.CREATE_MESSAGE:
@@ -242,8 +242,7 @@ const runWorker = async (workerData: SyncDataToESWorkerMessageDTO): Promise<void
 
 parentPort?.on('message', (message) => {
   runWorker(message).catch((error) => {
-    console.log('>>> sync data to es worker error:', error)
-    DevLogger.logError('sync data to es worker error:', error)
+    console.error('>>> sync data to es worker error:', error)
     parentPort?.postMessage(
       typeToRawObject<TWorkerResponse<null>>({
         success: false,

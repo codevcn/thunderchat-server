@@ -10,6 +10,6 @@ export class SyncDataToESWorkerMessageDTO {
 
   data?: TDirectMessage | TUserWithProfile
 
-  @IsOptional()
-  msgEncryptor?: UserMessageEncryptor
+  // @IsOptional()
+  // msgEncryptor?: UserMessageEncryptor
 }

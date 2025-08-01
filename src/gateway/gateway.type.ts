@@ -1,19 +1,25 @@
-import { Socket } from 'socket.io'
+import type { Socket } from 'socket.io'
 import type { IEmitSocketEvents } from './gateway.interface'
 import type { TUserId } from '@/user/user.type'
+import type { TDirectChat } from '@/utils/entities/direct-chat.entity'
+import type { TSuccess } from '@/utils/types'
 
 export type TClientSocket = Socket<{}, IEmitSocketEvents>
 
 export type TClientAuth = {
-   clientId: number
+  clientId: number
 }
 
 export type TMsgToken = string
 
 export type TConversationTypingFlags = {
-   [key: TUserId]: NodeJS.Timeout
+  [key: TUserId]: NodeJS.Timeout
 }
 
 export type TUserKey = {
-   encryptMsgKey: string
+  encryptMsgKey: string
+}
+
+export type TSendDirectMessageRes = TSuccess & {
+  newDirectChat?: TDirectChat
 }

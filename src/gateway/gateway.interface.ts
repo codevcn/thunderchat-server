@@ -4,10 +4,10 @@ import type {
   TGetDirectMessagesMessage,
   TMsgStatusPayload,
 } from '@/direct-message/direct-message.type'
-import type { TSuccess, TWsErrorResponse } from '@/utils/types'
+import type { TWsErrorResponse } from '@/utils/types'
 import type { MarkAsSeenDTO, SendDirectMessageDTO, TypingDTO } from './gateway.dto'
 import type { Socket } from 'socket.io'
-import type { TClientSocket } from './gateway.type'
+import type { TClientSocket, TSendDirectMessageRes } from './gateway.type'
 import type {
   TFriendRequestPayload,
   TGetFriendRequestsData,
@@ -33,7 +33,7 @@ export interface IGateway {
   handleSendDirectMessage: (
     payload: SendDirectMessageDTO,
     client: Socket<IEmitSocketEvents>
-  ) => Promise<TSuccess>
+  ) => Promise<TSendDirectMessageRes>
   handleMarkAsSeenInDirectChat: (data: MarkAsSeenDTO, client: TClientSocket) => Promise<void>
   handleTyping: (data: TypingDTO, client: TClientSocket) => Promise<void>
 }
