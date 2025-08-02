@@ -13,10 +13,26 @@ export class LoginUserDTO {
   password: string
 }
 
+export class AdminLoginDTO {
+  @IsNotEmpty()
+  email: string
+
+  @IsNotEmpty()
+  password: string
+}
+
+export class CheckAdminEmailDTO {
+  @IsNotEmpty()
+  email: string
+}
+
 export class CheckAuthDataDTO implements TUserWithProfile {
   id: number
   createdAt: Date
   email: string
+  role: import('@prisma/client').AppRole
+  isActive: boolean
+  inActiveAt: Date
   Profile: Omit<TProfile, 'userId'> // this prop cannot be null, if null, it is a bug
 
   @Exclude()

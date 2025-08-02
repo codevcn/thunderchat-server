@@ -16,6 +16,8 @@ import type { TClientSocket } from '@/gateway/gateway.type'
 import { plainToInstance } from 'class-transformer'
 import { validate } from 'class-validator'
 import { SystemException } from '@/utils/exceptions/system.exception'
+import { EAppRoles } from '@/utils/enums'
+import { EAdminMessages } from './role/admin/admin.message'
 
 @Injectable()
 export class AuthService {
@@ -42,6 +44,53 @@ export class AuthService {
       response: res,
       token: jwt_token,
     })
+  }
+
+  async loginAdmin(res: Response, { email, password }: TLoginUserParams): Promise<void> {
+    const user = await this.userService.getUserByEmail(email)
+
+    // Kiểm tra password
+    const isMatch = await this.credentialService.compareHashedPassword(password, user.password)
+    if (!isMatch) {
+      throw new UnauthorizedException(EAuthMessages.INCORRECT_EMAIL_PASSWORD)
+    }
+
+    // Kiểm tra role ADMIN
+    if (user.role !== EAppRoles.ADMIN) {
+      throw new UnauthorizedException(EAdminMessages.INVALID_ADMIN_CREDENTIALS)
+    }
+
+    const { jwt_token } = await this.jwtService.createJWT({
+      email: user.email,
+      user_id: user.id,
+    })
+
+    await this.jwtService.sendClientJWT({
+      response: res,
+      token: jwt_token,
+    })
+  }
+
+  async checkAdminEmail(email: string): Promise<{ isAdmin: boolean; message?: string }> {
+    try {
+      const user = await this.userService.getUserByEmail(email)
+
+      // Kiểm tra role ADMIN
+      if (user.role === EAppRoles.ADMIN) {
+        return { isAdmin: true }
+      } else {
+        return {
+          isAdmin: false,
+          message: EAdminMessages.ADMIN_ACCESS_REQUIRED,
+        }
+      }
+    } catch (error) {
+      // Nếu user không tồn tại hoặc có lỗi khác
+      return {
+        isAdmin: false,
+        message: EAdminMessages.ADMIN_NOT_FOUND,
+      }
+    }
   }
 
   async logoutUser(res: Response): Promise<void> {

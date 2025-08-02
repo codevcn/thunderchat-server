@@ -42,10 +42,11 @@ import { FriendRequestModule } from './friend-request/friend-request.module'
 import { SearchModule } from './search/search.module'
 import { GroupChatModule } from './group-chat/group-chat.module'
 import { UploadModule } from './upload/upload.module'
-import { StatisticsModule } from './statistics/statistics.module'
+
 import { GroupMemberModule } from './group-member/group-member.module'
 import { GroupMessageModule } from './group-message/group-message.module'
 import { DeleteMessageModule } from './direct-message/delete-message/delete-message.module'
+import { AdminModule } from './admin/admin.module'
 
 @Module({
   imports: [
@@ -62,7 +63,7 @@ import { DeleteMessageModule } from './direct-message/delete-message/delete-mess
     SearchModule,
     GroupChatModule,
     UploadModule,
-    StatisticsModule,
+
     GroupMemberModule,
     DevModule,
     ProfileModule,
@@ -70,6 +71,7 @@ import { DeleteMessageModule } from './direct-message/delete-message/delete-mess
     PinDirectChatModule,
     UserSettingsModule,
     DeleteMessageModule,
+    AdminModule,
   ],
 })
 export class AppModule implements NestModule {
