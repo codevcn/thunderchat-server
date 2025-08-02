@@ -4,6 +4,7 @@ import { TProfile } from '@/utils/entities/profile.entity'
 import type { TUserWithProfile } from '@/utils/entities/user.entity'
 import { Exclude, Type } from 'class-transformer'
 import { IsDate, IsNotEmpty, IsNumber, IsOptional } from 'class-validator'
+import type { User } from '@prisma/client'
 
 export class LoginUserDTO {
   @IsNotEmpty()
@@ -17,6 +18,9 @@ export class CheckAuthDataDTO implements TUserWithProfile {
   id: number
   createdAt: Date
   email: string
+  role: 'USER' | 'ADMIN'
+  isActive: boolean
+  inActiveAt: Date
   Profile: Omit<TProfile, 'userId'> // this prop cannot be null, if null, it is a bug
 
   @Exclude()
