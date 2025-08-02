@@ -4,6 +4,7 @@ import { ConfigModule } from '@nestjs/config'
 import { JwtModule } from '@nestjs/jwt'
 import { DirectChatsModule } from './direct-chat/direct-chat.module'
 import { DirectMessageModule } from './direct-message/direct-message.module'
+import { MediaMessageModule } from './direct-message/media-message/media-message.module'
 import { PrismaModule } from './configs/db/prisma.module'
 import { envValidation } from './utils/validation/env.validation'
 import { UserModule } from './user/user.module'
@@ -55,6 +56,7 @@ import { AdminModule } from './admin/admin.module'
     GatewayModule,
     DirectChatsModule,
     DirectMessageModule,
+    MediaMessageModule,
     GroupMessageModule,
     UserModule,
     FriendRequestModule,

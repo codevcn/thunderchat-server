@@ -226,27 +226,6 @@ export class DirectMessageService {
       take: limit,
     })
   }
-  async getMediaMessages(
-    directChatId: number,
-    limit: number,
-    offset: number,
-    sortType: ESortTypes = ESortTypes.TIME_ASC
-  ) {
-    // Lấy tất cả message KHÔNG PHẢI TEXT
-    return this.PrismaService.directMessage.findMany({
-      where: {
-        directChatId,
-        type: {
-          not: EMessageTypes.TEXT,
-        },
-      },
-      orderBy: {
-        createdAt: sortType === ESortTypes.TIME_ASC ? 'asc' : 'desc',
-      },
-      take: limit,
-      skip: offset,
-    })
-  }
 
   async getVoiceMessages(
     directChatId: number,

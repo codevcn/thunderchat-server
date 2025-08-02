@@ -27,21 +27,6 @@ export class DirectMessageController implements IDirectMessageController {
     )
   }
 
-  @Get('direct-message/media/:directChatId')
-  async getMediaMessages(
-    @Param('directChatId') directChatId: number,
-    @Query('limit') limit?: number,
-    @Query('offset') offset?: number,
-    @Query('sortType') sortType?: string
-  ) {
-    return this.directMessageService.getMediaMessages(
-      directChatId,
-      limit ? Number(limit) : 100,
-      offset ? Number(offset) : 0,
-      sortType as ESortTypes
-    )
-  }
-
   @Get('direct-message/voices/:directChatId')
   async getVoiceMessages(
     @Param('directChatId') directChatId: number,
