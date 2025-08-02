@@ -78,3 +78,7 @@ export enum EMessageTypes {
   TEXT = 'TEXT',
   STICKER = 'STICKER',
 }
+export enum EAppRoles {
+  ADMIN = 'ADMIN',
+  USER = 'USER',
+}

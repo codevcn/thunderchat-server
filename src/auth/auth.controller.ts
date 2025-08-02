@@ -8,9 +8,10 @@ import {
   UseInterceptors,
   ClassSerializerInterceptor,
   InternalServerErrorException,
+  UnauthorizedException,
 } from '@nestjs/common'
 import { ERoutes } from '@/utils/enums'
-import { CheckAuthDataDTO, LoginUserDTO } from '@/auth/auth.dto'
+import { CheckAuthDataDTO, LoginUserDTO, AdminLoginDTO, CheckAdminEmailDTO } from '@/auth/auth.dto'
 import { AuthService } from '@/auth/auth.service'
 import type { Response } from 'express'
 import { AuthGuard } from '@/auth/auth.guard'
@@ -32,6 +33,21 @@ export class AuthController implements IAuthController {
     return { success: true }
   }
 
+  @Post('admin/login')
+  async adminLogin(
+    @Body() adminLoginPayload: AdminLoginDTO,
+    @Res({ passthrough: true }) res: Response
+  ) {
+    await this.authService.loginAdmin(res, adminLoginPayload)
+    return { success: true }
+  }
+
+  @Post('admin/check-email')
+  async checkAdminEmail(@Body() checkAdminEmailPayload: CheckAdminEmailDTO) {
+    const result = await this.authService.checkAdminEmail(checkAdminEmailPayload.email)
+    return result
+  }
+
   @Post('logout')
   @UseGuards(AuthGuard)
   async logout(@Res({ passthrough: true }) res: Response) {
@@ -42,7 +58,18 @@ export class AuthController implements IAuthController {
   @Get('check-auth')
   @UseGuards(AuthGuard)
   @UseInterceptors(ClassSerializerInterceptor)
-  async checkAuth(@User() user: TUserWithProfile) {
+  async checkAuth(@User() user: TUserWithProfile): Promise<CheckAuthDataDTO> {
+    return new CheckAuthDataDTO(user)
+  }
+
+  @Get('admin/check-auth')
+  @UseGuards(AuthGuard)
+  @UseInterceptors(ClassSerializerInterceptor)
+  async checkAdminAuth(@User() user: TUserWithProfile): Promise<CheckAuthDataDTO> {
+    // Kiểm tra role ADMIN
+    if (user.role !== 'ADMIN') {
+      throw new UnauthorizedException('Admin access required')
+    }
     return new CheckAuthDataDTO(user)
   }
 }

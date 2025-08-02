@@ -1,16 +1,141 @@
-import { Injectable, NotFoundException, BadRequestException, Inject } from '@nestjs/common'
-import { PrismaService } from '../configs/db/prisma.service'
+import { Injectable, Inject } from '@nestjs/common'
+import { PrismaService } from '@/configs/db/prisma.service'
+import { UserService } from '@/user/user.service'
 import { EProviderTokens } from '@/utils/enums'
-import type {
-  TAdminUsersData,
-  TGetAdminUsersParams,
-  TLockUnlockUserParams,
-  TDeleteUserParams,
-} from './admin.type'
+import { TAdminUsersData, TGetAdminUsersParams } from './admin.type'
 
 @Injectable()
 export class AdminService {
-  constructor(@Inject(EProviderTokens.PRISMA_CLIENT) private prismaService: PrismaService) {}
+  constructor(
+    @Inject(EProviderTokens.PRISMA_CLIENT)
+    private prisma: PrismaService,
+    private userService: UserService
+  ) {}
+
+  async getDashboardStats() {
+    const totalUsers = await this.prisma.user.count()
+
+    return {
+      summary: {
+        totalUsers,
+        message: 'Dashboard loaded successfully',
+      },
+    }
+  }
+
+  async getAllUsers(page: number = 1, limit: number = 10) {
+    const skip = (page - 1) * limit
+
+    const [users, total] = await Promise.all([
+      this.prisma.user.findMany({
+        skip,
+        take: limit,
+        include: {
+          Profile: true,
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      }),
+      this.prisma.user.count(),
+    ])
+
+    return {
+      users,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    }
+  }
+
+  async banUser(userId: number, reason: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    })
+
+    if (!user) {
+      throw new Error('User not found')
+    }
+
+    if (user.role === 'ADMIN') {
+      throw new Error('Cannot ban admin user')
+    }
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        isActive: false,
+        inActiveAt: new Date(),
+      },
+    })
+
+    // Log ban action (có thể tạo bảng admin_logs sau)
+    console.log(`User ${userId} banned for: ${reason}`)
+
+    return { success: true, message: 'User banned successfully' }
+  }
+
+  async unbanUser(userId: number) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    })
+
+    if (!user) {
+      throw new Error('User not found')
+    }
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        isActive: true,
+        inActiveAt: new Date(),
+      },
+    })
+
+    return { success: true, message: 'User unbanned successfully' }
+  }
+
+  async deleteUser(userId: number) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    })
+
+    if (!user) {
+      throw new Error('User not found')
+    }
+
+    if (user.role === 'ADMIN') {
+      throw new Error('Cannot delete admin user')
+    }
+
+    // Soft delete - chỉ đánh dấu là deleted
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        isActive: false,
+        inActiveAt: new Date(),
+      },
+    })
+
+    return { success: true, message: 'User deleted successfully' }
+  }
+
+  async getSystemStats() {
+    const totalUsers = await this.prisma.user.count()
+    const activeUsers = await this.prisma.user.count({ where: { isActive: true } })
+
+    return {
+      users: {
+        total: totalUsers,
+        active: activeUsers,
+        inactive: totalUsers - activeUsers,
+      },
+      message: 'System stats loaded successfully',
+    }
+  }
 
   async getUsers(params: TGetAdminUsersParams): Promise<TAdminUsersData> {
     const { page, limit, search, isLocked } = params
@@ -30,14 +155,14 @@ export class AdminService {
     }
 
     // Count total items for pagination
-    const totalItems = await this.prismaService.user.count({ where })
+    const totalItems = await this.prisma.user.count({ where })
 
     // Calculate pagination
     const totalPages = Math.ceil(totalItems / limit)
     const skip = (page - 1) * limit
 
     // Get users with pagination
-    const users = await this.prismaService.user.findMany({
+    const users = await this.prisma.user.findMany({
       where,
       skip,
       take: limit,
@@ -83,56 +208,5 @@ export class AdminService {
         hasPrevPage: page > 1,
       },
     }
-  }
-
-  async lockUnlockUser(params: TLockUnlockUserParams): Promise<{ success: boolean }> {
-    // const { userId, isLocked } = params
-
-    // // Check if user exists
-    // const user = await this.prismaService.user.findUnique({
-    //   where: { id: userId }
-    // })
-
-    // if (!user) {
-    //   throw new NotFoundException('User not found')
-    // }
-
-    // // Prevent locking admin account
-    // if (user.email === 'admin@thunderchat.com' && isLocked) {
-    //   throw new BadRequestException('Cannot lock admin account')
-    // }
-
-    // // Update user lock status
-    // await this.prismaService.user.update({
-    //   where: { id: userId },
-    //   data: { false }
-    // })
-
-    return { success: true }
-  }
-
-  async deleteUser(params: TDeleteUserParams): Promise<{ success: boolean }> {
-    // const { userId } = params
-
-    // // Check if user exists
-    // const user = await this.prismaService.user.findUnique({
-    //   where: { id: userId }
-    // })
-
-    // if (!user) {
-    //   throw new NotFoundException('User not found')
-    // }
-
-    // // Prevent deleting admin account
-    // if (user.email === 'admin@thunderchat.com') {
-    //   throw new BadRequestException('Cannot delete admin account')
-    // }
-
-    // // Delete user (cascade will handle related data)
-    // await this.prismaService.user.delete({
-    //   where: { id: userId }
-    // })
-
-    return { success: true }
   }
 }

@@ -1,4 +1,13 @@
-import { IsBoolean, IsNotEmpty, IsNumber, IsOptional, IsString, IsIn } from 'class-validator'
+import {
+  IsBoolean,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsIn,
+  Min,
+  Max,
+} from 'class-validator'
 import { Type } from 'class-transformer'
 
 export class GetAdminUsersDTO {
@@ -38,4 +47,27 @@ export class DeleteUserDTO {
   @IsNumber()
   @Type(() => Number)
   userId: number
+}
+
+export class BanUserDTO {
+  @IsNotEmpty()
+  @IsString()
+  reason: string
+}
+
+export class UnbanUserDTO {
+  // Không cần thêm fields cho unban
+}
+
+export class GetUsersQueryDTO {
+  @IsOptional()
+  @IsNumber()
+  @Min(1)
+  page?: number
+
+  @IsOptional()
+  @IsNumber()
+  @Min(1)
+  @Max(100)
+  limit?: number
 }
