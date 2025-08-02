@@ -17,7 +17,7 @@ import {
   BaseWsExceptionsFilter,
 } from '@/utils/exception-filters/base-ws-exception.filter'
 import { DirectMessageService } from '@/direct-message/direct-message.service'
-import type { TClientSocket } from './gateway.type'
+import type { TClientSocket, TFindDirectChatWithOtherUser } from './gateway.type'
 import type { IEmitSocketEvents, IGateway } from './gateway.interface'
 import { wsValidationPipe } from './gateway.validation'
 import { SocketService } from './socket/socket.service'
@@ -34,6 +34,7 @@ import { SyncDataToESService } from '@/configs/elasticsearch/sync-data-to-ES/syn
 import { DevLogger } from '@/dev/dev-logger'
 import type { TDirectChat } from '@/utils/entities/direct-chat.entity'
 import { Socket } from 'socket.io'
+import { TDirectMessageWithAuthorAndReplyTo } from '@/utils/entities/direct-message.entity'
 
 @WebSocketGateway({
   cors: {
@@ -152,15 +153,19 @@ export class AppGateway
     }
   }
 
-  async handleDirectChatNotExists(creatorId: number, recipientId: number): Promise<TDirectChat> {
-    let directChat = await this.directChatService.findConversationWithOtherUser(
+  async handleDirectChatNotExists(
+    creatorId: number,
+    recipientId: number
+  ): Promise<TFindDirectChatWithOtherUser> {
+    const directChat = await this.directChatService.findConversationWithOtherUser(
       creatorId,
       recipientId
     )
-    if (!directChat) {
-      directChat = await this.directChatService.createNewDirectChat(creatorId, recipientId)
+    if (directChat) {
+      return { directChat, isNew: false }
     }
-    return directChat
+    const newDirectChat = await this.directChatService.createNewDirectChat(creatorId, recipientId)
+    return { directChat: newDirectChat, isNew: true }
   }
 
   async handleMessage(
@@ -177,7 +182,7 @@ export class AppGateway
       thumbnailUrl?: string
       replyToId?: number
     }
-  ): Promise<void> {
+  ): Promise<TDirectMessageWithAuthorAndReplyTo> {
     const { id, socket } = client
     const {
       content,
@@ -191,25 +196,13 @@ export class AppGateway
       thumbnailUrl,
       replyToId,
     } = message
-    console.log('[SOCKET][DEBUG] handleMessage - tạo message mới:', {
-      id,
-      directChatId,
-      receiverId,
-      type,
-      content,
-      stickerUrl,
-      mediaUrl,
-      fileName,
-      thumbnailUrl,
-      replyToId,
-    })
     const newMessage = await this.DirectMessageService.createNewMessage(
       content,
       id,
       timestamp,
       directChatId,
       receiverId,
-      type as any,
+      type,
       stickerUrl,
       mediaUrl,
       fileName,
@@ -219,13 +212,10 @@ export class AppGateway
     await this.directChatService.updateLastSentMessage(directChatId, newMessage.id)
     const recipientSocket = this.socketService.getConnectedClient<IEmitSocketEvents>(receiverId)
     if (recipientSocket) {
-      console.log('[SOCKET][DEBUG] handleMessage - emit tới recipientSocket:', receiverId)
       recipientSocket.emit(EClientSocketEvents.send_message_direct, newMessage)
-    } else {
-      console.log('[SOCKET][DEBUG] handleMessage - recipientSocket KHÔNG online:', receiverId)
     }
-    console.log('[SOCKET][DEBUG] handleMessage - emit tới senderSocket:', id)
     socket.emit(EClientSocketEvents.send_message_direct, newMessage)
+    return newMessage
   }
 
   @SubscribeMessage(EClientSocketEvents.send_message_direct)
@@ -241,13 +231,15 @@ export class AppGateway
     await this.checkUniqueMessage(token, clientId)
     const { timestamp, content, replyToId } = msgPayload
 
-    const directChat = await this.handleDirectChatNotExists(clientId, receiverId)
+    const { directChat, isNew } = await this.handleDirectChatNotExists(clientId, receiverId)
     const { id: directChatId } = directChat
+
+    let newMessage: TDirectMessageWithAuthorAndReplyTo
 
     // Content đã được mã hóa bởi interceptor
     switch (type) {
       case EMessageTypes.TEXT:
-        await this.handleMessage(
+        newMessage = await this.handleMessage(
           { id: clientId, socket: client },
           {
             content, // Content đã được mã hóa
@@ -260,7 +252,7 @@ export class AppGateway
         )
         break
       case EMessageTypes.STICKER:
-        await this.handleMessage(
+        newMessage = await this.handleMessage(
           { id: clientId, socket: client },
           {
             content: '',
@@ -274,7 +266,7 @@ export class AppGateway
         )
         break
       case EMessageTypes.IMAGE:
-        await this.handleMessage(
+        newMessage = await this.handleMessage(
           { id: clientId, socket: client },
           {
             content: '',
@@ -288,7 +280,7 @@ export class AppGateway
         )
         break
       case EMessageTypes.VIDEO:
-        await this.handleMessage(
+        newMessage = await this.handleMessage(
           { id: clientId, socket: client },
           {
             content: '',
@@ -303,7 +295,7 @@ export class AppGateway
         )
         break
       case EMessageTypes.DOCUMENT:
-        await this.handleMessage(
+        newMessage = await this.handleMessage(
           { id: clientId, socket: client },
           {
             content: msgPayload.content || '', // Tên file
@@ -318,7 +310,7 @@ export class AppGateway
         )
         break
       case EMessageTypes.AUDIO:
-        await this.handleMessage(
+        newMessage = await this.handleMessage(
           { id: clientId, socket: client },
           {
             content: msgPayload.content || '', // Caption nếu có
@@ -332,7 +324,12 @@ export class AppGateway
         )
         break
     }
-    return { success: true, newDirectChat: directChat }
+    return {
+      success: true,
+      directChat,
+      newMessage,
+      isNewDirectChat: isNew,
+    }
   }
 
   @SubscribeMessage(EClientSocketEvents.message_seen_direct)
