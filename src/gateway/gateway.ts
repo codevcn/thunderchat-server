@@ -353,12 +353,12 @@ export class AppGateway
   @CatchInternalSocketError()
   async handleTyping(@MessageBody() data: TypingDTO, @ConnectedSocket() client: TClientSocket) {
     const { clientId } = await this.authService.validateSocketAuth(client)
-    const { receiverId, isTyping } = data
+    const { receiverId, isTyping, directChatId } = data
     const recipientSocket = this.socketService.getConnectedClient<IEmitSocketEvents>(receiverId)
     if (recipientSocket) {
-      recipientSocket.emit(EClientSocketEvents.typing_direct, isTyping)
+      recipientSocket.emit(EClientSocketEvents.typing_direct, isTyping, directChatId)
       if (isTyping) {
-        this.convTypingManager.initTyping(clientId, recipientSocket)
+        this.convTypingManager.initTyping(clientId, recipientSocket, directChatId)
       } else {
         this.convTypingManager.removeTyping(clientId)
       }

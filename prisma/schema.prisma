@@ -47,6 +47,8 @@ model User {
     PinnedDirectChats         PinnedDirectChat[]    @relation("PinnedDirectChatsByUser")
     UserSettings              UserSettings?         @relation("UserToUserSettings")
     PinnedGroupMessages       PinnedGroupMessage[]  @relation("PinnedGroupMessagesByUser")
+    ReportsMade               ViolationReport[]     @relation("ReportsMade")
+    ReportsAbout              ViolationReport[]     @relation("ReportsAbout")
 
     @@index([email], type: BTree)
     @@map("users")
@@ -282,6 +284,34 @@ model UserSettings {
     @@map("user_settings")
 }
 
+model ViolationReport {
+    id             Int            @id @default(autoincrement())
+    reporterUserId Int            @map("reporter_user_id")
+    reportedUserId Int            @map("reported_user_id")
+    reportCategory ReportCategory @map("report_category")
+    reasonImage    String?        @map("reason_image")
+    reasonText     String?        @map("reason_text")
+    reportStatus   ReportStatus   @default(PENDING) @map("report_status")
+    createdAt      DateTime       @default(now()) @map("created_at")
+
+    reporterUser User              @relation("ReportsMade", fields: [reporterUserId], references: [id])
+    reportedUser User              @relation("ReportsAbout", fields: [reportedUserId], references: [id])
+    actions      ViolationAction[] @relation("ReportActions")
+
+    @@map("violation_reports")
+}
+
+model ViolationAction {
+    id           Int      @id @default(autoincrement())
+    actionReason String   @map("action_reason")
+    reportId     Int      @unique @map("report_id")
+    createdAt    DateTime @default(now()) @map("created_at")
+
+    Report ViolationReport @relation("ReportActions", fields: [reportId], references: [id])
+
+    @@map("violation_actions")
+}
+
 enum FriendRequestsStatus {
     PENDING
     ACCEPTED
@@ -311,4 +341,17 @@ enum GroupChatRole {
 enum AppRole {
     USER
     ADMIN
+}
+
+enum ReportCategory {
+    SENSITIVE_CONTENT
+    BOTHER
+    FRAUD
+    OTHER
+}
+
+enum ReportStatus {
+    PENDING
+    RESOLVED
+    DISMISSED
 }

@@ -65,6 +65,7 @@ export class MarkAsSeenDTO {
 
 export class TypingDTO {
   @IsNumber()
+  @Type(() => Number)
   @IsNotEmpty()
   receiverId: number
 
@@ -72,4 +73,9 @@ export class TypingDTO {
   @IsBoolean()
   @ToBoolean()
   isTyping: boolean
+
+  @IsNumber()
+  @Type(() => Number)
+  @IsNotEmpty()
+  directChatId: number
 }

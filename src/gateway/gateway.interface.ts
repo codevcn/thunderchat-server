@@ -23,7 +23,7 @@ export interface IEmitSocketEvents {
   [EClientSocketEvents.error]: (error: TWsErrorResponse) => void
   [EClientSocketEvents.recovered_connection]: (messages: TGetDirectMessagesMessage[]) => void
   [EClientSocketEvents.message_seen_direct]: (payload: TMsgStatusPayload) => void
-  [EClientSocketEvents.typing_direct]: (isTyping: boolean) => void
+  [EClientSocketEvents.typing_direct]: (isTyping: boolean, directChatId: number) => void
   [EClientSocketEvents.friend_request_action]: (payload: TFriendRequestPayload) => void
   [EClientSocketEvents.pin_message]: (payload: any) => void
   [EClientSocketEvents.pin_direct_chat]: (payload: any) => void
