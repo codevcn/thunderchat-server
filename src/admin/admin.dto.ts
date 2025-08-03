@@ -26,8 +26,8 @@ export class GetAdminUsersDTO {
   search?: string
 
   @IsOptional()
-  @IsIn(['all', 'locked', 'active'])
-  isLocked?: 'all' | 'locked' | 'active'
+  @IsIn(['all', 'active', 'inactive'])
+  isActive?: 'all' | 'active' | 'inactive'
 }
 
 export class LockUnlockUserDTO {
@@ -39,7 +39,7 @@ export class LockUnlockUserDTO {
   @IsNotEmpty()
   @IsBoolean()
   @Type(() => Boolean)
-  isLocked: boolean
+  isActive: boolean
 }
 
 export class DeleteUserDTO {

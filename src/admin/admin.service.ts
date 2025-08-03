@@ -1,7 +1,7 @@
 import { Injectable, Inject } from '@nestjs/common'
 import { PrismaService } from '@/configs/db/prisma.service'
 import { UserService } from '@/user/user.service'
-import { EProviderTokens } from '@/utils/enums'
+import { EProviderTokens, EAppRoles } from '@/utils/enums'
 import { TAdminUsersData, TGetAdminUsersParams } from './admin.type'
 
 @Injectable()
@@ -138,10 +138,12 @@ export class AdminService {
   }
 
   async getUsers(params: TGetAdminUsersParams): Promise<TAdminUsersData> {
-    const { page, limit, search, isLocked } = params
+    const { page, limit, search, isActive } = params
 
     // Build where clause for filtering
-    const where: any = {}
+    const where: any = {
+      role: EAppRoles.USER, // Only get users with role USER
+    }
 
     if (search) {
       where.OR = [
@@ -150,8 +152,8 @@ export class AdminService {
       ]
     }
 
-    if (isLocked && isLocked !== 'all') {
-      where.isLocked = isLocked === 'locked'
+    if (isActive && isActive !== 'all') {
+      where.isActive = isActive === 'active'
     }
 
     // Count total items for pagination
@@ -178,23 +180,14 @@ export class AdminService {
     })
 
     // Transform to admin user format
-    // const adminUsers = users.map(user => ({
-    //   id: user.id,
-    //   email: user.email,
-    //   fullName: user.Profile?.fullName || 'Unknown',
-    //   avatar: user.Profile?.avatar,
-    //   isLocked: user.isLocked || false,
-    //   createdAt: user.createdAt.toISOString(),
-    //   lastActive: user.lastActive?.toISOString()
-    // }))
     const adminUsers = users.map((user) => ({
       id: user.id,
       email: user.email,
       fullName: user.Profile?.fullName || 'Unknown',
       avatar: user.Profile?.avatar || undefined,
-      isLocked: false,
+      isActive: user.isActive,
       createdAt: user.createdAt.toISOString(),
-      lastActive: user.createdAt.toISOString(),
+      inActiveAt: user.inActiveAt?.toISOString(),
     }))
 
     return {
@@ -208,5 +201,28 @@ export class AdminService {
         hasPrevPage: page > 1,
       },
     }
+  }
+
+  async lockUnlockUser(userId: number, isActive: boolean) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    })
+
+    if (!user) {
+      throw new Error('User not found')
+    }
+
+    // Always update both isActive and inActiveAt to current time
+    const updateData = {
+      isActive,
+      inActiveAt: new Date(), // Always set to current time
+    }
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: updateData,
+    })
+
+    return { success: true, message: 'User locked/unlocked successfully' }
   }
 }

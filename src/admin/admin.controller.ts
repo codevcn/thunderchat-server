@@ -12,7 +12,7 @@ import {
 import { AuthGuard } from '@/auth/auth.guard'
 import { AdminGuard, AdminOnly } from '@/auth/role/admin'
 import { AdminService } from './admin.service'
-import { BanUserDTO, GetAdminUsersDTO } from './admin.dto'
+import { BanUserDTO, GetAdminUsersDTO, LockUnlockUserDTO } from './admin.dto'
 
 @Controller('admin')
 @UseGuards(AuthGuard, AdminGuard)
@@ -53,5 +53,11 @@ export class AdminController {
   @AdminOnly()
   async getUsers(@Query() params: GetAdminUsersDTO) {
     return await this.adminService.getUsers(params)
+  }
+
+  @Put('/users/lock-unlock')
+  @AdminOnly()
+  async lockUnlockUser(@Body() body: LockUnlockUserDTO) {
+    return await this.adminService.lockUnlockUser(body.userId, body.isActive)
   }
 }
