@@ -71,3 +71,9 @@ export class GetUsersQueryDTO {
   @Max(100)
   limit?: number
 }
+
+export class UpdateUserEmailDTO {
+  @IsNotEmpty()
+  @IsString()
+  email: string
+}

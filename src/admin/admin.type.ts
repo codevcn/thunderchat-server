@@ -3,9 +3,10 @@ export type TAdminUser = {
   email: string
   fullName: string
   avatar?: string
-  isActive: boolean
+  birthday?: string | null
+  about?: string | null
+  status: string
   createdAt: string
-  inActiveAt?: string
 }
 
 export type TAdminUsersData = {
@@ -24,7 +25,7 @@ export type TGetAdminUsersParams = {
   page: number
   limit: number
   search?: string
-  isActive?: 'all' | 'active' | 'inactive'
+  status?: 'all' | 'NORMAL' | 'WARNING' | 'TEMPORARY_BAN' | 'PERMANENT_BAN'
 }
 
 export type TLockUnlockUserParams = {
@@ -34,4 +35,10 @@ export type TLockUnlockUserParams = {
 
 export type TDeleteUserParams = {
   userId: number
+}
+
+export type TUpdateUserEmailResponse = {
+  success: boolean
+  message: string
+  error?: string
 }

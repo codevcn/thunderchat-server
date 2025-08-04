@@ -2,7 +2,7 @@ import { Injectable, Inject } from '@nestjs/common'
 import { PrismaService } from '@/configs/db/prisma.service'
 import { UserService } from '@/user/user.service'
 import { EProviderTokens, EAppRoles } from '@/utils/enums'
-import { TAdminUsersData, TGetAdminUsersParams } from './admin.type'
+import { TAdminUsersData, TGetAdminUsersParams, TUpdateUserEmailResponse } from './admin.type'
 
 @Injectable()
 export class AdminService {
@@ -64,13 +64,13 @@ export class AdminService {
       throw new Error('Cannot ban admin user')
     }
 
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: {
-        isActive: false,
-        inActiveAt: new Date(),
-      },
-    })
+    // await this.prisma.user.update({
+    //   where: { id: userId },
+    //   data: {
+    //     isActive: false,
+    //     inActiveAt: new Date(),
+    //   },
+    // })
 
     // Log ban action (có thể tạo bảng admin_logs sau)
     console.log(`User ${userId} banned for: ${reason}`)
@@ -87,13 +87,13 @@ export class AdminService {
       throw new Error('User not found')
     }
 
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: {
-        isActive: true,
-        inActiveAt: new Date(),
-      },
-    })
+    // await this.prisma.user.update({
+    //   where: { id: userId },
+    //   data: {
+    //     isActive: true,
+    //     inActiveAt: new Date(),
+    //   },
+    // })
 
     return { success: true, message: 'User unbanned successfully' }
   }
@@ -112,33 +112,33 @@ export class AdminService {
     }
 
     // Soft delete - chỉ đánh dấu là deleted
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: {
-        isActive: false,
-        inActiveAt: new Date(),
-      },
-    })
+    // await this.prisma.user.update({
+    //   where: { id: userId },
+    //   data: {
+    //     isActive: false,
+    //     inActiveAt: new Date(),
+    //   },
+    // })
 
     return { success: true, message: 'User deleted successfully' }
   }
 
   async getSystemStats() {
     const totalUsers = await this.prisma.user.count()
-    const activeUsers = await this.prisma.user.count({ where: { isActive: true } })
+    // const activeUsers = await this.prisma.user.count({ where: { isActive: true } })
 
     return {
       users: {
         total: totalUsers,
-        active: activeUsers,
-        inactive: totalUsers - activeUsers,
+        // active: activeUsers,
+        // inactive: totalUsers - activeUsers,
       },
       message: 'System stats loaded successfully',
     }
   }
 
   async getUsers(params: TGetAdminUsersParams): Promise<TAdminUsersData> {
-    const { page, limit, search, isActive } = params
+    const { page, limit, search, status } = params
 
     // Build where clause for filtering
     const where: any = {
@@ -150,10 +150,6 @@ export class AdminService {
         { email: { contains: search, mode: 'insensitive' } },
         { Profile: { fullName: { contains: search, mode: 'insensitive' } } },
       ]
-    }
-
-    if (isActive && isActive !== 'all') {
-      where.isActive = isActive === 'active'
     }
 
     // Count total items for pagination
@@ -173,6 +169,18 @@ export class AdminService {
           select: {
             fullName: true,
             avatar: true,
+            birthday: true,
+            about: true,
+          },
+        },
+        ReportsAbout: {
+          include: {
+            Actions: {
+              orderBy: {
+                createdAt: 'desc',
+              },
+              take: 1,
+            },
           },
         },
       },
@@ -180,15 +188,34 @@ export class AdminService {
     })
 
     // Transform to admin user format
-    const adminUsers = users.map((user) => ({
-      id: user.id,
-      email: user.email,
-      fullName: user.Profile?.fullName || 'Unknown',
-      avatar: user.Profile?.avatar || undefined,
-      isActive: user.isActive,
-      createdAt: user.createdAt.toISOString(),
-      inActiveAt: user.inActiveAt?.toISOString(),
-    }))
+    let adminUsers = users.map((user) => {
+      // Get the latest violation action for this user
+      const latestViolationAction = user.ReportsAbout.flatMap((report) => report.Actions).sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      )[0]
+
+      // Determine status based on latest violation action
+      let status = 'NORMAL'
+      if (latestViolationAction) {
+        status = latestViolationAction.actionType
+      }
+
+      return {
+        id: user.id,
+        email: user.email,
+        fullName: user.Profile?.fullName || 'Unknown',
+        avatar: user.Profile?.avatar || undefined,
+        birthday: user.Profile?.birthday?.toISOString() || null,
+        about: user.Profile?.about || null,
+        status,
+        createdAt: user.createdAt.toISOString(),
+      }
+    })
+
+    // Filter by status if specified
+    if (status && status !== 'all') {
+      adminUsers = adminUsers.filter((user) => user.status === status)
+    }
 
     return {
       users: adminUsers,
@@ -224,5 +251,39 @@ export class AdminService {
     })
 
     return { success: true, message: 'User locked/unlocked successfully' }
+  }
+
+  async updateUserEmail(userId: number, newEmail: string): Promise<TUpdateUserEmailResponse> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    })
+
+    if (!user) {
+      return {
+        success: false,
+        message: 'User not found',
+        error: 'USER_NOT_FOUND',
+      }
+    }
+
+    // Check if email already exists
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email: newEmail },
+    })
+
+    if (existingUser && existingUser.id !== userId) {
+      return {
+        success: false,
+        message: 'Email already exists',
+        error: 'EMAIL_ALREADY_EXISTS',
+      }
+    }
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { email: newEmail },
+    })
+
+    return { success: true, message: 'User email updated successfully' }
   }
 }
