@@ -19,36 +19,6 @@ import { BanUserDTO, GetAdminUsersDTO, LockUnlockUserDTO, UpdateUserEmailDTO } f
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 
-  @Get('dashboard')
-  @AdminOnly()
-  async getDashboard() {
-    return await this.adminService.getDashboardStats()
-  }
-
-  @Get('system-stats')
-  @AdminOnly()
-  async getSystemStats() {
-    return await this.adminService.getSystemStats()
-  }
-
-  @Put('users/:id/ban')
-  @AdminOnly()
-  async banUser(@Param('id', ParseIntPipe) userId: number, @Body() banUserData: BanUserDTO) {
-    return await this.adminService.banUser(userId, banUserData.reason)
-  }
-
-  @Put('users/:id/unban')
-  @AdminOnly()
-  async unbanUser(@Param('id', ParseIntPipe) userId: number) {
-    return await this.adminService.unbanUser(userId)
-  }
-
-  @Delete('users/:id')
-  @AdminOnly()
-  async deleteUser(@Param('id', ParseIntPipe) userId: number) {
-    return await this.adminService.deleteUser(userId)
-  }
-
   @Get('users')
   @AdminOnly()
   async getUsers(@Query() params: GetAdminUsersDTO) {
