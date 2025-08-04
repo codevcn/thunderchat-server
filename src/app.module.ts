@@ -8,6 +8,7 @@ import { MediaMessageModule } from './direct-message/media-message/media-message
 import { PrismaModule } from './configs/db/prisma.module'
 import { envValidation } from './utils/validation/env.validation'
 import { UserModule } from './user/user.module'
+import { UserReportModule } from './user-report/user-report.module'
 import ms from 'ms'
 import { EventEmitterModule } from '@nestjs/event-emitter'
 import { LoggerModule } from './configs/logger/logger.module'
@@ -59,6 +60,7 @@ import { AdminModule } from './admin/admin.module'
     MediaMessageModule,
     GroupMessageModule,
     UserModule,
+    UserReportModule,
     FriendRequestModule,
     FriendModule,
     StickersModule,
