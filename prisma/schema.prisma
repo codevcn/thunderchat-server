@@ -22,13 +22,11 @@ model MessageMapping {
 }
 
 model User {
-    id         Int      @id @default(autoincrement())
-    email      String   @unique @db.VarChar(255)
-    password   String   @db.VarChar(255)
-    createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
-    role       AppRole  @default(USER)
-    isActive   Boolean  @default(true) @map("is_active")
-    inActiveAt DateTime @default(now()) @map("inactive_at") @db.Timestamptz(3)
+    id        Int      @id @default(autoincrement())
+    email     String   @unique @db.VarChar(255)
+    password  String   @db.VarChar(255)
+    createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+    role      AppRole  @default(USER)
 
     Profile                   Profile?
     DirectChatsAsSender       DirectChat[]          @relation("DirectChatsAsSender")
@@ -47,6 +45,8 @@ model User {
     PinnedDirectChats         PinnedDirectChat[]    @relation("PinnedDirectChatsByUser")
     UserSettings              UserSettings?         @relation("UserToUserSettings")
     PinnedGroupMessages       PinnedGroupMessage[]  @relation("PinnedGroupMessagesByUser")
+    ReportsMade               ViolationReport[]     @relation("ReportsMade")
+    ReportsAbout              ViolationReport[]     @relation("ReportsAbout")
 
     @@index([email], type: BTree)
     @@map("users")
@@ -111,6 +111,7 @@ model DirectMessage {
     replyToId    Int?              @map("reply_to_id")
     thumbnailUrl String?           @map("thumbnail_url")
     isDeleted    Boolean           @default(false) @map("is_deleted")
+    isViolated   Boolean           @default(false) @map("is_violated")
 
     Chat                    DirectChat            @relation("MessagesOnDirectChat", fields: [directChatId], references: [id])
     Author                  User                  @relation("DirectMessagesAsSender", fields: [authorId], references: [id])
@@ -120,6 +121,7 @@ model DirectMessage {
     ReplyTo                 DirectMessage?        @relation("RepliesOnDirectMessage", fields: [replyToId], references: [id])
     RepliedBy               DirectMessage[]       @relation("RepliesOnDirectMessage")
     PinnedMessages          PinnedDirectMessage[] @relation("PinnedMessagesOnDirectMessage")
+    ReportedMessages        ReportedMessage[]     @relation("ReportedMessageOnDirectMessage")
 
     @@map("direct_messages")
 }
@@ -282,6 +284,61 @@ model UserSettings {
     @@map("user_settings")
 }
 
+model ViolationReport {
+    id             Int            @id @default(autoincrement())
+    reporterUserId Int            @map("reporter_user_id")
+    reportedUserId Int            @map("reported_user_id")
+    reportCategory ReportCategory @map("report_category")
+    reasonText     String?        @map("reason_text")
+    reportStatus   ReportStatus   @default(PENDING) @map("report_status")
+    createdAt      DateTime       @default(now()) @map("created_at")
+
+    ReporterUser     User              @relation("ReportsMade", fields: [reporterUserId], references: [id])
+    ReportedUser     User              @relation("ReportsAbout", fields: [reportedUserId], references: [id])
+    Actions          ViolationAction[] @relation("ReportActions")
+    ReportImages     ReportImage[]     @relation("ReportImages")
+    ReportedMessages ReportedMessage[] @relation("ReportedMessages")
+
+    @@map("violation_reports")
+}
+
+model ReportImage {
+    id       Int    @id @default(autoincrement())
+    reportId Int    @map("report_id")
+    imageUrl String @map("image_url")
+
+    Report ViolationReport @relation("ReportImages", fields: [reportId], references: [id])
+
+    @@map("report_images")
+}
+
+model ViolationAction {
+    id           Int                 @id @default(autoincrement())
+    actionReason String              @map("action_reason")
+    actionType   ViolationActionType @map("action_type")
+    bannedUntil  DateTime?           @map("banned_until")
+    reportId     Int                 @unique @map("report_id")
+    createdAt    DateTime            @default(now()) @map("created_at")
+
+    Report ViolationReport @relation("ReportActions", fields: [reportId], references: [id])
+
+    @@map("violation_actions")
+}
+
+model ReportedMessage {
+    id             Int         @id @default(autoincrement())
+    messageId      Int         @map("message_id")
+    messageType    MessageType @map("message_type")
+    messageContent String      @map("message_content")
+    reportId       Int         @map("report_id")
+    createdAt      DateTime    @default(now()) @map("created_at")
+
+    ReportedMessage DirectMessage   @relation("ReportedMessageOnDirectMessage", fields: [messageId], references: [id])
+    ViolationReport ViolationReport @relation("ReportedMessages", fields: [reportId], references: [id])
+
+    @@map("reported_messages")
+}
+
 enum FriendRequestsStatus {
     PENDING
     ACCEPTED
@@ -311,4 +368,23 @@ enum GroupChatRole {
 enum AppRole {
     USER
     ADMIN
+}
+
+enum ReportCategory {
+    SENSITIVE_CONTENT
+    BOTHER
+    FRAUD
+    OTHER
+}
+
+enum ReportStatus {
+    PENDING
+    RESOLVED
+    DISMISSED
+}
+
+enum ViolationActionType {
+    WARNING
+    TEMPORARY_BAN
+    PERMANENT_BAN
 }
