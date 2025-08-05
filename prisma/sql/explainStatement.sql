@@ -7,7 +7,7 @@ SELECT
     content AS "content",
     created_at AS "createdAt",
     direct_chat_id AS "directChatId"
-FROM direct_messages
+FROM messages
 WHERE
     created_at < $1
 ORDER BY created_at DESC

@@ -37,7 +37,7 @@ export class DeleteMessageService {
         errors: null,
       }
 
-    let updateData: any = { isDeleted: true, content: '' }
+    let updateData: any = { isDeleted: true, content: '', replyToId: null }
     // Nếu là media thì set các trường liên quan về null/rỗng và xoá file trên S3
     if (msg.type === EMessageTypes.MEDIA) {
       if (msg.Media) {
@@ -75,6 +75,20 @@ export class DeleteMessageService {
         fileName: '',
         thumbnailUrl: null,
         stickerUrl: null,
+      }
+    }
+    // Nếu là STICKER thì set stickerUrl thành null
+    else if (msg.type === EMessageTypes.STICKER) {
+      updateData = {
+        ...updateData,
+        stickerUrl: null,
+      }
+    }
+    // Nếu là PIN_NOTICE thì chỉ set content thành rỗng (system message)
+    else if (msg.type === 'PIN_NOTICE') {
+      updateData = {
+        ...updateData,
+        content: '',
       }
     }
     const updated = await this.prisma.message.update({

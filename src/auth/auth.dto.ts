@@ -5,6 +5,7 @@ import type { TUserWithProfile } from '@/utils/entities/user.entity'
 import { EAppRoles } from '@/utils/enums'
 import { Exclude, Type } from 'class-transformer'
 import { IsDate, IsNotEmpty, IsNumber, IsOptional } from 'class-validator'
+import type { User } from '@prisma/client'
 
 export class LoginUserDTO {
   @IsNotEmpty()
@@ -14,14 +15,25 @@ export class LoginUserDTO {
   password: string
 }
 
+export class AdminLoginDTO {
+  @IsNotEmpty()
+  email: string
+
+  @IsNotEmpty()
+  password: string
+}
+
+export class CheckAdminEmailDTO {
+  @IsNotEmpty()
+  email: string
+}
+
 export class CheckAuthDataDTO implements TUserWithProfile {
   id: number
   createdAt: Date
   email: string
   Profile: Omit<TProfile, 'userId'> // this prop cannot be null, if null, it is a bug
   role: EAppRoles
-  isActive: boolean
-  inActiveAt: Date
 
   @Exclude()
   password: string

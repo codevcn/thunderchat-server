@@ -302,17 +302,26 @@ model ViolationAction {
 }
 
 model ReportedMessage {
-    id             Int         @id @default(autoincrement())
-    messageId      Int         @map("message_id")
-    messageType    MessageType @map("message_type")
-    messageContent String      @map("message_content")
-    reportId       Int         @map("report_id")
-    createdAt      DateTime    @default(now()) @map("created_at")
+    id             Int                 @id @default(autoincrement())
+    messageId      Int                 @map("message_id")
+    messageType    ReportedMessageType @map("message_type")
+    messageContent String              @map("message_content")
+    reportId       Int                 @map("report_id")
+    createdAt      DateTime            @default(now()) @map("created_at")
 
     ReportedMessage Message         @relation("ReportedMessageOnMessage", fields: [messageId], references: [id])
     ViolationReport ViolationReport @relation("ReportedMessages", fields: [reportId], references: [id])
 
     @@map("reported_messages")
+}
+
+enum ReportedMessageType {
+    TEXT
+    STICKER
+    IMAGE
+    VIDEO
+    AUDIO
+    DOCUMENT
 }
 
 enum FriendRequestsStatus {

@@ -4,9 +4,11 @@ import { ConfigModule } from '@nestjs/config'
 import { JwtModule } from '@nestjs/jwt'
 import { DirectChatsModule } from './direct-chat/direct-chat.module'
 import { DirectMessageModule } from './direct-message/direct-message.module'
+import { MediaMessageModule } from './direct-message/media-message/media-message.module'
 import { PrismaModule } from './configs/db/prisma.module'
 import { envValidation } from './utils/validation/env.validation'
 import { UserModule } from './user/user.module'
+import { UserReportModule } from './user-report/user-report.module'
 import ms from 'ms'
 import { EventEmitterModule } from '@nestjs/event-emitter'
 import { LoggerModule } from './configs/logger/logger.module'
@@ -42,9 +44,10 @@ import { FriendRequestModule } from './friend-request/friend-request.module'
 import { SearchModule } from './search/search.module'
 import { GroupChatModule } from './group-chat/group-chat.module'
 import { UploadModule } from './upload/upload.module'
-import { StatisticsModule } from './statistics/statistics.module'
+
 import { GroupMemberModule } from './group-member/group-member.module'
 import { DeleteMessageModule } from './direct-message/delete-message/delete-message.module'
+import { AdminModule } from './admin/admin.module'
 
 @Module({
   imports: [
@@ -53,14 +56,16 @@ import { DeleteMessageModule } from './direct-message/delete-message/delete-mess
     GatewayModule,
     DirectChatsModule,
     DirectMessageModule,
+    MediaMessageModule,
     UserModule,
+    UserReportModule,
     FriendRequestModule,
     FriendModule,
     StickersModule,
     SearchModule,
     GroupChatModule,
     UploadModule,
-    StatisticsModule,
+
     GroupMemberModule,
     DevModule,
     ProfileModule,
@@ -68,6 +73,7 @@ import { DeleteMessageModule } from './direct-message/delete-message/delete-mess
     PinDirectChatModule,
     UserSettingsModule,
     DeleteMessageModule,
+    AdminModule,
   ],
 })
 export class AppModule implements NestModule {
