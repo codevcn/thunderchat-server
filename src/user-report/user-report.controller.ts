@@ -15,6 +15,7 @@ import { AuthGuard } from '@/auth/auth.guard'
 import { User } from '@/user/user.decorator'
 import { EUserReportMessages } from './user-report.message'
 import { UserReportExceptionFilter } from './user-report.exception-filter'
+import { DevLogger } from '@/dev/dev-logger'
 
 @Controller('user-report')
 @UseFilters(UserReportExceptionFilter)
@@ -34,6 +35,27 @@ export class UserReportController {
     @UploadedFiles() files?: { reportImages?: Express.Multer.File[] }
   ) {
     const reportImages = files?.reportImages || []
+
+    // Parse reportedMessages from FormData array format
+    if (
+      createViolationReportData.reportedMessages &&
+      typeof createViolationReportData.reportedMessages === 'object'
+    ) {
+      // FormData đã tự động parse thành object, không cần làm gì thêm
+    } else if (typeof createViolationReportData.reportedMessages === 'string') {
+      try {
+        createViolationReportData.reportedMessages = JSON.parse(
+          createViolationReportData.reportedMessages
+        )
+      } catch (error) {
+        return {
+          success: false,
+          error: 'Invalid reportedMessages format',
+          code: 'INVALID_MESSAGES_FORMAT',
+          details: { error: error.message },
+        }
+      }
+    }
 
     // Validate maximum number of report images
     if (reportImages.length > 5) {

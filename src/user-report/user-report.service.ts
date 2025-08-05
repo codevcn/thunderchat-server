@@ -51,7 +51,7 @@ export class UserReportService implements IUserReportService {
         reporterUserId,
         reportedUserId,
         createdAt: {
-          gte: new Date(Date.now() - 60 * 1000),
+          gte: new Date(Date.now() - 10 * 1000),
           // gte: new Date(Date.now() - 24 * 60 * 60 * 1000) // 24 hours ago
         },
       },
