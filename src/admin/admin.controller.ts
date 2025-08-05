@@ -1,42 +1,113 @@
 import {
   Controller,
   Get,
+  Post,
   Put,
   Delete,
-  Param,
   Body,
   Query,
+  Param,
   UseGuards,
+  UseFilters,
   ParseIntPipe,
+  BadRequestException,
 } from '@nestjs/common'
-import { AuthGuard } from '@/auth/auth.guard'
-import { AdminGuard, AdminOnly } from '@/auth/role/admin'
 import { AdminService } from './admin.service'
-import { BanUserDTO, GetAdminUsersDTO, LockUnlockUserDTO, UpdateUserEmailDTO } from './admin.dto'
+import { AuthGuard } from '@/auth/auth.guard'
+import { User } from '@/user/user.decorator'
+import { AdminExceptionFilter } from './admin.exception-filter'
+import {
+  GetAdminUsersDTO,
+  LockUnlockUserDTO,
+  DeleteUserDTO,
+  UpdateUserEmailDTO,
+  GetViolationReportsDTO,
+  GetViolationReportDetailDTO,
+  UpdateViolationReportStatusDTO,
+  BanReportedUserDTO,
+  GetUserReportHistoryDTO,
+} from './admin.dto'
+import { AdminGuard } from '../auth/role/admin/admin.guard'
+import { AdminOnly } from '../auth/role/admin/admin.decorator'
 
 @Controller('admin')
-@UseGuards(AuthGuard, AdminGuard)
+@UseGuards(AuthGuard)
+@UseFilters(AdminExceptionFilter)
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 
   @Get('users')
-  @AdminOnly()
-  async getUsers(@Query() params: GetAdminUsersDTO) {
-    return await this.adminService.getUsers(params)
+  async getUsers(@Query() query: GetAdminUsersDTO) {
+    return this.adminService.getUsers(query)
   }
 
-  @Put('/users/lock-unlock')
-  @AdminOnly()
-  async lockUnlockUser(@Body() body: LockUnlockUserDTO) {
-    return await this.adminService.lockUnlockUser(body.userId, body.isActive)
+  @Put('users/:userId/lock')
+  async lockUnlockUser(@Param('userId') userId: string, @Body() body: LockUnlockUserDTO) {
+    return this.adminService.lockUnlockUser(parseInt(userId), body.isActive)
   }
 
-  @Put('/users/:id/email')
-  @AdminOnly()
-  async updateUserEmail(
-    @Param('id', ParseIntPipe) userId: number,
-    @Body() body: UpdateUserEmailDTO
+  @Put('users/:userId/email')
+  async updateUserEmail(@Param('userId') userId: string, @Body() body: UpdateUserEmailDTO) {
+    return this.adminService.updateUserEmail(parseInt(userId), body.email)
+  }
+
+  // Violation Reports Endpoints
+  @Get('violation-reports')
+  async getViolationReports(@Query() query: GetViolationReportsDTO) {
+    return this.adminService.getViolationReports({
+      page: query.page || 1,
+      limit: query.limit || 10,
+      search: query.search,
+      status: query.status || 'ALL',
+      category: query.category || 'ALL',
+      startDate: query.startDate,
+      endDate: query.endDate,
+      sortBy: query.sortBy || 'createdAt',
+      sortOrder: query.sortOrder || 'desc',
+    })
+  }
+
+  @Get('violation-reports/:reportId')
+  async getViolationReportDetail(@Param() params: GetViolationReportDetailDTO) {
+    return this.adminService.getViolationReportDetail(params.reportId)
+  }
+
+  @Put('violation-reports/:reportId/status')
+  async updateViolationReportStatus(
+    @Param('reportId') reportId: string,
+    @Body() body: UpdateViolationReportStatusDTO
   ) {
-    return await this.adminService.updateUserEmail(userId, body.email)
+    return this.adminService.updateViolationReportStatus(parseInt(reportId), body.status)
+  }
+
+  @Post('violation-reports/:reportId/ban-user')
+  async banReportedUser(@Param('reportId') reportId: string, @Body() body: BanReportedUserDTO) {
+    return this.adminService.banReportedUser(
+      parseInt(reportId),
+      body.banType,
+      body.reason,
+      body.banDuration
+    )
+  }
+
+  @Get('users/:userId/report-history')
+  @UseGuards(AuthGuard, AdminGuard)
+  @AdminOnly()
+  async getUserReportHistory(
+    @Param('userId', ParseIntPipe) userId: number,
+    @Query() query: GetUserReportHistoryDTO
+  ) {
+    const result = await this.adminService.getUserReportHistory({
+      userId,
+      type: query.type,
+      page: query.page,
+      limit: query.limit,
+    })
+
+    if (!result.success) {
+      throw new BadRequestException(result.message)
+    }
+
+    return result.data
   }
 }

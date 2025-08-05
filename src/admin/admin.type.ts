@@ -42,3 +42,129 @@ export type TUpdateUserEmailResponse = {
   message: string
   error?: string
 }
+
+// Violation Reports Types - Updated to match Prisma schema
+export type TViolationReportStatus = 'PENDING' | 'RESOLVED' | 'DISMISSED'
+export type TViolationReportCategory = 'SENSITIVE_CONTENT' | 'BOTHER' | 'FRAUD' | 'OTHER'
+
+export type TViolationReportEvidence = {
+  images: number
+  messages: number
+}
+
+export type TViolationReport = {
+  id: number
+  reporterId: number
+  reporterName: string
+  reporterEmail: string
+  reportedUserId: number
+  reportedUserName: string
+  reportedUserEmail: string
+  reportCategory: TViolationReportCategory
+  reasonText?: string | null
+  status: TViolationReportStatus
+  evidenceCount: TViolationReportEvidence
+  createdAt: string
+  updatedAt: string
+}
+
+export type TViolationReportDetail = {
+  id: number
+  reporterId: number
+  reporterName: string
+  reporterEmail: string
+  reportedUserId: number
+  reportedUserName: string
+  reportedUserEmail: string
+  reportCategory: TViolationReportCategory
+  reasonText?: string | null
+  status: TViolationReportStatus
+  evidenceCount: TViolationReportEvidence
+  reportImages: Array<{
+    id: number
+    imageUrl: string
+    createdAt: string
+  }>
+  reportedMessages: Array<{
+    id: number
+    messageId: number
+    messageType: string
+    messageContent: string
+    createdAt: string
+  }>
+  createdAt: string
+  updatedAt: string
+}
+
+export type TViolationReportsData = {
+  reports: TViolationReport[]
+  pagination: {
+    currentPage: number
+    totalPages: number
+    totalItems: number
+    itemsPerPage: number
+    hasNextPage: boolean
+    hasPrevPage: boolean
+  }
+  statistics: {
+    total: number
+    pending: number
+    resolved: number
+    dismissed: number
+  }
+}
+
+export type TGetViolationReportsParams = {
+  page: number
+  limit: number
+  search?: string
+  status?: TViolationReportStatus | 'ALL'
+  category?: TViolationReportCategory | 'ALL'
+  startDate?: string
+  endDate?: string
+  sortBy?: 'createdAt' | 'updatedAt'
+  sortOrder?: 'asc' | 'desc'
+}
+
+export type TUpdateViolationReportStatusResponse = {
+  success: boolean
+  message: string
+  error?: string
+}
+
+export type TBanUserResponse = {
+  success: boolean
+  message: string
+  error?: string
+}
+
+export type TUserReportHistoryItem = {
+  id: number
+  reportCategory: TViolationReportCategory
+  status: TViolationReportStatus
+  createdAt: string
+  reasonText: string | null
+  // For 'reported' type (reports made by user)
+  reportedUserName?: string
+  reportedUserEmail?: string
+  // For 'reportedBy' type (reports about user)
+  reporterName?: string
+  reporterEmail?: string
+}
+
+export type TUserReportHistoryData = {
+  reports: TUserReportHistoryItem[]
+  pagination: {
+    page: number
+    limit: number
+    total: number
+    totalPages: number
+  }
+}
+
+export type TGetUserReportHistoryParams = {
+  userId: number
+  type: 'reported' | 'reportedBy'
+  page?: number
+  limit?: number
+}
