@@ -1,8 +1,12 @@
 import crypto from 'crypto'
 import path from 'path'
 import { Worker } from 'worker_threads'
-import type { TOnPreRetry, TRetryRequestExecutor, TRetryRequestOptions } from './types'
+import type { TRetryRequestOptions } from './types'
 import validator from 'validator'
+import { Express } from 'express'
+import { fileTypeFromBuffer, FileTypeResult } from 'file-type'
+import { EMessageMediaTypes } from '@/direct-message/direct-message.enum'
+import { EGlobalMessages } from './enums'
 
 /**
  * Mã hóa tên file, đầu ra có độ dài tối đa 64 ký tự
@@ -83,4 +87,54 @@ export function replaceHTMLTagInMessageContent(input: string): string {
   // Regex kiểm tra thẻ HTML mở hoặc đóng
   const htmlTagRegex = /<([a-z][\w-]*)(\s[^>]*)?>.*?<\/\1>|<([a-z][\w-]*)(\s[^>]*)?\/?>/g
   return input.replace(htmlTagRegex, '(Media)')
+}
+
+/**
+ * Xác định loại file từ buffer của file
+ * @param {Express.Multer.File} file - File để xác định loại
+ * @returns {Promise<EMessageMediaTypes>} Loại file
+ */
+export async function detectFileType(file: Express.Multer.File): Promise<EMessageMediaTypes> {
+  const fileType: FileTypeResult | undefined = await fileTypeFromBuffer(file.buffer)
+
+  if (!fileType) throw new Error(EGlobalMessages.UNKNOWN_FILE_TYPE)
+
+  const mime = fileType.mime
+
+  if (mime.startsWith('image/')) return EMessageMediaTypes.IMAGE
+  if (mime.startsWith('video/')) return EMessageMediaTypes.VIDEO
+  if (mime.startsWith('audio/')) return EMessageMediaTypes.AUDIO
+
+  // Kiểm tra document (pdf, word, excel...)
+  if (
+    mime === 'application/pdf' ||
+    mime === 'application/msword' ||
+    mime === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+    mime === 'application/vnd.ms-excel' ||
+    mime === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+  ) {
+    return EMessageMediaTypes.DOCUMENT
+  }
+
+  throw new Error(EGlobalMessages.UNKNOWN_FILE_TYPE)
+}
+
+/**
+ * Định dạng kích thước file
+ * @param {number} bytes - Kích thước file
+ * @param {number} decimals - Số chữ số thập phân
+ * @returns {string} Kích thước file đã được định dạng
+ */
+export function formatBytes(bytes: number, decimals = 2): string {
+  if (bytes === 0) return '0 Bytes'
+
+  const k = 1024
+  const dm = decimals < 0 ? 0 : decimals
+
+  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB']
+
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  const value = parseFloat((bytes / Math.pow(k, i)).toFixed(dm))
+
+  return `${value} ${sizes[i]}`
 }

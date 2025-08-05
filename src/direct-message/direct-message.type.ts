@@ -1,7 +1,4 @@
-import type {
-  TDirectMessage,
-  TDirectMessageWithAuthorAndReplyTo,
-} from '@/utils/entities/direct-message.entity'
+import type { TMessage, TMessageWithAuthorAndReplyTo } from '@/utils/entities/message.entity'
 import type { EMessageStatus } from '@/utils/enums'
 import type { EMessageTypes } from '@/utils/enums'
 
@@ -23,11 +20,9 @@ export type TMsgStatusPayload = {
   status: EMessageStatus
 }
 
-export type TMessageOffset = TDirectMessage['id']
+export type TMessageOffset = TMessage['id']
 
-export type TMessageUpdates = Partial<
-  Omit<TDirectMessage, 'id' | 'createdAt' | 'updatedAt' | 'content'>
->
+export type TMessageUpdates = Partial<Omit<TMessage, 'id' | 'createdAt' | 'updatedAt' | 'content'>>
 
 export type TSendMessageDto = {
   content?: string
@@ -35,4 +30,4 @@ export type TSendMessageDto = {
   mediaUrl?: string
 }
 
-export type TGetDirectMessagesMessage = TDirectMessageWithAuthorAndReplyTo
+export type TGetDirectMessagesMessage = TMessageWithAuthorAndReplyTo

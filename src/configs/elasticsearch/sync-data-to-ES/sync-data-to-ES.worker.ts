@@ -5,7 +5,7 @@ import {
   WorkerInputDataException,
   WorkerResponseException,
 } from '@/utils/exceptions/system.exception'
-import type { TDirectMessage } from '@/utils/entities/direct-message.entity'
+import type { TMessage } from '@/utils/entities/message.entity'
 import type { TUserWithProfile } from '@/utils/entities/user.entity'
 import type { TWorkerResponse } from '@/utils/types'
 import { isMainThread, parentPort } from 'worker_threads'
@@ -22,6 +22,7 @@ import UserMessageEncryptor from '@/direct-message/security/es-message-encryptor
 import type { TMessageESMapping, TUserESMapping } from '@/configs/elasticsearch/elasticsearch.type'
 import { SymmetricEncryptor } from '@/utils/crypto/symmetric-encryption.crypto'
 import { measureTime } from '@/dev/helpers'
+import { NotFoundException } from '@nestjs/common'
 
 type TCheckInputDataResult = {
   messageData: SyncDataToESWorkerMessageDTO
@@ -34,10 +35,33 @@ class SyncDataToESHandler {
 
   constructor(private ESClient: Client) {}
 
-  recursiveCreateUpdateMessage = async (queryResult: TDirectMessage): Promise<void> => {
+  recursiveCreateUpdateMessage = async (
+    queryResult: TMessage,
+    prismaClient: PrismaClient
+  ): Promise<void> => {
     try {
       await retryAsyncRequest(
         async () => {
+          let validUserIds: number[] = []
+          const { directChatId, recipientId, groupChatId, authorId } = queryResult
+          if (directChatId && recipientId) {
+            validUserIds = [recipientId, authorId]
+          } else if (groupChatId) {
+            const groupChat = await prismaClient.groupChat.findUnique({
+              where: { id: groupChatId },
+              select: {
+                Members: {
+                  select: {
+                    userId: true,
+                  },
+                },
+              },
+            })
+            if (!groupChat) {
+              throw new NotFoundException(ESyncDataToESMessages.GROUP_CHAT_NOT_FOUND)
+            }
+            validUserIds = groupChat.Members.map((member) => member.userId)
+          }
           await this.ESClient.index({
             index: EESIndexes.DIRECT_MESSAGES,
             id: queryResult.id.toString(),
@@ -46,7 +70,7 @@ class SyncDataToESHandler {
               content: replaceHTMLTagInMessageContent(queryResult.content),
               original_content: queryResult.content,
               message_type: queryResult.type as EMessageTypes,
-              valid_user_ids: [queryResult.authorId, queryResult.recipientId],
+              valid_user_ids: validUserIds,
               created_at: queryResult.createdAt.toISOString(),
             }),
           })
@@ -80,7 +104,7 @@ class SyncDataToESHandler {
   }
 
   recursiveSyncAllUsersAndMessages = async (prismaClient: PrismaClient): Promise<void> => {
-    const messages = await prismaClient.directMessage.findMany()
+    const messages = await prismaClient.message.findMany()
     const users = await prismaClient.user.findMany({
       include: {
         Profile: true,
@@ -89,36 +113,65 @@ class SyncDataToESHandler {
     console.log('messages count: ', messages.length)
     console.log('users count: ', users.length)
     console.log('start sync messages')
-    measureTime(async () => {
-      for (const message of messages) {
-        const content = message.content
-        await this.ESClient.index({
-          index: EESIndexes.DIRECT_MESSAGES,
-          id: message.id.toString(),
-          document: typeToRawObject<TMessageESMapping>({
-            doc_id: message.id,
-            content: replaceHTMLTagInMessageContent(content),
-            original_content: content,
-            valid_user_ids: [message.authorId, message.recipientId],
-            message_type: message.type as EMessageTypes,
-            created_at: message.createdAt.toISOString(),
-          }),
-        })
-      }
-    })
-    measureTime(async () => {
-      for (const user of users) {
+    await Promise.all(
+      messages.map(
+        async ({
+          directChatId,
+          recipientId,
+          groupChatId,
+          authorId,
+          content,
+          type,
+          createdAt,
+          id,
+        }) => {
+          let validUserIds: number[] = []
+          if (directChatId && recipientId) {
+            validUserIds = [recipientId, authorId]
+          } else if (groupChatId) {
+            const groupChat = await prismaClient.groupChat.findUnique({
+              where: { id: groupChatId },
+              select: {
+                Members: {
+                  select: {
+                    userId: true,
+                  },
+                },
+              },
+            })
+            if (!groupChat) {
+              throw new NotFoundException(ESyncDataToESMessages.GROUP_CHAT_NOT_FOUND)
+            }
+            validUserIds = groupChat.Members.map((member) => member.userId)
+          }
+          await this.ESClient.index({
+            index: EESIndexes.DIRECT_MESSAGES,
+            id: id.toString(),
+            document: typeToRawObject<TMessageESMapping>({
+              doc_id: id,
+              content: replaceHTMLTagInMessageContent(content),
+              original_content: content,
+              valid_user_ids: validUserIds,
+              message_type: type as EMessageTypes,
+              created_at: createdAt.toISOString(),
+            }),
+          })
+        }
+      )
+    )
+    await Promise.all(
+      users.map(async ({ id, email, Profile }) => {
         await this.ESClient.index({
           index: EESIndexes.USERS,
-          id: user.id.toString(),
+          id: id.toString(),
           document: typeToRawObject<TUserESMapping>({
-            doc_id: user.id,
-            full_name: user.Profile?.fullName || '',
-            email: user.email,
+            doc_id: id,
+            full_name: Profile?.fullName || '',
+            email: email,
           }),
         })
-      }
-    })
+      })
+    )
   }
 }
 
@@ -216,10 +269,10 @@ const runWorker = async (workerData: SyncDataToESWorkerMessageDTO): Promise<void
 
   switch (type) {
     case ESyncDataToESWorkerType.CREATE_MESSAGE:
-      await syncDataToESHandler.recursiveCreateUpdateMessage(data as TDirectMessage)
+      await syncDataToESHandler.recursiveCreateUpdateMessage(data as TMessage, prismaClient)
       break
     case ESyncDataToESWorkerType.UPDATE_MESSAGE:
-      await syncDataToESHandler.recursiveCreateUpdateMessage(data as TDirectMessage)
+      await syncDataToESHandler.recursiveCreateUpdateMessage(data as TMessage, prismaClient)
       break
     case ESyncDataToESWorkerType.CREATE_USER:
       await syncDataToESHandler.recursiveCreateUpdateUser(data as TUserWithProfile)

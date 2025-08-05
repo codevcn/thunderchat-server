@@ -4,7 +4,6 @@ import { ElasticsearchService } from '@/configs/elasticsearch/elasticsearch.serv
 import { DirectMessageService } from '@/direct-message/direct-message.service'
 import { UserService } from '@/user/user.service'
 import { replaceHTMLTagInMessageContent } from '@/utils/helpers'
-import { GroupMessageService } from '@/group-message/group-message.service'
 import { EChatType } from '@/utils/enums'
 import { SocketService } from '@/gateway/socket/socket.service'
 
@@ -13,7 +12,6 @@ export class SearchService {
   constructor(
     private elasticSearchService: ElasticsearchService,
     private directMessageService: DirectMessageService,
-    private groupMessageService: GroupMessageService,
     private userService: UserService,
     private socketService: SocketService
   ) {}
@@ -38,34 +36,34 @@ export class SearchService {
       }))
     const messageIds = messageIdObjects.map((message) => message.id)
     const userIds = userHits.filter((user) => !!user._source).map((user) => parseInt(user._id!))
-    // find direct messages and users by ids in database
-    const [directMessages, groupMessages, users] = await Promise.all([
+    // find messages and users by ids in database
+    const [messages, users] = await Promise.all([
       this.directMessageService.findMessagesByIds(messageIds, limit),
-      this.groupMessageService.findMessagesByIds(messageIds, limit),
       this.userService.findUsersByIdsNotSelfUser(userIds, selfUserId, limit),
     ])
-    const finalMessages = [
-      ...directMessages.map(({ id, Recipient, content, directChatId, createdAt }) => ({
-        id,
-        avatarUrl: Recipient.Profile!.avatar || undefined,
-        conversationName: Recipient.Profile!.fullName,
-        messageContent: replaceHTMLTagInMessageContent(content),
-        highlights: messageIdObjects.find((m) => m.id === id)!.highlight?.content || [],
-        chatType: EChatType.DIRECT,
-        chatId: directChatId,
-        createdAt: createdAt.toISOString(),
-      })),
-      ...groupMessages.map(({ id, GroupChat, content, groupChatId, createdAt }) => ({
-        id,
-        avatarUrl: GroupChat.avatarUrl || undefined,
-        conversationName: GroupChat.name,
-        messageContent: replaceHTMLTagInMessageContent(content),
-        highlights: messageIdObjects.find((m) => m.id === id)!.highlight?.content || [],
-        chatType: EChatType.GROUP,
-        chatId: groupChatId,
-        createdAt: createdAt.toISOString(),
-      })),
-    ]
+    const finalMessages = messages.map<TGlobalSearchData['messages'][number]>(
+      ({ id, GroupChat, content, directChatId, groupChatId, createdAt, Recipient }) => {
+        let avatarUrl: string | undefined,
+          conversationName: string = ''
+        if (Recipient) {
+          avatarUrl = Recipient.Profile!.avatar || undefined
+          conversationName = Recipient.Profile!.fullName
+        } else {
+          avatarUrl = GroupChat!.Members[0].User.Profile!.avatar || undefined
+          conversationName = GroupChat!.name
+        }
+        return {
+          id,
+          avatarUrl,
+          conversationName,
+          messageContent: replaceHTMLTagInMessageContent(content),
+          highlights: messageIdObjects.find((m) => m.id === id)!.highlight?.content || [],
+          chatType: directChatId ? EChatType.DIRECT : EChatType.GROUP,
+          chatId: (directChatId || groupChatId)!,
+          createdAt: createdAt.toISOString(),
+        }
+      }
+    )
     const finalUsers = users.map((user) => ({
       ...user,
       isOnline: this.socketService.checkUserOnlineStatus(user.id),

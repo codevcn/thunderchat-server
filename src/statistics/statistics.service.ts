@@ -72,8 +72,8 @@ export class StatisticsService implements IStatisticsService {
     // Thống kê tổng quan
     const [chatCount, messageCount, fileCount, userCount] = await Promise.all([
       this.PrismaService.directChat.count({ where: whereCondition }),
-      this.PrismaService.directMessage.count({ where: whereCondition }),
-      this.PrismaService.directMessage.count({
+      this.PrismaService.message.count({ where: whereCondition }),
+      this.PrismaService.message.count({
         where: {
           ...whereCondition,
           mediaUrl: { not: null },
@@ -128,7 +128,7 @@ export class StatisticsService implements IStatisticsService {
             MAX(dm."created_at") as last_active
          FROM "users" u
          LEFT JOIN "direct_chats" dc ON (u.id = dc."creator_id" OR u.id = dc."recipient_id")
-         LEFT JOIN "direct_messages" dm ON u.id = dm."author_id"
+         LEFT JOIN "messages" dm ON u.id = dm."author_id"
          ${whereClause}
          GROUP BY u.id, u.email
          ORDER BY total_messages DESC
@@ -157,7 +157,7 @@ export class StatisticsService implements IStatisticsService {
             MAX(dm."created_at") as last_active
          FROM "users" u
          LEFT JOIN "direct_chats" dc ON (u.id = dc."creator_id" OR u.id = dc."recipient_id")
-         LEFT JOIN "direct_messages" dm ON u.id = dm."author_id"
+         LEFT JOIN "messages" dm ON u.id = dm."author_id"
          GROUP BY u.id, u.email
          ORDER BY total_messages DESC
          LIMIT ${limit}

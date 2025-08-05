@@ -1,10 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common'
 import { PrismaService } from '../configs/db/prisma.service'
 import { EProviderTokens, ESyncDataToESWorkerType } from '@/utils/enums'
-import type {
-  TDirectMessage,
-  TDirectMessageWithRecipient,
-} from '@/utils/entities/direct-message.entity'
+import type { TMessage, TMessageWithRecipients } from '@/utils/entities/message.entity'
 import { EMessageStatus, EMessageTypes, ESortTypes } from '@/direct-message/direct-message.enum'
 import dayjs from 'dayjs'
 import type {
@@ -40,8 +37,8 @@ export class DirectMessageService {
     private syncDataToESService: SyncDataToESService
   ) {}
 
-  async fidMsgById(msgId: number): Promise<TDirectMessage | null> {
-    return await this.PrismaService.directMessage.findUnique({
+  async fidMsgById(msgId: number): Promise<TMessage | null> {
+    return await this.PrismaService.message.findUnique({
       where: { id: msgId },
       include: {
         ReplyTo: true,
@@ -56,15 +53,15 @@ export class DirectMessageService {
     directChatId: number,
     recipientId: number,
     type: EMessageTypes = EMessageTypes.TEXT,
-    stickerUrl?: string,
-    mediaUrl?: string,
+    stickerId?: number,
+    mediaId?: number,
     fileName?: string,
     thumbnailUrl?: string,
     replyToId?: number
   ): Promise<TGetDirectMessagesMessage> {
     // Kiểm tra quyền gửi tin nhắn 1-1
     await canSendDirectMessage(this.PrismaService, authorId, recipientId)
-    const message = await this.PrismaService.directMessage.create({
+    const message = await this.PrismaService.message.create({
       data: {
         content: encryptedContent,
         authorId,
@@ -72,9 +69,9 @@ export class DirectMessageService {
         directChatId,
         status: EMessageStatus.SENT,
         type,
-        stickerUrl,
+        stickerId,
         recipientId,
-        ...(mediaUrl && { mediaUrl: mediaUrl as any }),
+        ...(mediaId && { mediaId }),
         ...(fileName && { fileName }),
         ...(thumbnailUrl && { thumbnailUrl }),
         ...(replyToId && { replyToId }),
@@ -89,8 +86,8 @@ export class DirectMessageService {
     return message
   }
 
-  async updateMsg(msgId: number, updates: TMessageUpdates): Promise<TDirectMessage> {
-    const message = await this.PrismaService.directMessage.update({
+  async updateMsg(msgId: number, updates: TMessageUpdates): Promise<TMessage> {
+    const message = await this.PrismaService.message.update({
       where: { id: msgId },
       data: updates,
     })
@@ -114,7 +111,7 @@ export class DirectMessageService {
       'limit:',
       limit
     )
-    const messages = await this.PrismaService.directMessage.findMany({
+    const messages = await this.PrismaService.message.findMany({
       where: {
         directChatId,
         id: {
@@ -155,7 +152,7 @@ export class DirectMessageService {
     limit: number,
     equalOffset: boolean
   ): Promise<TGetDirectMessagesMessage[]> {
-    return await this.PrismaService.directMessage.findMany({
+    return await this.PrismaService.message.findMany({
       where: {
         id: {
           [equalOffset ? 'lte' : 'lt']: messageOffset,
@@ -205,14 +202,14 @@ export class DirectMessageService {
     }
   }
 
-  async updateMessageStatus(msgId: number, status: EMessageStatus): Promise<TDirectMessage> {
+  async updateMessageStatus(msgId: number, status: EMessageStatus): Promise<TMessage> {
     return await this.updateMsg(msgId, {
       status,
     })
   }
 
-  async findMessagesByIds(ids: number[], limit: number): Promise<TDirectMessageWithRecipient[]> {
-    return await this.PrismaService.directMessage.findMany({
+  async findMessagesByIds(ids: number[], limit: number): Promise<TMessageWithRecipients[]> {
+    return await this.PrismaService.message.findMany({
       where: {
         id: { in: ids },
       },
@@ -222,10 +219,24 @@ export class DirectMessageService {
             Profile: true,
           },
         },
+        GroupChat: {
+          include: {
+            Members: {
+              include: {
+                User: {
+                  include: {
+                    Profile: true,
+                  },
+                },
+              },
+            },
+          },
+        },
       },
       take: limit,
     })
   }
+
   async getMediaMessages(
     directChatId: number,
     limit: number,
@@ -233,7 +244,7 @@ export class DirectMessageService {
     sortType: ESortTypes = ESortTypes.TIME_ASC
   ) {
     // Lấy tất cả message KHÔNG PHẢI TEXT
-    return this.PrismaService.directMessage.findMany({
+    return this.PrismaService.message.findMany({
       where: {
         directChatId,
         type: {
@@ -255,11 +266,11 @@ export class DirectMessageService {
     sortType: ESortTypes = ESortTypes.TIME_ASC
   ) {
     // Lấy chỉ voice messages
-    const voiceMessages = await this.PrismaService.directMessage.findMany({
+    const voiceMessages = await this.PrismaService.message.findMany({
       where: {
         directChatId,
-        type: EMessageTypes.AUDIO,
-        mediaUrl: {
+        type: EMessageTypes.MEDIA,
+        mediaId: {
           not: null,
         },
       },
@@ -279,7 +290,7 @@ export class DirectMessageService {
   async getMessageContext(messageId: number) {
     console.log('[getMessageContext] Nhận yêu cầu lấy context cho messageId:', messageId)
     // 1. Lấy tin nhắn trung tâm (tin nhắn muốn dẫn tới)
-    const centerMsg = await this.PrismaService.directMessage.findUnique({
+    const centerMsg = await this.PrismaService.message.findUnique({
       where: { id: messageId },
       include: this.messageIncludeReplyToAndAuthor,
     })
@@ -295,7 +306,7 @@ export class DirectMessageService {
     )
 
     // 2. Lấy 10 tin nhắn trước
-    const prevMsgs = await this.PrismaService.directMessage.findMany({
+    const prevMsgs = await this.PrismaService.message.findMany({
       where: {
         directChatId: centerMsg.directChatId,
         createdAt: { lt: centerMsg.createdAt },
@@ -305,7 +316,7 @@ export class DirectMessageService {
       include: this.messageIncludeReplyToAndAuthor,
     })
     // 3. Lấy 10 tin nhắn sau
-    const nextMsgs = await this.PrismaService.directMessage.findMany({
+    const nextMsgs = await this.PrismaService.message.findMany({
       where: {
         directChatId: centerMsg.directChatId,
         createdAt: { gt: centerMsg.createdAt },

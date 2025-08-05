@@ -1,5 +1,5 @@
 import type { TDirectChat } from '@/utils/entities/direct-chat.entity'
-import type { TDirectMessage } from '@/utils/entities/direct-message.entity'
+import type { TMessage } from '@/utils/entities/message.entity'
 import type { TUserWithProfile } from '@/utils/entities/user.entity'
 
 export type TSearchDirectChatParams = {
@@ -18,7 +18,7 @@ export type TUpdateDirectChatData = Partial<{
 }>
 
 export type TFetchDirectChatsData = TDirectChat & {
-  LastSentMessage: TDirectMessage | null
+  LastSentMessage: TMessage | null
   Recipient: TUserWithProfile
   Creator: TUserWithProfile
 }

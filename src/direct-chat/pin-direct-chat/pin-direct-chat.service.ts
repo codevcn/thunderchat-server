@@ -38,7 +38,7 @@ export class PinDirectChatService {
 
     if (isPinned) {
       // Kiểm tra xem cuộc trò chuyện đã được ghim chưa
-      const existingPin = await this.prismaService.pinnedDirectChat.findFirst({
+      const existingPin = await this.prismaService.pinnedChat.findFirst({
         where: {
           directChatId,
           pinnedBy: userId,
@@ -50,7 +50,7 @@ export class PinDirectChatService {
       }
 
       // Đếm số lượng cuộc trò chuyện đã ghim của user
-      const count = await this.prismaService.pinnedDirectChat.count({
+      const count = await this.prismaService.pinnedChat.count({
         where: {
           pinnedBy: userId,
         },
@@ -61,7 +61,7 @@ export class PinDirectChatService {
       }
 
       // Tạo pin mới
-      const pinnedDirectChat = await this.prismaService.pinnedDirectChat.create({
+      const pinnedDirectChat = await this.prismaService.pinnedChat.create({
         data: {
           directChatId,
           pinnedBy: userId,
@@ -91,7 +91,7 @@ export class PinDirectChatService {
       return pinnedDirectChat
     } else {
       // Bỏ ghim - xóa record trong PinnedDirectChat
-      const deletedPin = await this.prismaService.pinnedDirectChat.deleteMany({
+      const deletedPin = await this.prismaService.pinnedChat.deleteMany({
         where: {
           directChatId,
           pinnedBy: userId,
@@ -117,7 +117,7 @@ export class PinDirectChatService {
    * @param userId ID của user
    */
   async getPinnedDirectChats(userId: number) {
-    return this.prismaService.pinnedDirectChat.findMany({
+    return this.prismaService.pinnedChat.findMany({
       where: {
         pinnedBy: userId,
       },
@@ -143,7 +143,7 @@ export class PinDirectChatService {
    * @param userId ID của user
    */
   async getPinnedDirectChatsCount(userId: number) {
-    return this.prismaService.pinnedDirectChat.count({
+    return this.prismaService.pinnedChat.count({
       where: {
         pinnedBy: userId,
       },
@@ -156,7 +156,7 @@ export class PinDirectChatService {
    * @param userId ID của user
    */
   async isDirectChatPinned(directChatId: number, userId: number) {
-    const pinnedDirectChat = await this.prismaService.pinnedDirectChat.findFirst({
+    const pinnedDirectChat = await this.prismaService.pinnedChat.findFirst({
       where: {
         directChatId,
         pinnedBy: userId,
@@ -171,7 +171,7 @@ export class PinDirectChatService {
    * @param userId ID của user
    */
   async getPinnedDirectChatDetail(directChatId: number, userId: number) {
-    return this.prismaService.pinnedDirectChat.findFirst({
+    return this.prismaService.pinnedChat.findFirst({
       where: {
         directChatId,
         pinnedBy: userId,

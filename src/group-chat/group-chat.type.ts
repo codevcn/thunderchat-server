@@ -1,6 +1,6 @@
 import type { TGroupChat } from '@/utils/entities/group-chat.entity'
-import type { TGroupMessage } from '@/utils/entities/group-message.entity'
 import type { TUserWithProfile } from '@/utils/entities/user.entity'
+import type { TMessage } from '@/utils/entities/message.entity'
 
 export type TFetchGroupChatData = TGroupChat
 
@@ -9,6 +9,6 @@ export type TUploadGroupChatAvatar = {
 }
 
 export type TFetchGroupChatsData = TGroupChat & {
-  LastSentMessage: TGroupMessage | null
+  LastSentMessage: TMessage | null
   Creator: TUserWithProfile
 }

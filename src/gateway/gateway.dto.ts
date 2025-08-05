@@ -1,4 +1,4 @@
-import { EMessageTypes } from '@/direct-message/direct-message.enum'
+import { EMessageMediaTypes, EMessageTypes } from '@/direct-message/direct-message.enum'
 import { ToBoolean } from '@/utils/validation/transformers'
 import { Type } from 'class-transformer'
 import {
@@ -11,6 +11,7 @@ import {
   IsUUID,
   ValidateNested,
 } from 'class-validator'
+import { EMessageTypesFromClient } from './gateway.enum'
 
 export class SendDirectMessagePayloadDTO {
   @IsNumber()
@@ -44,9 +45,9 @@ export class SendDirectMessagePayloadDTO {
 }
 
 export class SendDirectMessageDTO {
-  @IsEnum(EMessageTypes)
+  @IsEnum(EMessageTypesFromClient)
   @IsNotEmpty()
-  type: EMessageTypes
+  type: EMessageTypesFromClient
 
   @IsNotEmpty()
   @ValidateNested()

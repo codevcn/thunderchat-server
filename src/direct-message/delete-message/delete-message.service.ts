@@ -16,7 +16,10 @@ export class DeleteMessageService {
   ) {}
 
   async recallMessage(msgId: number, userId: number): Promise<TDeleteMessageResult> {
-    const msg = await this.prisma.directMessage.findUnique({ where: { id: msgId } })
+    const msg = await this.prisma.message.findUnique({
+      where: { id: msgId },
+      include: { Media: true },
+    })
     if (!msg)
       return {
         success: false,
@@ -36,17 +39,10 @@ export class DeleteMessageService {
 
     let updateData: any = { isDeleted: true, content: '' }
     // Nếu là media thì set các trường liên quan về null/rỗng và xoá file trên S3
-    if (
-      [
-        EMessageTypes.IMAGE,
-        EMessageTypes.VIDEO,
-        EMessageTypes.DOCUMENT,
-        EMessageTypes.AUDIO,
-      ].includes(msg.type as any)
-    ) {
-      if (msg.mediaUrl) {
+    if (msg.type === EMessageTypes.MEDIA) {
+      if (msg.Media) {
         try {
-          await this.uploadService.deleteFileByUrl(msg.mediaUrl)
+          await this.uploadService.deleteFileByUrl(msg.Media.url)
         } catch (err) {
           // log lỗi nhưng vẫn tiếp tục
           return {
@@ -59,9 +55,9 @@ export class DeleteMessageService {
         }
       }
       // Nếu là VIDEO, xoá thêm thumbnailUrl
-      if (msg.type === EMessageTypes.VIDEO && msg.thumbnailUrl) {
+      if (msg.type === EMessageTypes.MEDIA && msg.Media) {
         try {
-          await this.uploadService.deleteFileByUrl(msg.thumbnailUrl)
+          await this.uploadService.deleteFileByUrl(msg.Media.thumbnailUrl)
         } catch (err) {
           // log lỗi nhưng vẫn tiếp tục
           return {
@@ -81,12 +77,12 @@ export class DeleteMessageService {
         stickerUrl: null,
       }
     }
-    const updated = await this.prisma.directMessage.update({
+    const updated = await this.prisma.message.update({
       where: { id: msgId },
       data: updateData,
     })
     this.socketService.emitToDirectChat(
-      updated.directChatId,
+      (updated.directChatId || updated.groupChatId)!,
       EClientSocketEvents.send_message_direct,
       updated
     )

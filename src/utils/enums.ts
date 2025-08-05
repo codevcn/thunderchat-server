@@ -83,3 +83,7 @@ export enum EAppRoles {
   USER = 'USER',
   ADMIN = 'ADMIN',
 }
+
+export enum EGlobalMessages {
+  UNKNOWN_FILE_TYPE = 'Unknown file type',
+}

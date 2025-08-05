@@ -18,7 +18,7 @@ export class TempController {
 
   @Get('dl-all-msg')
   async deleteAllMessages() {
-    await this.PrismaService.directMessage.deleteMany()
+    await this.PrismaService.message.deleteMany()
   }
 
   @Post('all-msg')

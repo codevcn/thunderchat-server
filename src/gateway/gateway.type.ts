@@ -3,7 +3,7 @@ import type { IEmitSocketEvents } from './gateway.interface'
 import type { TUserId } from '@/user/user.type'
 import type { TDirectChat } from '@/utils/entities/direct-chat.entity'
 import type { TSuccess } from '@/utils/types'
-import type { TDirectMessageWithAuthorAndReplyTo } from '@/utils/entities/direct-message.entity'
+import type { TMessageWithAuthorAndReplyTo } from '@/utils/entities/message.entity'
 
 export type TClientSocket = Socket<{}, IEmitSocketEvents>
 
@@ -23,7 +23,7 @@ export type TUserKey = {
 
 export type TSendDirectMessageRes = TSuccess & {
   directChat: TDirectChat
-  newMessage: TDirectMessageWithAuthorAndReplyTo
+  newMessage: TMessageWithAuthorAndReplyTo
   isNewDirectChat: boolean
 }
 

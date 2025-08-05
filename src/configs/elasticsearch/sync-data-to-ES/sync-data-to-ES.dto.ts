@@ -1,4 +1,4 @@
-import type { TDirectMessage } from '@/utils/entities/direct-message.entity'
+import type { TMessage } from '@/utils/entities/message.entity'
 import type { TUserWithProfile } from '@/utils/entities/user.entity'
 import { ESyncDataToESWorkerType } from '@/utils/enums'
 import { IsEnum, IsOptional } from 'class-validator'
@@ -8,7 +8,7 @@ export class SyncDataToESWorkerMessageDTO {
   @IsEnum(ESyncDataToESWorkerType)
   type: ESyncDataToESWorkerType
 
-  data?: TDirectMessage | TUserWithProfile
+  data?: TMessage | TUserWithProfile
 
   // @IsOptional()
   // msgEncryptor?: UserMessageEncryptor

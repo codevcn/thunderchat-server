@@ -3,25 +3,28 @@ import { PrismaService } from '../../configs/db/prisma.service'
 import { EProviderTokens } from '@/utils/enums'
 import { SocketService } from '@/gateway/socket/socket.service'
 import { EClientSocketEvents } from '@/gateway/gateway.event'
-import { EMessageTypes } from '../direct-message.enum'
+import { EMessageMediaTypes, EMessageTypes } from '../direct-message.enum'
+import type { TMessageWithMedia } from '@/utils/entities/message.entity'
 
 // Helper mô tả nội dung tin nhắn
-function getMessageDescription(message: any): string {
-  switch (message.type) {
-    case EMessageTypes.IMAGE:
+function getMessageDescription(message: TMessageWithMedia): string {
+  switch (message.Media?.type) {
+    case EMessageMediaTypes.IMAGE:
       return 'hình ảnh'
-    case EMessageTypes.VIDEO:
+    case EMessageMediaTypes.VIDEO:
       return 'video'
-    case EMessageTypes.DOCUMENT:
-      return message.fileName ? `file: ${message.fileName}` : 'file'
+    case EMessageMediaTypes.DOCUMENT:
+      return message.Media?.fileName ? `file: ${message.Media.fileName}` : 'file'
+    case EMessageMediaTypes.AUDIO:
+      return 'audio'
+  }
+  switch (message.type) {
     case EMessageTypes.STICKER:
       return 'sticker'
-    case EMessageTypes.AUDIO:
-      return 'audio'
     case EMessageTypes.TEXT:
-    default:
-      return message.content || ''
+      return message.content
   }
+  return message.content
 }
 
 @Injectable()
@@ -49,7 +52,7 @@ export class PinService {
   ) {
     if (isPinned) {
       // Kiểm tra xem tin nhắn đã được ghim chưa (cho bất kỳ ai trong cuộc trò chuyện)
-      const existingPin = await this.prismaService.pinnedDirectMessage.findFirst({
+      const existingPin = await this.prismaService.pinnedMessage.findFirst({
         where: {
           messageId,
           directChatId,
@@ -61,7 +64,7 @@ export class PinService {
       }
 
       // Đếm số lượng tin nhắn đã ghim trong directChatId (tổng cộng cho tất cả user)
-      const count = await this.prismaService.pinnedDirectMessage.count({
+      const count = await this.prismaService.pinnedMessage.count({
         where: {
           directChatId,
         },
@@ -72,14 +75,14 @@ export class PinService {
       }
 
       // Tạo pin mới (ghi nhận người đầu tiên ghim)
-      const pinnedMessage = await this.prismaService.pinnedDirectMessage.create({
+      const pinnedMessage = await this.prismaService.pinnedMessage.create({
         data: {
           messageId,
           directChatId,
           pinnedBy: userId,
         },
         include: {
-          DirectMessage: {
+          Message: {
             include: {
               Author: {
                 include: {
@@ -98,8 +101,11 @@ export class PinService {
       const fullName = userProfile?.fullName || 'Người dùng'
 
       // Lấy nội dung tin nhắn gốc
-      const originalMessage = await this.prismaService.directMessage.findUnique({
+      const originalMessage = await this.prismaService.message.findUnique({
         where: { id: messageId },
+        include: {
+          Media: true,
+        },
       })
       const originalMessageDescription = originalMessage
         ? getMessageDescription(originalMessage)
@@ -116,7 +122,7 @@ export class PinService {
       }
 
       // Tạo message thông báo
-      const pinNoticeMessage = await this.prismaService.directMessage.create({
+      const pinNoticeMessage = await this.prismaService.message.create({
         data: {
           content: `${fullName} đã ghim tin nhắn: ${originalMessageDescription}`,
           authorId: userId,
@@ -151,7 +157,7 @@ export class PinService {
       return pinnedMessage
     } else {
       // Bỏ ghim - xóa record trong PinnedDirectMessage (cho tất cả user)
-      const deletedPin = await this.prismaService.pinnedDirectMessage.deleteMany({
+      const deletedPin = await this.prismaService.pinnedMessage.deleteMany({
         where: {
           messageId,
           directChatId,
@@ -165,8 +171,11 @@ export class PinService {
       const fullName = userProfile?.fullName || 'Người dùng'
 
       // Lấy nội dung tin nhắn gốc
-      const originalMessage = await this.prismaService.directMessage.findUnique({
+      const originalMessage = await this.prismaService.message.findUnique({
         where: { id: messageId },
+        include: {
+          Media: true,
+        },
       })
       const originalMessageDescription = originalMessage
         ? getMessageDescription(originalMessage)
@@ -183,7 +192,7 @@ export class PinService {
       }
 
       // Tạo message thông báo
-      const pinNoticeMessage = await this.prismaService.directMessage.create({
+      const pinNoticeMessage = await this.prismaService.message.create({
         data: {
           content: `${fullName} đã bỏ ghim tin nhắn: ${originalMessageDescription}`,
           authorId: userId,
@@ -223,12 +232,12 @@ export class PinService {
    * @param userId ID của user (để tương thích API, không sử dụng trong logic)
    */
   async getPinnedMessages(directChatId: number, userId: number) {
-    return this.prismaService.pinnedDirectMessage.findMany({
+    return this.prismaService.pinnedMessage.findMany({
       where: {
         directChatId,
       },
       include: {
-        DirectMessage: {
+        Message: {
           include: {
             Author: {
               include: {
@@ -258,7 +267,7 @@ export class PinService {
    * @param userId ID của user (để tương thích API, không sử dụng trong logic)
    */
   async getPinnedCount(directChatId: number, userId: number) {
-    return this.prismaService.pinnedDirectMessage.count({
+    return this.prismaService.pinnedMessage.count({
       where: {
         directChatId,
       },
@@ -272,7 +281,7 @@ export class PinService {
    * @param userId ID của user (để tương thích API, không sử dụng trong logic)
    */
   async isMessagePinned(messageId: number, directChatId: number, userId: number) {
-    const pinnedMessage = await this.prismaService.pinnedDirectMessage.findFirst({
+    const pinnedMessage = await this.prismaService.pinnedMessage.findFirst({
       where: {
         messageId,
         directChatId,

@@ -16,3 +16,28 @@ search.service.ts
 
 ==================== sửa sau khi merge =================
 xóa các enum khỏi file types.ts
+
+=================== sửa sau big update =================
+D:\D-Documents\Code_VCN\React\VCN-THUNDER-CHAT-APP\server\src\configs\elasticsearch\sync-data-to-ES\sync-data-to-ES.worker.ts
+D:\D-Documents\Code_VCN\React\VCN-THUNDER-CHAT-APP\server\src\direct-chat\direct-chat.type.ts
+D:\D-Documents\Code_VCN\React\VCN-THUNDER-CHAT-APP\server\src\dev\dev.controller.ts
+D:\D-Documents\Code_VCN\React\VCN-THUNDER-CHAT-APP\server\src\direct-chat\pin-direct-chat\pin-direct-chat.service.ts
+D:\D-Documents\Code_VCN\React\VCN-THUNDER-CHAT-APP\server\src\direct-message\delete-message\delete-message.service.ts
+D:\D-Documents\Code_VCN\React\VCN-THUNDER-CHAT-APP\server\src\direct-message\direct-message.service.ts
+D:\D-Documents\Code_VCN\React\VCN-THUNDER-CHAT-APP\server\src\utils\entities\message.entity.ts
+D:\D-Documents\Code_VCN\React\VCN-THUNDER-CHAT-APP\server\src\utils\entities\group-chat.entity.ts
+D:\D-Documents\Code_VCN\React\VCN-THUNDER-CHAT-APP\server\src\gateway\gateway.ts
+D:\D-Documents\Code_VCN\React\VCN-THUNDER-CHAT-APP\server\src\direct-message\pin\pin.service.ts
+D:\D-Documents\Code_VCN\React\VCN-THUNDER-CHAT-APP\server\src\profile\profile.controller.ts
+D:\D-Documents\Code_VCN\React\VCN-THUNDER-CHAT-APP\server\src\app.module.ts
+D:\D-Documents\Code_VCN\React\VCN-THUNDER-CHAT-APP\server\src\direct-message\direct-message.type.ts
+D:\D-Documents\Code_VCN\React\VCN-THUNDER-CHAT-APP\server\src\gateway\gateway.type.ts
+D:\D-Documents\Code_VCN\React\VCN-THUNDER-CHAT-APP\server\src\search\search.module.ts
+D:\D-Documents\Code_VCN\React\VCN-THUNDER-CHAT-APP\server\src\search\search.service.ts
+D:\D-Documents\Code_VCN\React\VCN-THUNDER-CHAT-APP\server\src\group-chat\group-chat.type.ts
+D:\D-Documents\Code_VCN\React\VCN-THUNDER-CHAT-APP\server\src\statistics\statistics.service.ts
+D:\D-Documents\Code_VCN\React\VCN-THUNDER-CHAT-APP\server\src\configs\elasticsearch\sync-data-to-ES\sync-data-to-ES.dto.ts
+D:\D-Documents\Code_VCN\React\VCN-THUNDER-CHAT-APP\server\src\utils\helpers.ts
+D:\D-Documents\Code_VCN\React\VCN-THUNDER-CHAT-APP\server\src\utils\enums.ts
+D:\D-Documents\Code_VCN\React\VCN-THUNDER-CHAT-APP\server\src\upload\upload.controller.ts
+D:\D-Documents\Code_VCN\React\VCN-THUNDER-CHAT-APP\server\src\upload\upload.service.ts

@@ -29,24 +29,22 @@ model User {
     role      AppRole  @default(USER)
 
     Profile                   Profile?
-    DirectChatsAsSender       DirectChat[]          @relation("DirectChatsAsSender")
-    DirectChatsAsRecipient    DirectChat[]          @relation("DirectChatsAsRecipient")
-    GroupMessages             GroupMessage[]        @relation("GroupMessages")
-    DirectMessages            DirectMessage[]       @relation("DirectMessagesAsSender")
-    FriendsAsRecipient        Friend[]              @relation("FriendsAsRecipient")
-    FriendsAsSender           Friend[]              @relation("FriendsAsSender")
-    FriendRequestsSent        FriendRequest[]       @relation("FriendRequestsSent")
-    FriendRequestsReceived    FriendRequest[]       @relation("FriendRequestsReceived")
-    DirectMessagesAsRecipient DirectMessage[]       @relation("DirectMessagesAsRecipient")
-    MessageMappings           MessageMapping[]      @relation("MessageMappings")
-    GroupChatCreator          GroupChat[]           @relation("GroupChatCreator")
-    GroupChatMembers          GroupChatMember[]     @relation("GroupChatMembers")
-    PinnedMessages            PinnedDirectMessage[] @relation("PinnedMessagesByUser")
-    PinnedDirectChats         PinnedDirectChat[]    @relation("PinnedDirectChatsByUser")
-    UserSettings              UserSettings?         @relation("UserToUserSettings")
-    PinnedGroupMessages       PinnedGroupMessage[]  @relation("PinnedGroupMessagesByUser")
-    ReportsMade               ViolationReport[]     @relation("ReportsMade")
-    ReportsAbout              ViolationReport[]     @relation("ReportsAbout")
+    DirectChatsAsSender       DirectChat[]      @relation("DirectChatsAsSender")
+    DirectChatsAsRecipient    DirectChat[]      @relation("DirectChatsAsRecipient")
+    Messages                  Message[]         @relation("DirectMessagesAsSender")
+    FriendsAsRecipient        Friend[]          @relation("FriendsAsRecipient")
+    FriendsAsSender           Friend[]          @relation("FriendsAsSender")
+    FriendRequestsSent        FriendRequest[]   @relation("FriendRequestsSent")
+    FriendRequestsReceived    FriendRequest[]   @relation("FriendRequestsReceived")
+    DirectMessagesAsRecipient Message[]         @relation("DirectMessagesAsRecipient")
+    MessageMappings           MessageMapping[]  @relation("MessageMappings")
+    GroupChatCreator          GroupChat[]       @relation("GroupChatCreator")
+    GroupChatMembers          GroupChatMember[] @relation("GroupChatMembers")
+    PinnedMessages            PinnedMessage[]   @relation("PinnedMessagesByUser")
+    PinnedChats               PinnedChat[]      @relation("PinnedChatsByUser")
+    UserSettings              UserSettings?     @relation("UserToUserSettings")
+    ReportsMade               ViolationReport[] @relation("ReportsMade")
+    ReportsAbout              ViolationReport[] @relation("ReportsAbout")
 
     @@index([email], type: BTree)
     @@map("users")
@@ -73,71 +71,89 @@ model DirectChat {
     createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
     lastSentMessageId Int?     @unique @map("last_sent_message_id")
 
-    Recipient         User                  @relation("DirectChatsAsRecipient", fields: [recipientId], references: [id])
-    Creator           User                  @relation("DirectChatsAsSender", fields: [creatorId], references: [id])
-    Messages          DirectMessage[]       @relation("MessagesOnDirectChat")
-    LastSentMessage   DirectMessage?        @relation("LastSentMessageOnDirectChat", fields: [lastSentMessageId], references: [id])
-    PinnedMessages    PinnedDirectMessage[] @relation("PinnedMessagesOnDirectChat")
-    PinnedDirectChats PinnedDirectChat[]    @relation("PinnedDirectChatsOnDirectChat")
+    Recipient       User            @relation("DirectChatsAsRecipient", fields: [recipientId], references: [id])
+    Creator         User            @relation("DirectChatsAsSender", fields: [creatorId], references: [id])
+    Messages        Message[]       @relation("MessagesOnDirectChat")
+    LastSentMessage Message?        @relation("LastSentMessageOnDirectChat", fields: [lastSentMessageId], references: [id])
+    PinnedMessages  PinnedMessage[] @relation("PinnedMessagesOnDirectChat")
+    PinnedChats     PinnedChat[]    @relation("PinnedChatsOnDirectChat")
 
     @@unique([creatorId, recipientId])
     @@map("direct_chats")
 }
 
-model PinnedDirectChat {
+model PinnedChat {
     id           Int      @id @default(autoincrement())
     directChatId Int      @map("direct_chat_id")
     pinnedBy     Int      @map("pinned_by")
     pinnedAt     DateTime @default(now()) @map("pinned_at") @db.Timestamptz(3)
 
-    DirectChat DirectChat @relation("PinnedDirectChatsOnDirectChat", fields: [directChatId], references: [id])
-    PinnedBy   User       @relation("PinnedDirectChatsByUser", fields: [pinnedBy], references: [id])
+    DirectChat DirectChat @relation("PinnedChatsOnDirectChat", fields: [directChatId], references: [id])
+    PinnedBy   User       @relation("PinnedChatsByUser", fields: [pinnedBy], references: [id])
 
-    @@map("pinned_direct_chats")
+    @@map("pinned_chats")
 }
 
-model DirectMessage {
+model Message {
     id           Int               @id @default(autoincrement())
     content      String
     authorId     Int               @map("author_id")
-    recipientId  Int               @map("recipient_id")
-    directChatId Int               @map("direct_chat_id")
+    recipientId  Int?              @map("recipient_id")
+    directChatId Int?              @map("direct_chat_id")
+    groupChatId  Int?              @map("group_chat_id")
     type         MessageType       @default(TEXT)
     status       MessageStatusEnum
-    stickerUrl   String?           @map("sticker_url")
+    stickerId    Int?              @map("sticker_id")
     createdAt    DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
-    mediaUrl     String?           @map("media_url")
-    fileName     String?           @map("file_name")
     replyToId    Int?              @map("reply_to_id")
-    thumbnailUrl String?           @map("thumbnail_url")
     isDeleted    Boolean           @default(false) @map("is_deleted")
     isViolated   Boolean           @default(false) @map("is_violated")
+    mediaId      Int?              @unique @map("media_id")
 
-    Chat                    DirectChat            @relation("MessagesOnDirectChat", fields: [directChatId], references: [id])
-    Author                  User                  @relation("DirectMessagesAsSender", fields: [authorId], references: [id])
-    DirectChatOfLastSentMsg DirectChat?           @relation("LastSentMessageOnDirectChat")
-    Sticker                 Sticker?              @relation("StickerOnDirectMessage", fields: [stickerUrl], references: [imageUrl])
-    Recipient               User                  @relation("DirectMessagesAsRecipient", fields: [recipientId], references: [id])
-    ReplyTo                 DirectMessage?        @relation("RepliesOnDirectMessage", fields: [replyToId], references: [id])
-    RepliedBy               DirectMessage[]       @relation("RepliesOnDirectMessage")
-    PinnedMessages          PinnedDirectMessage[] @relation("PinnedMessagesOnDirectMessage")
-    ReportedMessages        ReportedMessage[]     @relation("ReportedMessageOnDirectMessage")
+    DirectChat              DirectChat?       @relation("MessagesOnDirectChat", fields: [directChatId], references: [id])
+    Author                  User              @relation("DirectMessagesAsSender", fields: [authorId], references: [id])
+    DirectChatOfLastSentMsg DirectChat?       @relation("LastSentMessageOnDirectChat")
+    Sticker                 Sticker?          @relation("StickerOnMessage", fields: [stickerId], references: [id])
+    Recipient               User?             @relation("DirectMessagesAsRecipient", fields: [recipientId], references: [id])
+    ReplyTo                 Message?          @relation("RepliesOnMessage", fields: [replyToId], references: [id])
+    RepliedBy               Message[]         @relation("RepliesOnMessage")
+    PinnedMessages          PinnedMessage[]   @relation("PinnedMessagesOnMessage")
+    ReportedMessages        ReportedMessage[] @relation("ReportedMessageOnMessage")
+    Media                   MessageMedia?     @relation("MessageMediaOnMessage", fields: [mediaId], references: [id])
+    GroupChat               GroupChat?        @relation("MessagesOnGroupChat", fields: [groupChatId], references: [id])
+    GroupChatOfLastSentMsg  GroupChat?        @relation("LastSentMessageOnGroupChat")
 
-    @@map("direct_messages")
+    @@map("messages")
 }
 
-model PinnedDirectMessage {
+model MessageMedia {
+    id           Int              @id @default(autoincrement())
+    url          String           @unique @map("url")
+    fileSize     Int              @map("file_size")
+    fileName     String           @map("file_name")
+    thumbnailUrl String           @map("thumbnail_url")
+    type         MessageMediaType
+    createdAt    DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+
+    Message Message? @relation("MessageMediaOnMessage")
+
+    @@map("message_medias")
+}
+
+model PinnedMessage {
     id           Int      @id @default(autoincrement())
     messageId    Int      @map("message_id")
-    directChatId Int      @map("direct_chat_id")
+    directChatId Int?     @map("direct_chat_id")
+    groupChatId  Int?     @map("group_chat_id")
     pinnedBy     Int      @map("pinned_by")
     pinnedAt     DateTime @default(now()) @map("pinned_at") @db.Timestamptz(3)
 
-    DirectChat    DirectChat    @relation("PinnedMessagesOnDirectChat", fields: [directChatId], references: [id])
-    DirectMessage DirectMessage @relation("PinnedMessagesOnDirectMessage", fields: [messageId], references: [id])
-    PinnedBy      User          @relation("PinnedMessagesByUser", fields: [pinnedBy], references: [id])
+    DirectChat DirectChat? @relation("PinnedMessagesOnDirectChat", fields: [directChatId], references: [id])
+    Message    Message     @relation("PinnedMessagesOnMessage", fields: [messageId], references: [id])
+    PinnedBy   User        @relation("PinnedMessagesByUser", fields: [pinnedBy], references: [id])
+    GroupChat  GroupChat?  @relation("PinnedMessagesOnGroupChat", fields: [groupChatId], references: [id])
 
-    @@map("pinned_direct_messages")
+    @@map("pinned_messages")
 }
 
 model Friend {
@@ -173,10 +189,9 @@ model Sticker {
     categoryId  Int      @map("category_id")
     createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
 
-    Messages      DirectMessage[]  @relation("StickerOnDirectMessage")
-    Category      StickerCategory  @relation(fields: [categoryId], references: [id])
-    Greeting      GreetingSticker? @relation("StickerOnGreetingSticker")
-    GroupMessages GroupMessage[]   @relation("StickerOnGroupMessage")
+    Messages Message[]        @relation("StickerOnMessage")
+    Category StickerCategory  @relation(fields: [categoryId], references: [id])
+    Greeting GreetingSticker? @relation("StickerOnGreetingSticker")
 
     @@map("stickers")
 }
@@ -213,52 +228,13 @@ model GroupChat {
     createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
     lastSentMessageId Int?     @unique @map("last_sent_message_id")
 
-    Messages        GroupMessage[]       @relation("MessagesOnGroupChat")
-    Creator         User                 @relation("GroupChatCreator", fields: [creatorId], references: [id])
-    Members         GroupChatMember[]    @relation("GroupChatMembers")
-    LastSentMessage GroupMessage?        @relation("LastSentMessageOnGroupChat", fields: [lastSentMessageId], references: [id])
-    PinnedMessages  PinnedGroupMessage[] @relation("PinnedMessagesOnGroupChat")
+    Messages        Message[]         @relation("MessagesOnGroupChat")
+    Creator         User              @relation("GroupChatCreator", fields: [creatorId], references: [id])
+    Members         GroupChatMember[] @relation("GroupChatMembers")
+    LastSentMessage Message?          @relation("LastSentMessageOnGroupChat", fields: [lastSentMessageId], references: [id])
+    PinnedMessages  PinnedMessage[]   @relation("PinnedMessagesOnGroupChat")
 
     @@map("group_chats")
-}
-
-model PinnedGroupMessage {
-    id          Int      @id @default(autoincrement())
-    messageId   Int      @map("message_id")
-    groupChatId Int      @map("group_chat_id")
-    pinnedBy    Int      @map("pinned_by")
-    pinnedAt    DateTime @default(now()) @map("pinned_at") @db.Timestamptz(3)
-
-    GroupChat    GroupChat    @relation("PinnedMessagesOnGroupChat", fields: [groupChatId], references: [id])
-    GroupMessage GroupMessage @relation("PinnedMessagesOnGroupMessage", fields: [messageId], references: [id])
-    PinnedBy     User         @relation("PinnedGroupMessagesByUser", fields: [pinnedBy], references: [id])
-
-    @@map("pinned_group_messages")
-}
-
-model GroupMessage {
-    id           Int               @id @default(autoincrement())
-    content      String
-    authorId     Int               @map("author_id")
-    type         MessageType       @default(TEXT)
-    status       MessageStatusEnum
-    stickerUrl   String?           @map("sticker_url")
-    createdAt    DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
-    mediaUrl     String?           @map("media_url")
-    fileName     String?           @map("file_name")
-    replyToId    Int?              @map("reply_to_id")
-    thumbnailUrl String?           @map("thumbnail_url")
-    groupChatId  Int               @map("group_chat_id")
-
-    GroupChat              GroupChat            @relation("MessagesOnGroupChat", fields: [groupChatId], references: [id])
-    Author                 User                 @relation("GroupMessages", fields: [authorId], references: [id])
-    GroupChatOfLastSentMsg GroupChat?           @relation("LastSentMessageOnGroupChat")
-    ReplyTo                GroupMessage?        @relation("RepliesOnGroupMessage", fields: [replyToId], references: [id])
-    RepliedBy              GroupMessage[]       @relation("RepliesOnGroupMessage")
-    Sticker                Sticker?             @relation("StickerOnGroupMessage", fields: [stickerUrl], references: [imageUrl])
-    PinnedMessages         PinnedGroupMessage[] @relation("PinnedMessagesOnGroupMessage")
-
-    @@map("group_messages")
 }
 
 model GroupChatMember {
@@ -333,7 +309,7 @@ model ReportedMessage {
     reportId       Int         @map("report_id")
     createdAt      DateTime    @default(now()) @map("created_at")
 
-    ReportedMessage DirectMessage   @relation("ReportedMessageOnDirectMessage", fields: [messageId], references: [id])
+    ReportedMessage Message         @relation("ReportedMessageOnMessage", fields: [messageId], references: [id])
     ViolationReport ViolationReport @relation("ReportedMessages", fields: [reportId], references: [id])
 
     @@map("reported_messages")
@@ -353,10 +329,7 @@ enum MessageStatusEnum {
 enum MessageType {
     TEXT
     STICKER
-    IMAGE
-    VIDEO
-    DOCUMENT
-    AUDIO
+    MEDIA
     PIN_NOTICE
 }
 
@@ -387,4 +360,11 @@ enum ViolationActionType {
     WARNING
     TEMPORARY_BAN
     PERMANENT_BAN
+}
+
+enum MessageMediaType {
+    IMAGE
+    VIDEO
+    AUDIO
+    DOCUMENT
 }

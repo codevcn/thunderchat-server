@@ -44,7 +44,6 @@ import { GroupChatModule } from './group-chat/group-chat.module'
 import { UploadModule } from './upload/upload.module'
 import { StatisticsModule } from './statistics/statistics.module'
 import { GroupMemberModule } from './group-member/group-member.module'
-import { GroupMessageModule } from './group-message/group-message.module'
 import { DeleteMessageModule } from './direct-message/delete-message/delete-message.module'
 
 @Module({
@@ -54,7 +53,6 @@ import { DeleteMessageModule } from './direct-message/delete-message/delete-mess
     GatewayModule,
     DirectChatsModule,
     DirectMessageModule,
-    GroupMessageModule,
     UserModule,
     FriendRequestModule,
     FriendModule,

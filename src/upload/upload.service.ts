@@ -1,6 +1,11 @@
-import { Injectable, BadRequestException } from '@nestjs/common'
+import { Injectable, BadRequestException, Inject } from '@nestjs/common'
 import * as AWS from 'aws-sdk'
 import { ThumbnailService } from './thumbnail.service'
+import { Express } from 'express'
+import type { TUploadResult } from './upload.type'
+import { PrismaService } from '@/configs/db/prisma.service'
+import { EProviderTokens } from '@/utils/enums'
+import { detectFileType, formatBytes } from '@/utils/helpers'
 
 @Injectable()
 export class UploadService {
@@ -9,9 +14,6 @@ export class UploadService {
     secretAccessKey: process.env.AWS_SECRET_KEY,
     region: process.env.AWS_REGION,
   })
-
-  constructor(private readonly thumbnailService: ThumbnailService) {}
-
   // Định nghĩa các loại file được phép upload
   private allowedMimeTypes = {
     // Images
@@ -43,13 +45,12 @@ export class UploadService {
     'audio/webm': 'audio',
   }
 
-  async uploadFile(
-    file: any
-  ): Promise<{ url: string; fileType: string; fileName: string; thumbnailUrl?: string }> {
-    console.log('🚀 Bắt đầu upload file:', file.originalname)
-    console.log('📁 Loại file:', file.mimetype)
-    console.log('📏 Kích thước:', (file.size / 1024 / 1024).toFixed(2), 'MB')
+  constructor(
+    private readonly thumbnailService: ThumbnailService,
+    @Inject(EProviderTokens.PRISMA_CLIENT) private PrismaService: PrismaService
+  ) {}
 
+  async uploadFile(file: Express.Multer.File): Promise<TUploadResult> {
     if (!process.env.AWS_S3_BUCKET) {
       throw new Error('AWS_S3_BUCKET environment variable is not set')
     }
@@ -57,20 +58,14 @@ export class UploadService {
     // Kiểm tra loại file
     const fileType = this.allowedMimeTypes[file.mimetype]
     if (!fileType) {
-      console.log('❌ Loại file không được phép:', file.mimetype)
       throw new BadRequestException(`File type ${file.mimetype} is not allowed`)
     }
-
-    console.log('✅ Loại file hợp lệ:', fileType)
 
     // Kiểm tra kích thước file (giới hạn 50MB)
     const maxSize = 50 * 1024 * 1024 // 50MB
     if (file.size > maxSize) {
-      console.log('❌ File quá lớn:', (file.size / 1024 / 1024).toFixed(2), 'MB')
       throw new BadRequestException('File size exceeds 50MB limit')
     }
-
-    console.log('✅ Kích thước file hợp lệ')
 
     const fileKey = `${Date.now()}_${file.originalname}`
     let uploadedFileUrl: string | null = null
@@ -83,45 +78,42 @@ export class UploadService {
         ContentType: file.mimetype,
       }
 
-      console.log('📤 Đang upload lên S3...')
-      console.log('🪣 Bucket:', process.env.AWS_S3_BUCKET)
-      console.log('🔑 Key:', params.Key)
-
       const data = await this.s3.upload(params).promise()
       uploadedFileUrl = data.Location
 
-      console.log('🎉 Upload thành công!')
-      console.log('🔗 URL:', data.Location)
-      console.log('📄 Tên file:', file.originalname)
-      console.log('🏷️ Loại:', fileType)
+      const messageMedia = await this.PrismaService.messageMedia.create({
+        data: {
+          url: data.Location,
+          type: await detectFileType(file),
+          fileName: file.originalname,
+          fileSize: file.size,
+          thumbnailUrl: '',
+        },
+      })
 
-      const result: { url: string; fileType: string; fileName: string; thumbnailUrl?: string } = {
-        url: data.Location,
-        fileType: fileType,
-        fileName: file.originalname,
+      const result: TUploadResult = {
+        id: messageMedia.id,
+        url: messageMedia.url,
+        fileType: messageMedia.type,
+        fileName: messageMedia.fileName,
+        fileSize: formatBytes(messageMedia.fileSize),
       }
 
       // Bước 2: Nếu là video, tạo thumbnail
       if (fileType === 'video') {
         try {
-          console.log('🎬 Kiểm tra thumbnail có sẵn không...')
-
           // Kiểm tra thumbnail đã tồn tại chưa
           const existingThumbnail = await this.thumbnailService.checkThumbnailExists(fileKey)
           if (existingThumbnail) {
-            console.log('✅ Thumbnail đã tồn tại:', existingThumbnail)
             result.thumbnailUrl = existingThumbnail
           } else {
-            console.log('🎬 Bắt đầu tạo thumbnail mới...')
             const thumbnailUrl = await this.thumbnailService.generateVideoThumbnail(
               data.Location,
               fileKey
             )
             result.thumbnailUrl = thumbnailUrl
-            console.log('✅ Tạo thumbnail thành công:', thumbnailUrl)
           }
         } catch (error) {
-          console.error('❌ Lỗi tạo thumbnail:', error.message)
           // Rollback: Xóa file video đã upload
           await this.rollbackFileUpload(fileKey)
           throw new Error(`Failed to create thumbnail: ${error.message}`)
@@ -142,38 +134,23 @@ export class UploadService {
    * Rollback: Xóa file đã upload lên S3
    */
   private async rollbackFileUpload(fileKey: string): Promise<void> {
-    try {
-      console.log('🔄 Bắt đầu rollback: Xóa file', fileKey)
-
-      const params = {
-        Bucket: process.env.AWS_S3_BUCKET,
-        Key: fileKey,
-      }
-
-      await this.s3.deleteObject(params).promise()
-      console.log('✅ Rollback thành công: Đã xóa file', fileKey)
-    } catch (rollbackError) {
-      console.error('❌ Lỗi rollback:', rollbackError.message)
-      // Không throw error vì đây là cleanup, không nên làm fail toàn bộ process
+    const params = {
+      Bucket: process.env.AWS_S3_BUCKET,
+      Key: fileKey,
     }
+    await this.s3.deleteObject(params).promise()
   }
 
   /**
    * Xoá file bất kỳ trên S3 theo url
    */
   public async deleteFileByUrl(fileUrl: string): Promise<void> {
-    try {
-      const objectKey = fileUrl.split('.amazonaws.com/')[1]
-      if (!objectKey) throw new Error('Không tìm thấy object key trong url')
-      const params = {
-        Bucket: process.env.AWS_S3_BUCKET,
-        Key: objectKey,
-      }
-      await this.s3.deleteObject(params).promise()
-      console.log('✅ Đã xoá file trên S3:', objectKey)
-    } catch (err: any) {
-      console.error('❌ Lỗi xoá file trên S3:', err.message)
-      // Không throw để không làm fail process chính
+    const objectKey = fileUrl.split('.amazonaws.com/')[1]
+    if (!objectKey) throw new Error('Không tìm thấy object key trong url')
+    const params = {
+      Bucket: process.env.AWS_S3_BUCKET,
+      Key: objectKey,
     }
+    await this.s3.deleteObject(params).promise()
   }
 }
