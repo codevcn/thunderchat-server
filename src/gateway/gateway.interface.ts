@@ -12,6 +12,9 @@ import type {
   TFriendRequestPayload,
   TGetFriendRequestsData,
 } from '@/friend-request/friend-request.type'
+import type { TDirectChat } from '@/utils/entities/direct-chat.entity'
+import type { EChatType } from '@/utils/enums'
+import { TMessage } from '@/utils/entities/message.entity'
 
 export interface IEmitSocketEvents {
   [EInitEvents.client_connected]: (message: string) => void
@@ -27,6 +30,12 @@ export interface IEmitSocketEvents {
   [EClientSocketEvents.friend_request_action]: (payload: TFriendRequestPayload) => void
   [EClientSocketEvents.pin_message]: (payload: any) => void
   [EClientSocketEvents.pin_direct_chat]: (payload: any) => void
+  [EClientSocketEvents.new_conversation]: (
+    payload: TDirectChat,
+    type: EChatType,
+    newMessage: TMessage,
+    sender: TUserWithProfile
+  ) => void
 }
 
 export interface IGateway {

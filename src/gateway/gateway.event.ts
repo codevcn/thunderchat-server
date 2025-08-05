@@ -12,4 +12,5 @@ export enum EClientSocketEvents {
   friend_request_action = 'friend_request_action',
   pin_message = 'pin_message',
   pin_direct_chat = 'pin_direct_chat',
+  new_conversation = 'new_conversation',
 }

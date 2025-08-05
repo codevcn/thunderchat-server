@@ -4,7 +4,8 @@ import type { TUserId } from '@/user/user.type'
 import type { TDirectChat } from '@/utils/entities/direct-chat.entity'
 import type { TSuccess } from '@/utils/types'
 import type { TMessageFullInfo } from '@/utils/entities/message.entity'
-import { EMessageTypes } from '@/direct-message/direct-message.enum'
+import type { EMessageTypes } from '@/direct-message/direct-message.enum'
+import type { TUserWithProfile } from '@/utils/entities/user.entity'
 
 export type TClientSocket = Socket<{}, IEmitSocketEvents>
 
@@ -23,9 +24,7 @@ export type TUserKey = {
 }
 
 export type TSendDirectMessageRes = TSuccess & {
-  directChat: TDirectChat
   newMessage: TMessageFullInfo
-  isNewDirectChat: boolean
 }
 
 export type TFindDirectChatWithOtherUser = {
@@ -33,7 +32,7 @@ export type TFindDirectChatWithOtherUser = {
   isNew: boolean
 }
 
-export type THandleMessageMessage = {
+export type THandleMessageParamsMessage = {
   content: string
   timestamp: Date
   directChatId: number
@@ -42,4 +41,18 @@ export type THandleMessageMessage = {
   stickerId?: number
   mediaId?: number
   replyToId?: number
+}
+
+export type THandleMessageParamsClient = {
+  socket: TClientSocket
+  id: number
+}
+
+export type THandleEmitNewMessageParams = {
+  client: THandleMessageParamsClient
+  receiverId: number
+  newMessage: TMessageFullInfo
+  isNewDirectChat: boolean
+  directChat: TDirectChat
+  sender: TUserWithProfile
 }

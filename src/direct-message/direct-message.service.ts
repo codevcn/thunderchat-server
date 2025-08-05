@@ -54,13 +54,18 @@ export class DirectMessageService {
     encryptedContent: string,
     authorId: number,
     timestamp: Date,
-    directChatId: number,
     recipientId: number,
     type: EMessageTypes = EMessageTypes.TEXT,
     stickerId?: number,
     mediaId?: number,
-    replyToId?: number
+    replyToId?: number,
+    directChatId?: number,
+    groupChatId?: number
   ): Promise<TGetDirectMessagesMessage> {
+    console.log('>>> chat data:', {
+      directChatId,
+      groupChatId,
+    })
     // Kiểm tra quyền gửi tin nhắn 1-1
     await canSendDirectMessage(this.PrismaService, authorId, recipientId)
     const message = await this.PrismaService.message.create({
@@ -68,13 +73,14 @@ export class DirectMessageService {
         content: encryptedContent,
         authorId,
         createdAt: timestamp,
-        directChatId,
         status: EMessageStatus.SENT,
         type,
         stickerId,
         recipientId,
         mediaId,
         replyToId,
+        groupChatId,
+        directChatId,
       },
       include: this.messageFullInfo,
     })

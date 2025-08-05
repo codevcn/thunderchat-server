@@ -68,31 +68,31 @@ export class TempController {
     return { success: true }
   }
 
-  @Get('test')
-  async test(@Query() query: any) {
-    try {
-      DevLogger.logInfo('run this test api create new message')
-      const { content, authorId, recipientId, directChatId, type, stickerUrl } = query
-      if (!content || !authorId || !recipientId || !directChatId) {
-        DevLogger.logInfo('input data is required')
-        return { success: false, error: 'input data is required' }
-      }
-      const res = await this.DirectMessageService.createNewMessage(
-        content,
-        Number(authorId),
-        new Date(),
-        Number(directChatId),
-        Number(recipientId),
-        type,
-        stickerUrl
-      )
-      DevLogger.logInfo('res:', res)
-      return { success: true }
-    } catch (error) {
-      DevLogger.logInfo('error:', error)
-      return { success: false, error: error.message }
-    }
-  }
+  // @Get('test')
+  // async test(@Query() query: any) {
+  //   try {
+  //     DevLogger.logInfo('run this test api create new message')
+  //     const { content, authorId, recipientId, directChatId, type, stickerUrl } = query
+  //     if (!content || !authorId || !recipientId || !directChatId) {
+  //       DevLogger.logInfo('input data is required')
+  //       return { success: false, error: 'input data is required' }
+  //     }
+  //     const res = await this.DirectMessageService.createNewMessage(
+  //       content,
+  //       Number(authorId),
+  //       new Date(),
+  //       Number(directChatId),
+  //       Number(recipientId),
+  //       type,
+  //       stickerUrl
+  //     )
+  //     DevLogger.logInfo('res:', res)
+  //     return { success: true }
+  //   } catch (error) {
+  //     DevLogger.logInfo('error:', error)
+  //     return { success: false, error: error.message }
+  //   }
+  // }
 
   @Get('sync-all-data-to-es')
   async syncAllDataToES() {

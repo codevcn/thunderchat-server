@@ -41,7 +41,7 @@ export class ElasticsearchService implements OnModuleInit {
   async deleteAllDataFromES(): Promise<void> {
     // Xóa tất cả các document trong index DIRECT_MESSAGES
     await ESClient.deleteByQuery({
-      index: EESIndexes.DIRECT_MESSAGES,
+      index: EESIndexes.MESSAGES,
       query: { match_all: {} },
       refresh: true,
     })
@@ -55,7 +55,7 @@ export class ElasticsearchService implements OnModuleInit {
 
   async createMessage(messageId: number, message: TMessageESMapping): Promise<void> {
     await ESClient.index({
-      index: EESIndexes.DIRECT_MESSAGES,
+      index: EESIndexes.MESSAGES,
       id: messageId.toString(),
       document: message,
       refresh: 'wait_for',
@@ -73,7 +73,7 @@ export class ElasticsearchService implements OnModuleInit {
 
   async deleteMessage(messageId: number): Promise<void> {
     await ESClient.delete({
-      index: EESIndexes.DIRECT_MESSAGES,
+      index: EESIndexes.MESSAGES,
       id: messageId.toString(),
     })
   }
@@ -92,7 +92,7 @@ export class ElasticsearchService implements OnModuleInit {
     searchOffset?: TMessageSearchOffset
   ): Promise<TESSearchGeneralResult<TMessageESMapping>[]> {
     const result = await ESClient.search<TMessageESMapping>({
-      index: EESIndexes.DIRECT_MESSAGES,
+      index: EESIndexes.MESSAGES,
       query: {
         bool: {
           must: [

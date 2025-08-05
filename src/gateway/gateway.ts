@@ -20,7 +20,9 @@ import { DirectMessageService } from '@/direct-message/direct-message.service'
 import type {
   TClientSocket,
   TFindDirectChatWithOtherUser,
-  THandleMessageMessage,
+  THandleEmitNewMessageParams,
+  THandleMessageParamsClient,
+  THandleMessageParamsMessage,
 } from './gateway.type'
 import type { IEmitSocketEvents, IGateway } from './gateway.interface'
 import { wsValidationPipe } from './gateway.validation'
@@ -39,6 +41,9 @@ import { DevLogger } from '@/dev/dev-logger'
 import type { TDirectChat } from '@/utils/entities/direct-chat.entity'
 import { Socket } from 'socket.io'
 import { TMessageFullInfo } from '@/utils/entities/message.entity'
+import { EChatType } from '@/utils/enums'
+import { UserService } from '@/user/user.service'
+import { EGatewayMessages } from './gateway.message'
 
 @WebSocketGateway({
   cors: {
@@ -67,7 +72,8 @@ export class AppGateway
     private DirectMessageService: DirectMessageService,
     private authService: AuthService,
     private directChatService: DirectChatService,
-    private syncDataToESService: SyncDataToESService
+    private syncDataToESService: SyncDataToESService,
+    private userService: UserService
   ) {}
 
   /**
@@ -172,30 +178,55 @@ export class AppGateway
     return { directChat: newDirectChat, isNew: true }
   }
 
+  async handleEmitNewMessage({
+    client,
+    receiverId,
+    newMessage,
+    isNewDirectChat,
+    directChat,
+    sender,
+  }: THandleEmitNewMessageParams): Promise<void> {
+    const { socket } = client
+    const recipientSocket = this.socketService.getConnectedClient<IEmitSocketEvents>(receiverId)
+    recipientSocket?.emit(EClientSocketEvents.send_message_direct, newMessage)
+    socket.emit(EClientSocketEvents.send_message_direct, newMessage)
+    if (isNewDirectChat) {
+      socket.emit(
+        EClientSocketEvents.new_conversation,
+        directChat,
+        EChatType.DIRECT,
+        newMessage,
+        sender
+      )
+      recipientSocket?.emit(
+        EClientSocketEvents.new_conversation,
+        directChat,
+        EChatType.DIRECT,
+        newMessage,
+        sender
+      )
+    }
+  }
+
   async handleMessage(
-    client: { socket: TClientSocket; id: number },
-    message: THandleMessageMessage
+    client: THandleMessageParamsClient,
+    message: THandleMessageParamsMessage
   ): Promise<TMessageFullInfo> {
-    const { id, socket } = client
+    const { id } = client
     const { content, timestamp, directChatId, receiverId, stickerId, type, mediaId, replyToId } =
       message
     const newMessage = await this.DirectMessageService.createNewMessage(
       content,
       id,
       timestamp,
-      directChatId,
       receiverId,
       type,
       stickerId,
       mediaId,
-      replyToId
+      replyToId,
+      directChatId
     )
     await this.directChatService.updateLastSentMessage(directChatId, newMessage.id)
-    const recipientSocket = this.socketService.getConnectedClient<IEmitSocketEvents>(receiverId)
-    if (recipientSocket) {
-      recipientSocket.emit(EClientSocketEvents.send_message_direct, newMessage)
-    }
-    socket.emit(EClientSocketEvents.send_message_direct, newMessage)
     return newMessage
   }
 
@@ -214,6 +245,11 @@ export class AppGateway
 
     const { directChat, isNew } = await this.handleDirectChatNotExists(clientId, receiverId)
     const { id: directChatId } = directChat
+
+    const sender = await this.userService.findUserWithProfileById(clientId)
+    if (!sender) {
+      throw new BaseWsException(EGatewayMessages.SENDER_NOT_FOUND)
+    }
 
     let newMessage: TMessageFullInfo
 
@@ -302,11 +338,19 @@ export class AppGateway
         )
         break
     }
-    return {
-      success: true,
-      directChat,
+
+    await this.handleEmitNewMessage({
+      client: { id: clientId, socket: client },
+      receiverId,
       newMessage,
       isNewDirectChat: isNew,
+      directChat,
+      sender,
+    })
+
+    return {
+      success: true,
+      newMessage,
     }
   }
 

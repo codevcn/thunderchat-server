@@ -42,3 +42,5 @@ D:\D-Documents\Code_VCN\React\VCN-THUNDER-CHAT-APP\server\src\utils\helpers.ts
 D:\D-Documents\Code_VCN\React\VCN-THUNDER-CHAT-APP\server\src\utils\enums.ts
 D:\D-Documents\Code_VCN\React\VCN-THUNDER-CHAT-APP\server\src\upload\upload.controller.ts (H)
 D:\D-Documents\Code_VCN\React\VCN-THUNDER-CHAT-APP\server\src\upload\upload.service.ts (H)
+D:\D-Documents\Code_VCN\React\VCN-THUNDER-CHAT-APP\server\src\gateway\gateway.interface.ts
+D:\D-Documents\Code_VCN\React\VCN-THUNDER-CHAT-APP\server\src\configs\elasticsearch\elasticsearch.service.ts

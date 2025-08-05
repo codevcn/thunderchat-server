@@ -63,7 +63,7 @@ class SyncDataToESHandler {
             validUserIds = groupChat.Members.map((member) => member.userId)
           }
           await this.ESClient.index({
-            index: EESIndexes.DIRECT_MESSAGES,
+            index: EESIndexes.MESSAGES,
             id: queryResult.id.toString(),
             document: typeToRawObject<TMessageESMapping>({
               doc_id: queryResult.id,
@@ -145,7 +145,7 @@ class SyncDataToESHandler {
             validUserIds = groupChat.Members.map((member) => member.userId)
           }
           await this.ESClient.index({
-            index: EESIndexes.DIRECT_MESSAGES,
+            index: EESIndexes.MESSAGES,
             id: id.toString(),
             document: typeToRawObject<TMessageESMapping>({
               doc_id: id,
