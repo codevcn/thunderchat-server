@@ -30,15 +30,6 @@ export class SendDirectMessagePayloadDTO {
   @Type(() => Date)
   timestamp: Date
 
-  @IsOptional()
-  mediaUrl?: string
-
-  @IsOptional()
-  fileName?: string
-
-  @IsOptional()
-  thumbnailUrl?: string
-
   @IsNumber()
   @Type(() => Number)
   replyToId?: number

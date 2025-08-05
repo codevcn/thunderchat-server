@@ -15,7 +15,7 @@ import { canSendDirectMessage } from './can-send-message.helper'
 
 @Injectable()
 export class DirectMessageService {
-  private readonly messageIncludeReplyToAndAuthor = {
+  private readonly messageFullInfo = {
     ReplyTo: {
       include: {
         Author: {
@@ -23,6 +23,8 @@ export class DirectMessageService {
             Profile: true,
           },
         },
+        Media: true,
+        Sticker: true,
       },
     },
     Author: {
@@ -30,6 +32,8 @@ export class DirectMessageService {
         Profile: true,
       },
     },
+    Media: true,
+    Sticker: true,
   }
 
   constructor(
@@ -55,8 +59,6 @@ export class DirectMessageService {
     type: EMessageTypes = EMessageTypes.TEXT,
     stickerId?: number,
     mediaId?: number,
-    fileName?: string,
-    thumbnailUrl?: string,
     replyToId?: number
   ): Promise<TGetDirectMessagesMessage> {
     // Kiểm tra quyền gửi tin nhắn 1-1
@@ -71,12 +73,10 @@ export class DirectMessageService {
         type,
         stickerId,
         recipientId,
-        ...(mediaId && { mediaId }),
-        ...(fileName && { fileName }),
-        ...(thumbnailUrl && { thumbnailUrl }),
-        ...(replyToId && { replyToId }),
+        mediaId,
+        replyToId,
       },
-      include: this.messageIncludeReplyToAndAuthor,
+      include: this.messageFullInfo,
     })
     this.syncDataToESService.syncDataToES({
       type: ESyncDataToESWorkerType.CREATE_MESSAGE,
@@ -122,7 +122,7 @@ export class DirectMessageService {
         id: 'asc',
       },
       take: limit,
-      include: this.messageIncludeReplyToAndAuthor,
+      include: this.messageFullInfo,
     })
     console.log(
       '[getNewerDirectMessages] Trả về',
@@ -163,7 +163,7 @@ export class DirectMessageService {
         id: 'desc',
       },
       take: limit,
-      include: this.messageIncludeReplyToAndAuthor,
+      include: this.messageFullInfo,
     })
   }
 
@@ -251,6 +251,7 @@ export class DirectMessageService {
           not: EMessageTypes.TEXT,
         },
       },
+      include: this.messageFullInfo,
       orderBy: {
         createdAt: sortType === ESortTypes.TIME_ASC ? 'asc' : 'desc',
       },
@@ -292,7 +293,7 @@ export class DirectMessageService {
     // 1. Lấy tin nhắn trung tâm (tin nhắn muốn dẫn tới)
     const centerMsg = await this.PrismaService.message.findUnique({
       where: { id: messageId },
-      include: this.messageIncludeReplyToAndAuthor,
+      include: this.messageFullInfo,
     })
     if (!centerMsg) {
       console.error('[getMessageContext] Không tìm thấy messageId:', messageId)
@@ -313,7 +314,7 @@ export class DirectMessageService {
       },
       orderBy: { createdAt: 'desc' },
       take: 10,
-      include: this.messageIncludeReplyToAndAuthor,
+      include: this.messageFullInfo,
     })
     // 3. Lấy 10 tin nhắn sau
     const nextMsgs = await this.PrismaService.message.findMany({
@@ -323,7 +324,7 @@ export class DirectMessageService {
       },
       orderBy: { createdAt: 'asc' },
       take: 10,
-      include: this.messageIncludeReplyToAndAuthor,
+      include: this.messageFullInfo,
     })
     console.log(
       '[getMessageContext] prevMsgs:',

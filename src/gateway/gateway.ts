@@ -17,7 +17,11 @@ import {
   BaseWsExceptionsFilter,
 } from '@/utils/exception-filters/base-ws-exception.filter'
 import { DirectMessageService } from '@/direct-message/direct-message.service'
-import type { TClientSocket, TFindDirectChatWithOtherUser } from './gateway.type'
+import type {
+  TClientSocket,
+  TFindDirectChatWithOtherUser,
+  THandleMessageMessage,
+} from './gateway.type'
 import type { IEmitSocketEvents, IGateway } from './gateway.interface'
 import { wsValidationPipe } from './gateway.validation'
 import { SocketService } from './socket/socket.service'
@@ -34,7 +38,7 @@ import { SyncDataToESService } from '@/configs/elasticsearch/sync-data-to-ES/syn
 import { DevLogger } from '@/dev/dev-logger'
 import type { TDirectChat } from '@/utils/entities/direct-chat.entity'
 import { Socket } from 'socket.io'
-import { TMessageWithAuthorAndReplyTo } from '@/utils/entities/message.entity'
+import { TMessageFullInfo } from '@/utils/entities/message.entity'
 
 @WebSocketGateway({
   cors: {
@@ -170,32 +174,11 @@ export class AppGateway
 
   async handleMessage(
     client: { socket: TClientSocket; id: number },
-    message: {
-      content: string
-      timestamp: Date
-      directChatId: number
-      receiverId: number
-      type: EMessageTypes
-      stickerId?: number
-      mediaId?: number
-      fileName?: string
-      thumbnailUrl?: string
-      replyToId?: number
-    }
-  ): Promise<TMessageWithAuthorAndReplyTo> {
+    message: THandleMessageMessage
+  ): Promise<TMessageFullInfo> {
     const { id, socket } = client
-    const {
-      content,
-      timestamp,
-      directChatId,
-      receiverId,
-      stickerId,
-      type,
-      fileName,
-      mediaId,
-      thumbnailUrl,
-      replyToId,
-    } = message
+    const { content, timestamp, directChatId, receiverId, stickerId, type, mediaId, replyToId } =
+      message
     const newMessage = await this.DirectMessageService.createNewMessage(
       content,
       id,
@@ -205,8 +188,6 @@ export class AppGateway
       type,
       stickerId,
       mediaId,
-      fileName,
-      thumbnailUrl,
       replyToId
     )
     await this.directChatService.updateLastSentMessage(directChatId, newMessage.id)
@@ -234,7 +215,7 @@ export class AppGateway
     const { directChat, isNew } = await this.handleDirectChatNotExists(clientId, receiverId)
     const { id: directChatId } = directChat
 
-    let newMessage: TMessageWithAuthorAndReplyTo
+    let newMessage: TMessageFullInfo
 
     // Content đã được mã hóa bởi interceptor
     switch (type) {
@@ -289,7 +270,6 @@ export class AppGateway
             receiverId,
             type: EMessageTypes.MEDIA,
             mediaId: parseInt(content),
-            thumbnailUrl: msgPayload.thumbnailUrl,
             replyToId,
           }
         )
@@ -304,7 +284,6 @@ export class AppGateway
             receiverId,
             type: EMessageTypes.MEDIA,
             mediaId: parseInt(content),
-            fileName: msgPayload.fileName,
             replyToId,
           }
         )
@@ -319,7 +298,6 @@ export class AppGateway
             receiverId,
             type: EMessageTypes.MEDIA,
             mediaId: parseInt(content),
-            fileName: msgPayload.fileName,
           }
         )
         break

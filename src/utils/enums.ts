@@ -74,11 +74,6 @@ export enum EMessageStatus {
   SEEN = 'SEEN',
 }
 
-export enum EMessageTypes {
-  TEXT = 'TEXT',
-  STICKER = 'STICKER',
-}
-
 export enum EAppRoles {
   USER = 'USER',
   ADMIN = 'ADMIN',

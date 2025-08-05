@@ -253,6 +253,8 @@ export class PinService {
                 },
               },
             },
+            Media: true,
+            Sticker: true,
           },
         },
       },

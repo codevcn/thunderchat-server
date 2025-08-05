@@ -1,6 +1,6 @@
-import type { TMessage, TMessageWithAuthorAndReplyTo } from '@/utils/entities/message.entity'
+import type { TMessage, TMessageFullInfo } from '@/utils/entities/message.entity'
 import type { EMessageStatus } from '@/utils/enums'
-import type { EMessageTypes } from '@/utils/enums'
+import type { EMessageTypes } from '@/direct-message/direct-message.enum'
 
 export type TNewGroupMessage = {
   id: number
@@ -30,4 +30,4 @@ export type TSendMessageDto = {
   mediaUrl?: string
 }
 
-export type TGetDirectMessagesMessage = TMessageWithAuthorAndReplyTo
+export type TGetDirectMessagesMessage = TMessageFullInfo
