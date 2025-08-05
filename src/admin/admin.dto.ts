@@ -7,6 +7,7 @@ import {
   IsIn,
   Min,
   Max,
+  IsDateString,
 } from 'class-validator'
 import { Type } from 'class-transformer'
 
@@ -76,4 +77,42 @@ export class UpdateUserEmailDTO {
   @IsNotEmpty()
   @IsString()
   email: string
+}
+
+export class GetSystemOverviewDTO {
+  @IsOptional()
+  @IsIn(['day', 'week', 'month', 'year'])
+  timeRange?: 'day' | 'week' | 'month' | 'year'
+
+  @IsOptional()
+  @IsDateString()
+  startDate?: string
+
+  @IsOptional()
+  @IsDateString()
+  endDate?: string
+}
+
+export class GetUserMessageStatsDTO {
+  @IsNotEmpty()
+  @IsNumber()
+  @Type(() => Number)
+  page: number
+
+  @IsNotEmpty()
+  @IsNumber()
+  @Type(() => Number)
+  limit: number
+
+  @IsOptional()
+  @IsString()
+  search?: string
+
+  @IsOptional()
+  @IsIn(['directMessageCount', 'groupMessageCount', 'totalMessageCount', 'lastMessageAt'])
+  sortBy?: 'directMessageCount' | 'groupMessageCount' | 'totalMessageCount' | 'lastMessageAt'
+
+  @IsOptional()
+  @IsIn(['asc', 'desc'])
+  sortOrder?: 'asc' | 'desc'
 }

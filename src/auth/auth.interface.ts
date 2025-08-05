@@ -8,7 +8,7 @@ export interface IAuthController {
   checkAdminEmail: (
     checkAdminEmailPayload: CheckAdminEmailDTO
   ) => Promise<{ isAdmin: boolean; message?: string }>
-  logout: (res: Response) => Promise<{ success: boolean }>
+  logout: (res: Response, user: TUserWithProfile) => Promise<{ success: boolean }>
   checkAuth: (user: TUserWithProfile) => Promise<CheckAuthDataDTO>
   checkAdminAuth: (user: TUserWithProfile) => Promise<CheckAuthDataDTO>
 }

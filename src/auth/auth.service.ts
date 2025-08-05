@@ -18,13 +18,15 @@ import { validate } from 'class-validator'
 import { SystemException } from '@/utils/exceptions/system.exception'
 import { EAppRoles } from '@/utils/enums'
 import { EAdminMessages } from './role/admin/admin.message'
+import { SocketService } from '@/gateway/socket/socket.service'
 
 @Injectable()
 export class AuthService {
   constructor(
     private jwtService: JWTService,
     private userService: UserService,
-    private credentialService: CredentialService
+    private credentialService: CredentialService,
+    private socketService: SocketService
   ) {}
 
   async loginUser(res: Response, { email, password }: TLoginUserParams): Promise<void> {
@@ -93,8 +95,9 @@ export class AuthService {
     }
   }
 
-  async logoutUser(res: Response): Promise<void> {
+  async logoutUser(res: Response, userId: number): Promise<void> {
     await this.jwtService.removeJWT({ response: res })
+    this.socketService.removeConnectedClient(userId)
   }
 
   async validateSocketConnection(socket: Socket): Promise<void> {
