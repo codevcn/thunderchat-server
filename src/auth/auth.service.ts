@@ -19,6 +19,7 @@ import { SystemException } from '@/utils/exceptions/system.exception'
 import { EAppRoles } from '@/utils/enums'
 import { EAdminMessages } from './role/admin/admin.message'
 import { PrismaService } from '@/configs/db/prisma.service'
+import { SocketService } from '@/gateway/socket/socket.service'
 
 @Injectable()
 export class AuthService {
@@ -26,7 +27,8 @@ export class AuthService {
     private jwtService: JWTService,
     private userService: UserService,
     private credentialService: CredentialService,
-    @Inject(EProviderTokens.PRISMA_CLIENT) private prisma: PrismaService
+    @Inject(EProviderTokens.PRISMA_CLIENT) private prisma: PrismaService,
+    private socketService: SocketService
   ) {}
 
   /**
@@ -184,8 +186,9 @@ export class AuthService {
     }
   }
 
-  async logoutUser(res: Response): Promise<void> {
+  async logoutUser(res: Response, userId: number): Promise<void> {
     await this.jwtService.removeJWT({ response: res })
+    this.socketService.removeConnectedClient(userId)
   }
 
   async validateSocketConnection(socket: Socket): Promise<void> {

@@ -70,6 +70,10 @@ export class SocketService {
     return this.connectedClients.has(userId)
   }
 
+  getConnectedClientsCount(): number {
+    return this.connectedClients.size
+  }
+
   async emitToDirectChat(directChatId: number, event: EClientSocketEvents, payload: any) {
     if (this.server) {
       const room = `direct_chat_${directChatId}`

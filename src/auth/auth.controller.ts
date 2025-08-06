@@ -50,8 +50,8 @@ export class AuthController implements IAuthController {
 
   @Post('logout')
   @UseGuards(AuthGuard)
-  async logout(@Res({ passthrough: true }) res: Response) {
-    await this.authService.logoutUser(res)
+  async logout(@Res({ passthrough: true }) res: Response, @User() user: TUserWithProfile) {
+    await this.authService.logoutUser(res, user.id)
     return { success: true }
   }
 

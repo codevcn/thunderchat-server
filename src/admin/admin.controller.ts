@@ -29,6 +29,7 @@ import {
 } from './admin.dto'
 import { AdminGuard } from '../auth/role/admin/admin.guard'
 import { AdminOnly } from '../auth/role/admin/admin.decorator'
+import { BanUserDTO, GetSystemOverviewDTO, GetUserMessageStatsDTO } from './admin.dto'
 
 @Controller('admin')
 @UseGuards(AuthGuard)
@@ -41,6 +42,11 @@ export class AdminController {
     return this.adminService.getUsers(query)
   }
 
+  @Get('overview')
+  @AdminOnly()
+  async getSystemOverview(@Query() params: GetSystemOverviewDTO) {
+    return await this.adminService.getSystemOverview(params)
+  }
   @Put('users/:userId/lock')
   async lockUnlockUser(@Param('userId') userId: string, @Body() body: LockUnlockUserDTO) {
     return this.adminService.lockUnlockUser(parseInt(userId), body.isActive)
@@ -109,5 +115,11 @@ export class AdminController {
     }
 
     return result.data
+  }
+
+  @Get('users/message-stats')
+  @AdminOnly()
+  async getUserMessageStats(@Query() params: GetUserMessageStatsDTO) {
+    return await this.adminService.getUserMessageStats(params)
   }
 }

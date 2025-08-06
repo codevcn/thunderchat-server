@@ -9,7 +9,7 @@ export interface IAuthController {
   checkAdminEmail: (
     checkAdminEmailPayload: CheckAdminEmailDTO
   ) => Promise<{ isAdmin: boolean; message?: string }>
-  logout: (res: Response) => Promise<TSuccess>
+  logout: (res: Response, user: TUserWithProfile) => Promise<TSuccess>
   checkAuth: (user: TUserWithProfile) => Promise<CheckAuthDataDTO>
   checkAdminAuth: (user: TUserWithProfile) => Promise<CheckAuthDataDTO>
 }
