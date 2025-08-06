@@ -4,6 +4,8 @@ export enum EInitEvents {
 
 export enum EClientSocketEvents {
   send_message_direct = 'send_message:direct',
+  send_message_group = 'send_message:group',
+  join_group_chat = 'join_group_chat',
   send_friend_request = 'friend_request:send',
   error = 'error',
   recovered_connection = 'recovered_connection',

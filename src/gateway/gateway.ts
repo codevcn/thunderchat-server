@@ -27,7 +27,13 @@ import type {
 import type { IEmitSocketEvents, IGateway } from './gateway.interface'
 import { wsValidationPipe } from './gateway.validation'
 import { SocketService } from './socket/socket.service'
-import { MarkAsSeenDTO, TypingDTO, SendDirectMessageDTO } from './gateway.dto'
+import {
+  MarkAsSeenDTO,
+  TypingDTO,
+  SendDirectMessageDTO,
+  JoinGroupChatDTO,
+  SendGroupMessageDTO,
+} from './gateway.dto'
 import type { TMessageOffset } from '@/direct-message/direct-message.type'
 import { EMsgMessages } from '@/direct-message/direct-message.message'
 import { AuthService } from '@/auth/auth.service'
@@ -45,6 +51,7 @@ import { EChatType } from '@/utils/enums'
 import { UserService } from '@/user/user.service'
 import { EGatewayMessages } from './gateway.message'
 import { GatewayInterceptor } from './gateway.interceptor'
+import { canSendDirectMessage } from '@/direct-message/can-send-message.helper'
 
 @WebSocketGateway({
   cors: {
@@ -70,7 +77,7 @@ export class AppGateway
   constructor(
     private socketService: SocketService,
     private friendService: FriendService,
-    private DirectMessageService: DirectMessageService,
+    private messageService: DirectMessageService,
     private authService: AuthService,
     private directChatService: DirectChatService,
     private syncDataToESService: SyncDataToESService,
@@ -146,7 +153,7 @@ export class AppGateway
     limit?: number
   ): Promise<void> {
     if (directChatId) {
-      const messages = await this.DirectMessageService.getNewerDirectMessages(
+      const messages = await this.messageService.getNewerDirectMessages(
         messageOffset,
         directChatId,
         limit ?? 20
@@ -185,29 +192,37 @@ export class AppGateway
     newMessage,
     isNewDirectChat,
     directChat,
+    groupChat,
     sender,
   }: THandleEmitNewMessageParams): Promise<void> {
-    const { socket } = client
-    const recipientSocket = this.socketService.getConnectedClient<IEmitSocketEvents>(receiverId)
-    recipientSocket?.emit(EClientSocketEvents.send_message_direct, newMessage)
-    socket.emit(EClientSocketEvents.send_message_direct, newMessage)
-    if (isNewDirectChat) {
-      socket.emit(
-        EClientSocketEvents.new_conversation,
-        directChat,
-        null,
-        EChatType.DIRECT,
-        newMessage,
-        sender
-      )
-      recipientSocket?.emit(
-        EClientSocketEvents.new_conversation,
-        directChat,
-        null,
-        EChatType.DIRECT,
-        newMessage,
-        sender
-      )
+    if (directChat && receiverId) {
+      const { socket } = client
+      socket.emit(EClientSocketEvents.send_message_direct, newMessage)
+      const recipientSocket = this.socketService.getConnectedClient<IEmitSocketEvents>(receiverId)
+      recipientSocket?.emit(EClientSocketEvents.send_message_direct, newMessage)
+      if (isNewDirectChat) {
+        socket.emit(
+          EClientSocketEvents.new_conversation,
+          directChat,
+          null,
+          EChatType.DIRECT,
+          newMessage,
+          sender
+        )
+        recipientSocket?.emit(
+          EClientSocketEvents.new_conversation,
+          directChat,
+          null,
+          EChatType.DIRECT,
+          newMessage,
+          sender
+        )
+      }
+    } else if (groupChat) {
+      this.socketService
+        .getServer()
+        .to(this.createGroupChatRoomName(groupChat.id))
+        .emit(EClientSocketEvents.send_message_group, newMessage)
     }
   }
 
@@ -216,21 +231,48 @@ export class AppGateway
     message: THandleMessageParamsMessage
   ): Promise<TMessageFullInfo> {
     const { id } = client
-    const { content, timestamp, directChatId, receiverId, stickerId, type, mediaId, replyToId } =
-      message
-    const newMessage = await this.DirectMessageService.createNewMessage(
+    const {
       content,
-      id,
       timestamp,
+      directChatId,
       receiverId,
-      type,
+      groupId,
       stickerId,
+      type,
       mediaId,
       replyToId,
-      directChatId
-    )
-    await this.directChatService.updateLastSentMessage(directChatId, newMessage.id)
-    return newMessage
+    } = message
+    if (directChatId && receiverId) {
+      await canSendDirectMessage(this.messageService['PrismaService'], id, receiverId) // Kiểm tra quyền gửi tin nhắn 1-1
+      const newMessage = await this.messageService.createNewMessage(
+        content,
+        id,
+        timestamp,
+        type,
+        receiverId,
+        stickerId,
+        mediaId,
+        replyToId,
+        directChatId
+      )
+      await this.directChatService.updateLastSentMessage(directChatId, newMessage.id)
+      return newMessage
+    } else if (groupId) {
+      const newMessage = await this.messageService.createNewMessage(
+        content,
+        id,
+        timestamp,
+        type,
+        undefined,
+        stickerId,
+        mediaId,
+        replyToId,
+        undefined,
+        groupId
+      )
+      return newMessage
+    }
+    throw new BaseWsException(EGatewayMessages.INVALID_MESSAGE_TYPE)
   }
 
   @SubscribeMessage(EClientSocketEvents.send_message_direct)
@@ -256,13 +298,12 @@ export class AppGateway
 
     let newMessage: TMessageFullInfo
 
-    // Content đã được mã hóa bởi interceptor
     switch (type) {
       case EMessageTypeAllTypes.TEXT:
         newMessage = await this.handleMessage(
           { id: clientId, socket: client },
           {
-            content, // Content đã được mã hóa
+            content,
             timestamp,
             directChatId,
             receiverId,
@@ -366,7 +407,7 @@ export class AppGateway
     @ConnectedSocket() client: TClientSocket
   ) {
     const { messageId, receiverId } = data
-    await this.DirectMessageService.updateMessageStatus(messageId, EMessageStatus.SEEN)
+    await this.messageService.updateMessageStatus(messageId, EMessageStatus.SEEN)
     const recipientSocket = this.socketService.getConnectedClient<IEmitSocketEvents>(receiverId)
     if (recipientSocket) {
       recipientSocket.emit(EClientSocketEvents.message_seen_direct, {
@@ -392,10 +433,136 @@ export class AppGateway
     }
   }
 
-  @SubscribeMessage('join_room')
-  handleJoinRoom(@MessageBody() data: { room: string }, @ConnectedSocket() client: Socket) {
-    client.join(data.room)
-    client.emit('joined_room', data.room)
-    console.log('[SERVER] Socket', client.id, 'joined room', data.room)
+  private createGroupChatRoomName(groupId: number): string {
+    return `group_chat_${groupId}`
   }
+
+  @SubscribeMessage(EClientSocketEvents.join_group_chat)
+  @CatchInternalSocketError()
+  async handleJoinGroupChat(
+    @MessageBody() data: JoinGroupChatDTO,
+    @ConnectedSocket() client: Socket
+  ) {
+    const { groupId } = data
+    client.join(this.createGroupChatRoomName(groupId))
+    return {
+      success: true,
+    }
+  }
+
+  // @SubscribeMessage(EClientSocketEvents.send_message_group)
+  // @CatchInternalSocketError()
+  // async handleSendGroupMessage(
+  //   @MessageBody() payload: SendGroupMessageDTO,
+  //   @ConnectedSocket() client: TClientSocket
+  // ) {
+  //   const { clientId } = await this.authService.validateSocketAuth(client)
+  //   const { type, msgPayload } = payload
+  //   const { groupId, token } = msgPayload
+
+  //   await this.checkUniqueMessage(token, clientId)
+  //   const { timestamp, content, replyToId } = msgPayload
+
+  //   const sender = await this.userService.findUserWithProfileById(clientId)
+  //   if (!sender) {
+  //     throw new BaseWsException(EGatewayMessages.SENDER_NOT_FOUND)
+  //   }
+
+  //   let newMessage: TMessageFullInfo
+
+  //   switch (type) {
+  //     case EMessageTypeAllTypes.TEXT:
+  //       newMessage = await this.handleMessage(
+  //         { id: clientId, socket: client },
+  //         {
+  //           content,
+  //           timestamp,
+  //           groupId,
+  //           type: EMessageTypes.TEXT,
+  //           replyToId,
+  //         }
+  //       )
+  //       break
+  //     case EMessageTypeAllTypes.STICKER:
+  //       newMessage = await this.handleMessage(
+  //         { id: clientId, socket: client },
+  //         {
+  //           content: '',
+  //           timestamp,
+  //           groupId,
+  //           type: EMessageTypes.STICKER,
+  //           stickerId: parseInt(content),
+  //           replyToId,
+  //         }
+  //       )
+  //       break
+  //     case EMessageTypeAllTypes.IMAGE:
+  //       newMessage = await this.handleMessage(
+  //         { id: clientId, socket: client },
+  //         {
+  //           content: '',
+  //           timestamp,
+  //           groupId,
+  //           type: EMessageTypes.MEDIA,
+  //           mediaId: parseInt(content),
+  //           replyToId,
+  //         }
+  //       )
+  //       break
+  //     case EMessageTypeAllTypes.VIDEO:
+  //       newMessage = await this.handleMessage(
+  //         { id: clientId, socket: client },
+  //         {
+  //           content: '',
+  //           timestamp,
+  //           groupId,
+  //           type: EMessageTypes.MEDIA,
+  //           mediaId: parseInt(content),
+  //           replyToId,
+  //         }
+  //       )
+  //       break
+  //     case EMessageTypeAllTypes.DOCUMENT:
+  //       newMessage = await this.handleMessage(
+  //         { id: clientId, socket: client },
+  //         {
+  //           content: msgPayload.content || '', // Tên file
+  //           timestamp,
+  //           groupId,
+  //           type: EMessageTypes.MEDIA,
+  //           mediaId: parseInt(content),
+  //           replyToId,
+  //         }
+  //       )
+  //       break
+  //     case EMessageTypeAllTypes.AUDIO:
+  //       newMessage = await this.handleMessage(
+  //         { id: clientId, socket: client },
+  //         {
+  //           content: msgPayload.content || '', // Caption nếu có
+  //           timestamp,
+  //           groupId,
+  //           type: EMessageTypes.MEDIA,
+  //           mediaId: parseInt(content),
+  //         }
+  //       )
+  //       break
+  //     default:
+  //       throw new BaseWsException(EGatewayMessages.INVALID_MESSAGE_FORMAT)
+  //   }
+
+  //   await this.handleEmitNewMessage({
+  //     client: { id: clientId, socket: client },
+  //     receiverId,
+  //     newMessage,
+  //     isNewDirectChat: isNew,
+  //     directChat,
+  //     sender,
+  //   })
+
+  //   return {
+  //     success: true,
+  //     newMessage,
+  //   }
+  // }
 }

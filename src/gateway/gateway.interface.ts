@@ -4,8 +4,13 @@ import type {
   TGetDirectMessagesMessage,
   TMsgStatusPayload,
 } from '@/direct-message/direct-message.type'
-import type { TWsErrorResponse } from '@/utils/types'
-import type { MarkAsSeenDTO, SendDirectMessageDTO, TypingDTO } from './gateway.dto'
+import type { TSuccess, TWsErrorResponse } from '@/utils/types'
+import type {
+  JoinGroupChatDTO,
+  MarkAsSeenDTO,
+  SendDirectMessageDTO,
+  TypingDTO,
+} from './gateway.dto'
 import type { Socket } from 'socket.io'
 import type { TClientSocket, TSendDirectMessageRes } from './gateway.type'
 import type {
@@ -14,8 +19,8 @@ import type {
 } from '@/friend-request/friend-request.type'
 import type { TDirectChat } from '@/utils/entities/direct-chat.entity'
 import type { EChatType } from '@/utils/enums'
-import { TMessage } from '@/utils/entities/message.entity'
-import { TGroupChat } from '@/utils/entities/group-chat.entity'
+import type { TMessage } from '@/utils/entities/message.entity'
+import type { TGroupChat } from '@/utils/entities/group-chat.entity'
 
 export interface IEmitSocketEvents {
   [EInitEvents.client_connected]: (message: string) => void
@@ -38,6 +43,8 @@ export interface IEmitSocketEvents {
     newMessage: TMessage,
     sender: TUserWithProfile
   ) => void
+  [EClientSocketEvents.send_message_group]: () => void
+  [EClientSocketEvents.join_group_chat]: () => void
 }
 
 export interface IGateway {
@@ -47,4 +54,5 @@ export interface IGateway {
   ) => Promise<TSendDirectMessageRes>
   handleMarkAsSeenInDirectChat: (data: MarkAsSeenDTO, client: TClientSocket) => Promise<void>
   handleTyping: (data: TypingDTO, client: TClientSocket) => Promise<void>
+  handleJoinGroupChat: (data: JoinGroupChatDTO, client: TClientSocket) => Promise<TSuccess>
 }

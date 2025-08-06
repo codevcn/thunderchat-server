@@ -71,3 +71,42 @@ export class TypingDTO {
   @IsNotEmpty()
   directChatId: number
 }
+
+export class SendGroupMessagePayloadDTO {
+  @IsNumber()
+  @IsNotEmpty()
+  groupId: number
+
+  @IsNotEmpty()
+  content: string
+
+  @IsNotEmpty()
+  @IsUUID()
+  token: string
+
+  @IsNotEmpty()
+  @IsDate()
+  @Type(() => Date)
+  timestamp: Date
+
+  @IsNumber()
+  @Type(() => Number)
+  replyToId?: number
+}
+
+export class SendGroupMessageDTO {
+  @IsEnum(EMessageTypeAllTypes)
+  @IsNotEmpty()
+  type: EMessageTypeAllTypes
+
+  @IsNotEmpty()
+  @ValidateNested()
+  msgPayload: SendGroupMessagePayloadDTO
+}
+
+export class JoinGroupChatDTO {
+  @IsNumber()
+  @IsNotEmpty()
+  @Type(() => Number)
+  groupId: number
+}

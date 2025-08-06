@@ -11,7 +11,6 @@ import type {
   TMessageUpdates,
 } from './direct-message.type'
 import { SyncDataToESService } from '@/configs/elasticsearch/sync-data-to-ES/sync-data-to-ES.service'
-import { canSendDirectMessage } from './can-send-message.helper'
 
 @Injectable()
 export class DirectMessageService {
@@ -54,23 +53,14 @@ export class DirectMessageService {
     encryptedContent: string,
     authorId: number,
     timestamp: Date,
-    recipientId: number,
     type: EMessageTypes = EMessageTypes.TEXT,
+    recipientId?: number,
     stickerId?: number,
     mediaId?: number,
     replyToId?: number,
     directChatId?: number,
     groupChatId?: number
   ): Promise<TGetDirectMessagesMessage> {
-    console.log('>>> chat data:', {
-      directChatId,
-      groupChatId,
-      mediaId,
-      stickerId,
-      replyToId,
-    })
-    // Kiểm tra quyền gửi tin nhắn 1-1
-    await canSendDirectMessage(this.PrismaService, authorId, recipientId)
     const message = await this.PrismaService.message.create({
       data: {
         content: encryptedContent,
