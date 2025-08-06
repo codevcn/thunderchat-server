@@ -43,7 +43,6 @@ export class DirectMessageController implements IDirectMessageController {
   }
   @Get('context/:messageId')
   async getMessageContext(@Param('messageId') messageId: string) {
-    console.log('[DirectMessageController] Nhận request GET /context/' + messageId)
     return this.directMessageService.getMessageContext(Number(messageId))
   }
 

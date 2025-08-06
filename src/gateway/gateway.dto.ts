@@ -11,7 +11,7 @@ import {
   IsUUID,
   ValidateNested,
 } from 'class-validator'
-import { EMessageTypesFromClient } from './gateway.enum'
+import { EMessageTypeAllTypes } from './gateway.enum'
 
 export class SendDirectMessagePayloadDTO {
   @IsNumber()
@@ -36,9 +36,9 @@ export class SendDirectMessagePayloadDTO {
 }
 
 export class SendDirectMessageDTO {
-  @IsEnum(EMessageTypesFromClient)
+  @IsEnum(EMessageTypeAllTypes)
   @IsNotEmpty()
-  type: EMessageTypesFromClient
+  type: EMessageTypeAllTypes
 
   @IsNotEmpty()
   @ValidateNested()

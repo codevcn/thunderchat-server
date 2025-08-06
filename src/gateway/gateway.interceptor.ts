@@ -8,6 +8,7 @@ import { BaseWsException } from '@/utils/exceptions/base-ws.exception'
 import type { TClientSocket } from './gateway.type'
 import { EGatewayMessages } from './gateway.message'
 import { EMsgEncryptionAlgorithms } from '@/utils/enums'
+import { DevLogger } from '@/dev/dev-logger'
 
 @Injectable()
 export class GatewayInterceptor implements NestInterceptor {
@@ -22,12 +23,17 @@ export class GatewayInterceptor implements NestInterceptor {
     const event = context.switchToWs().getPattern() as EClientSocketEvents
     const data = context.switchToWs().getData()
 
-    this.handleEncryptMessageContent(client, event, data)
+    DevLogger.logForWebsocket('Got an EVENT:', { event, data })
+    // this.handleEncryptMessageContent(client, event, data)
 
     return next.handle()
   }
 
-  handleEncryptMessageContent(client: TClientSocket, event: EClientSocketEvents, data: any): void {
+  private handleEncryptMessageContent(
+    client: TClientSocket,
+    event: EClientSocketEvents,
+    data: any
+  ): void {
     // Chỉ xử lý sự kiện gửi tin nhắn 1-1
     if (event !== EClientSocketEvents.send_message_direct) return
 

@@ -7,7 +7,7 @@ import {
 import type { OnGatewayConnection, OnGatewayInit, OnGatewayDisconnect } from '@nestjs/websockets'
 import { Server } from 'socket.io'
 import { EClientSocketEvents, EInitEvents } from './gateway.event'
-import { EMessageTypesFromClient, ESocketNamespaces } from './gateway.enum'
+import { EMessageTypeAllTypes, ESocketNamespaces } from './gateway.enum'
 import { HttpStatus, UseFilters, UsePipes, UseInterceptors } from '@nestjs/common'
 import { FriendService } from '@/friend/friend.service'
 import { BaseWsException } from '../utils/exceptions/base-ws.exception'
@@ -44,6 +44,7 @@ import { TMessageFullInfo } from '@/utils/entities/message.entity'
 import { EChatType } from '@/utils/enums'
 import { UserService } from '@/user/user.service'
 import { EGatewayMessages } from './gateway.message'
+import { GatewayInterceptor } from './gateway.interceptor'
 
 @WebSocketGateway({
   cors: {
@@ -55,7 +56,7 @@ import { EGatewayMessages } from './gateway.message'
 })
 @UseFilters(new BaseWsExceptionsFilter())
 @UsePipes(wsValidationPipe)
-// @UseInterceptors(GatewayInterceptor)
+@UseInterceptors(GatewayInterceptor)
 export class AppGateway
   implements
     OnGatewayConnection<TClientSocket>,
@@ -257,7 +258,7 @@ export class AppGateway
 
     // Content đã được mã hóa bởi interceptor
     switch (type) {
-      case EMessageTypesFromClient.TEXT:
+      case EMessageTypeAllTypes.TEXT:
         newMessage = await this.handleMessage(
           { id: clientId, socket: client },
           {
@@ -270,7 +271,7 @@ export class AppGateway
           }
         )
         break
-      case EMessageTypesFromClient.STICKER:
+      case EMessageTypeAllTypes.STICKER:
         newMessage = await this.handleMessage(
           { id: clientId, socket: client },
           {
@@ -284,7 +285,7 @@ export class AppGateway
           }
         )
         break
-      case EMessageTypesFromClient.IMAGE:
+      case EMessageTypeAllTypes.IMAGE:
         newMessage = await this.handleMessage(
           { id: clientId, socket: client },
           {
@@ -298,7 +299,7 @@ export class AppGateway
           }
         )
         break
-      case EMessageTypesFromClient.VIDEO:
+      case EMessageTypeAllTypes.VIDEO:
         newMessage = await this.handleMessage(
           { id: clientId, socket: client },
           {
@@ -312,7 +313,7 @@ export class AppGateway
           }
         )
         break
-      case EMessageTypesFromClient.DOCUMENT:
+      case EMessageTypeAllTypes.DOCUMENT:
         newMessage = await this.handleMessage(
           { id: clientId, socket: client },
           {
@@ -326,7 +327,7 @@ export class AppGateway
           }
         )
         break
-      case EMessageTypesFromClient.AUDIO:
+      case EMessageTypeAllTypes.AUDIO:
         newMessage = await this.handleMessage(
           { id: clientId, socket: client },
           {
@@ -339,6 +340,8 @@ export class AppGateway
           }
         )
         break
+      default:
+        throw new BaseWsException(EGatewayMessages.INVALID_MESSAGE_FORMAT)
     }
 
     await this.handleEmitNewMessage({
