@@ -11,7 +11,7 @@ import {
   IsUUID,
   ValidateNested,
 } from 'class-validator'
-import { EMessageTypesFromClient } from './gateway.enum'
+import { EMessageTypeAllTypes } from './gateway.enum'
 
 export class SendDirectMessagePayloadDTO {
   @IsNumber()
@@ -36,9 +36,9 @@ export class SendDirectMessagePayloadDTO {
 }
 
 export class SendDirectMessageDTO {
-  @IsEnum(EMessageTypesFromClient)
+  @IsEnum(EMessageTypeAllTypes)
   @IsNotEmpty()
-  type: EMessageTypesFromClient
+  type: EMessageTypeAllTypes
 
   @IsNotEmpty()
   @ValidateNested()
@@ -70,4 +70,43 @@ export class TypingDTO {
   @Type(() => Number)
   @IsNotEmpty()
   directChatId: number
+}
+
+export class SendGroupMessagePayloadDTO {
+  @IsNumber()
+  @IsNotEmpty()
+  groupId: number
+
+  @IsNotEmpty()
+  content: string
+
+  @IsNotEmpty()
+  @IsUUID()
+  token: string
+
+  @IsNotEmpty()
+  @IsDate()
+  @Type(() => Date)
+  timestamp: Date
+
+  @IsNumber()
+  @Type(() => Number)
+  replyToId?: number
+}
+
+export class SendGroupMessageDTO {
+  @IsEnum(EMessageTypeAllTypes)
+  @IsNotEmpty()
+  type: EMessageTypeAllTypes
+
+  @IsNotEmpty()
+  @ValidateNested()
+  msgPayload: SendGroupMessagePayloadDTO
+}
+
+export class JoinGroupChatDTO {
+  @IsNumber()
+  @IsNotEmpty()
+  @Type(() => Number)
+  groupId: number
 }

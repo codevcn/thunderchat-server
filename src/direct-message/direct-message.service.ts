@@ -11,7 +11,6 @@ import type {
   TMessageUpdates,
 } from './direct-message.type'
 import { SyncDataToESService } from '@/configs/elasticsearch/sync-data-to-ES/sync-data-to-ES.service'
-import { canSendDirectMessage } from './can-send-message.helper'
 
 @Injectable()
 export class DirectMessageService {
@@ -54,20 +53,14 @@ export class DirectMessageService {
     encryptedContent: string,
     authorId: number,
     timestamp: Date,
-    recipientId: number,
     type: EMessageTypes = EMessageTypes.TEXT,
+    recipientId?: number,
     stickerId?: number,
     mediaId?: number,
     replyToId?: number,
     directChatId?: number,
     groupChatId?: number
   ): Promise<TGetDirectMessagesMessage> {
-    console.log('>>> chat data:', {
-      directChatId,
-      groupChatId,
-    })
-    // Kiểm tra quyền gửi tin nhắn 1-1
-    await canSendDirectMessage(this.PrismaService, authorId, recipientId)
     const message = await this.PrismaService.message.create({
       data: {
         content: encryptedContent,
@@ -295,22 +288,14 @@ export class DirectMessageService {
   }
 
   async getMessageContext(messageId: number) {
-    console.log('[getMessageContext] Nhận yêu cầu lấy context cho messageId:', messageId)
     // 1. Lấy tin nhắn trung tâm (tin nhắn muốn dẫn tới)
     const centerMsg = await this.PrismaService.message.findUnique({
       where: { id: messageId },
       include: this.messageFullInfo,
     })
     if (!centerMsg) {
-      console.error('[getMessageContext] Không tìm thấy messageId:', messageId)
       throw new Error('Message not found')
     }
-    console.log(
-      '[getMessageContext] Tìm thấy messageId:',
-      messageId,
-      'directChatId:',
-      centerMsg.directChatId
-    )
 
     // 2. Lấy 10 tin nhắn trước
     const prevMsgs = await this.PrismaService.message.findMany({
@@ -332,14 +317,7 @@ export class DirectMessageService {
       take: 10,
       include: this.messageFullInfo,
     })
-    console.log(
-      '[getMessageContext] prevMsgs:',
-      prevMsgs.map((m) => m.id),
-      'center:',
-      centerMsg.id,
-      'nextMsgs:',
-      nextMsgs.map((m) => m.id)
-    )
+
     // 4. Ghép lại đúng thứ tự thời gian
     const messages: (TGetDirectMessagesMessage & { isLastMsgInList?: boolean })[] = [
       ...prevMsgs.reverse(),
@@ -350,14 +328,7 @@ export class DirectMessageService {
     if (messages.length > 0) {
       messages[messages.length - 1].isLastMsgInList = true
     }
-    console.log(
-      '[getMessageContext] Trả về',
-      messages.length,
-      'tin nhắn cho messageId:',
-      messageId,
-      'Các id:',
-      messages.map((m) => m.id)
-    )
+
     return messages
   }
 }
