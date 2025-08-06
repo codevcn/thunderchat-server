@@ -194,6 +194,7 @@ export class AppGateway
       socket.emit(
         EClientSocketEvents.new_conversation,
         directChat,
+        null,
         EChatType.DIRECT,
         newMessage,
         sender
@@ -201,6 +202,7 @@ export class AppGateway
       recipientSocket?.emit(
         EClientSocketEvents.new_conversation,
         directChat,
+        null,
         EChatType.DIRECT,
         newMessage,
         sender

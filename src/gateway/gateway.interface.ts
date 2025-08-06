@@ -15,6 +15,7 @@ import type {
 import type { TDirectChat } from '@/utils/entities/direct-chat.entity'
 import type { EChatType } from '@/utils/enums'
 import { TMessage } from '@/utils/entities/message.entity'
+import { TGroupChat } from '@/utils/entities/group-chat.entity'
 
 export interface IEmitSocketEvents {
   [EInitEvents.client_connected]: (message: string) => void
@@ -31,7 +32,8 @@ export interface IEmitSocketEvents {
   [EClientSocketEvents.pin_message]: (payload: any) => void
   [EClientSocketEvents.pin_direct_chat]: (payload: any) => void
   [EClientSocketEvents.new_conversation]: (
-    payload: TDirectChat,
+    directChat: TDirectChat | null,
+    groupChat: TGroupChat | null,
     type: EChatType,
     newMessage: TMessage,
     sender: TUserWithProfile
