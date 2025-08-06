@@ -15,12 +15,16 @@ import {
   TViolationReport,
   TGetUserReportHistoryParams,
   TUserReportHistoryData,
+  TUserReportHistoryItem,
   TSystemOverviewData,
   TGetSystemOverviewParams,
   TUserMessageStats,
   TGetUserMessageStatsParams,
   TGetUserMessageStatsData,
+  TViolationReportStatus,
+  TViolationReportActionType,
 } from './admin.type'
+import { Prisma } from '@prisma/client'
 
 @Injectable()
 export class AdminService {
@@ -35,7 +39,7 @@ export class AdminService {
     const { page, limit, search, status } = params
 
     // Build where clause for filtering
-    const where: any = {
+    const where: Prisma.UserWhereInput = {
       role: EAppRoles.USER, // Only get users with role USER
     }
 
@@ -186,7 +190,7 @@ export class AdminService {
     const { page, limit, search, status, category, startDate, endDate, sortBy, sortOrder } = params
 
     // Build where clause for filtering
-    const where: any = {}
+    const where: Prisma.ViolationReportWhereInput = {}
 
     // Search filter
     if (search) {
@@ -362,6 +366,7 @@ export class AdminService {
             messageId: true,
             messageType: true,
             messageContent: true,
+            createdAt: true,
           },
         },
       },
@@ -396,7 +401,7 @@ export class AdminService {
         messageId: message.messageId,
         messageType: message.messageType,
         messageContent: message.messageContent,
-        createdAt: report.createdAt.toISOString(), // Using report createdAt since ReportedMessage doesn't have createdAt in schema
+        createdAt: message.createdAt.toISOString(), // Using actual message createdAt
       })),
       createdAt: report.createdAt.toISOString(),
       updatedAt: report.createdAt.toISOString(), // Using createdAt as updatedAt since there's no updatedAt field
@@ -405,7 +410,7 @@ export class AdminService {
 
   async updateViolationReportStatus(
     reportId: number,
-    status: string
+    status: TViolationReportStatus
   ): Promise<TUpdateViolationReportStatusResponse> {
     const report = await this.prisma.violationReport.findUnique({
       where: { id: reportId },
@@ -431,7 +436,7 @@ export class AdminService {
     await this.prisma.violationReport.update({
       where: { id: reportId },
       data: {
-        reportStatus: status as any, // Type assertion for enum
+        reportStatus: status,
       },
     })
 
@@ -443,7 +448,7 @@ export class AdminService {
 
   async banReportedUser(
     reportId: number,
-    banType: string,
+    banType: TViolationReportActionType,
     reason: string,
     banDuration?: number
   ): Promise<TBanUserResponse> {
@@ -481,8 +486,8 @@ export class AdminService {
     }
 
     // Create violation action
-    const actionData: any = {
-      reportId: reportId,
+    const actionData: Prisma.ViolationActionCreateInput = {
+      Report: { connect: { id: reportId } },
       actionType: banType,
       actionReason: reason,
       // Note: adminId field doesn't exist in schema, would need to be added
@@ -526,7 +531,7 @@ export class AdminService {
       const { userId, type, page = 1, limit = 10 } = params
       const skip = (page - 1) * limit
 
-      let reports: any[] = []
+      let reports: TUserReportHistoryItem[] = []
       let total = 0
 
       if (type === 'reported') {
@@ -840,7 +845,7 @@ export class AdminService {
     const { page, limit, search, sortBy = 'totalMessageCount', sortOrder = 'desc' } = params
 
     // Build where clause for filtering users
-    const where: any = {
+    const where: Prisma.UserWhereInput = {
       role: EAppRoles.USER, // Only get users with role USER
     }
 

@@ -46,6 +46,7 @@ export type TUpdateUserEmailResponse = {
 // Violation Reports Types - Updated to match Prisma schema
 export type TViolationReportStatus = 'PENDING' | 'RESOLVED' | 'DISMISSED'
 export type TViolationReportCategory = 'SENSITIVE_CONTENT' | 'BOTHER' | 'FRAUD' | 'OTHER'
+export type TViolationReportActionType = 'WARNING' | 'TEMPORARY_BAN' | 'PERMANENT_BAN'
 
 export type TViolationReportEvidence = {
   images: number

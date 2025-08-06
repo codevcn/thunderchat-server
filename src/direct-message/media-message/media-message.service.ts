@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common'
 import { PrismaService } from '@/configs/db/prisma.service'
 import { EProviderTokens } from '@/utils/enums'
 import { EMessageMediaTypes, EMessageTypes } from '@/direct-message/direct-message.enum'
-import { EMediaTypes, ESortOrder } from './media-message.enum'
+import { ESortOrder } from './media-message.enum'
 import type {
   TMediaItem,
   TPaginationInfo,
@@ -12,6 +12,7 @@ import type {
 } from '@/direct-message/media-message/media-message.type'
 import dayjs from 'dayjs'
 import { countMessageMedia } from '@prisma/client/sql'
+import { Prisma } from '@prisma/client'
 
 @Injectable()
 export class MediaMessageService {
@@ -127,16 +128,16 @@ export class MediaMessageService {
       const backendTypes: string[] = []
       filters.types.forEach((type) => {
         switch (type) {
-          case EMediaTypes.IMAGE:
+          case EMessageMediaTypes.IMAGE:
             backendTypes.push(EMessageMediaTypes.IMAGE)
             break
-          case EMediaTypes.VIDEO:
+          case EMessageMediaTypes.VIDEO:
             backendTypes.push(EMessageMediaTypes.VIDEO)
             break
-          case EMediaTypes.FILE:
+          case EMessageMediaTypes.DOCUMENT:
             backendTypes.push(EMessageMediaTypes.DOCUMENT)
             break
-          case EMediaTypes.VOICE:
+          case EMessageMediaTypes.AUDIO:
             backendTypes.push(EMessageMediaTypes.AUDIO)
             break
         }
@@ -145,16 +146,16 @@ export class MediaMessageService {
     } else if (filters.type) {
       // Handle single type
       switch (filters.type) {
-        case EMediaTypes.IMAGE:
+        case EMessageMediaTypes.IMAGE:
           typeCondition = { type: EMessageMediaTypes.IMAGE }
           break
-        case EMediaTypes.VIDEO:
+        case EMessageMediaTypes.VIDEO:
           typeCondition = { type: EMessageMediaTypes.VIDEO }
           break
-        case EMediaTypes.FILE:
+        case EMessageMediaTypes.DOCUMENT:
           typeCondition = { type: EMessageMediaTypes.DOCUMENT }
           break
-        case EMediaTypes.VOICE:
+        case EMessageMediaTypes.AUDIO:
           typeCondition = { type: EMessageMediaTypes.AUDIO }
           break
         default:
@@ -192,7 +193,7 @@ export class MediaMessageService {
     // Handle date filters
     let dateCondition = {}
     if (filters.fromDate || filters.toDate) {
-      const dateFilter: any = {}
+      const dateFilter: Prisma.DateTimeFilter = {}
       if (filters.fromDate) {
         dateFilter.gte = dayjs(filters.fromDate).startOf('day').toDate()
       }

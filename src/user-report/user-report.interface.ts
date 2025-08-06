@@ -11,6 +11,6 @@ export interface IUserReportService {
     message?: string
     error?: string
     code?: string
-    details?: any
+    details?: unknown
   }>
 }

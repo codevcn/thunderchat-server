@@ -6,6 +6,7 @@ import { EProviderTokens } from '@/utils/enums'
 import type { TDeleteMessageResult } from './delete-message.type'
 import { EMessageTypes } from '@/direct-message/direct-message.enum'
 import { UploadService } from '@/upload/upload.service'
+import { Prisma } from '@prisma/client'
 
 @Injectable()
 export class DeleteMessageService {
@@ -37,7 +38,11 @@ export class DeleteMessageService {
         errors: null,
       }
 
-    let updateData: any = { isDeleted: true, content: '', replyToId: null }
+    let updateData: Prisma.MessageUpdateInput = {
+      isDeleted: true,
+      content: '',
+      ReplyTo: { disconnect: true },
+    }
     // Nếu là media thì set các trường liên quan về null/rỗng và xoá file trên S3
     if (msg.type === EMessageTypes.MEDIA) {
       if (msg.Media) {
@@ -71,17 +76,15 @@ export class DeleteMessageService {
       }
       updateData = {
         ...updateData,
-        mediaUrl: null,
-        fileName: '',
-        thumbnailUrl: null,
-        stickerUrl: null,
+        Media: { disconnect: true },
+        Sticker: { disconnect: true },
       }
     }
     // Nếu là STICKER thì set stickerUrl thành null
     else if (msg.type === EMessageTypes.STICKER) {
       updateData = {
         ...updateData,
-        stickerUrl: null,
+        Sticker: { disconnect: true },
       }
     }
     // Nếu là PIN_NOTICE thì chỉ set content thành rỗng (system message)

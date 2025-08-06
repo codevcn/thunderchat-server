@@ -1,15 +1,16 @@
 import { Type } from 'class-transformer'
 import { IsBoolean, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsArray } from 'class-validator'
+import { EMessageMediaTypes } from '../direct-message.enum'
 
 export class GetMediaMessagesDTO {
   @IsOptional()
-  @IsEnum(['image', 'video', 'file', 'voice'])
-  type?: 'image' | 'video' | 'file' | 'voice'
+  @IsEnum(EMessageMediaTypes)
+  type?: EMessageMediaTypes
 
   @IsOptional()
   @IsArray()
-  @IsEnum(['image', 'video', 'file', 'voice'], { each: true })
-  types?: ('image' | 'video' | 'file' | 'voice')[]
+  @IsEnum(EMessageMediaTypes, { each: true })
+  types?: EMessageMediaTypes[]
 
   @IsOptional()
   @IsNumber()
