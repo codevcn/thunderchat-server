@@ -22,3 +22,14 @@ export class GlobalSearchPayloadDTO {
   @IsNotEmpty({ each: true })
   userSearchOffset?: TUserSearchOffset
 }
+
+export class SearchConversationsPayloadDTO {
+  @IsNotEmpty()
+  @IsString()
+  keyword: string
+
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  limit?: number
+}

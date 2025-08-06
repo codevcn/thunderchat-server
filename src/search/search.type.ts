@@ -25,3 +25,16 @@ export type TGlobalSearchData = {
 export type TMessageSearchOffset = SortResults
 
 export type TUserSearchOffset = SortResults
+
+export type TConversationSearchResult = {
+  id: number
+  type: EChatType
+  title: string
+  email?: string
+  avatar?: {
+    src: string
+  }
+  subtitle?: {
+    content: string
+  }
+}
