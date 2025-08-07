@@ -104,15 +104,24 @@ export class UploadService {
         try {
           // Kiểm tra thumbnail đã tồn tại chưa
           const existingThumbnail = await this.thumbnailService.checkThumbnailExists(fileKey)
+          let thumbnailUrl: string
+
           if (existingThumbnail) {
-            result.thumbnailUrl = existingThumbnail
+            thumbnailUrl = existingThumbnail
           } else {
-            const thumbnailUrl = await this.thumbnailService.generateVideoThumbnail(
+            thumbnailUrl = await this.thumbnailService.generateVideoThumbnail(
               data.Location,
               fileKey
             )
-            result.thumbnailUrl = thumbnailUrl
           }
+
+          // Update thumbnailUrl trong database
+          await this.PrismaService.messageMedia.update({
+            where: { id: messageMedia.id },
+            data: { thumbnailUrl },
+          })
+
+          result.thumbnailUrl = thumbnailUrl
         } catch (error) {
           // Rollback: Xóa file video đã upload
           await this.rollbackFileUpload(fileKey)

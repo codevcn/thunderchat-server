@@ -110,12 +110,9 @@ export class ThumbnailService {
     try {
       const fileBuffer = fs.readFileSync(thumbnailPath)
 
-      // Tạo bucket name cho thumbnail bằng cách thêm "thumbnail" vào bucket chính
-      const thumbnailBucket = `${process.env.AWS_S3_BUCKET}/thumbnail`
-
       const params = {
-        Bucket: thumbnailBucket,
-        Key: thumbnailKey,
+        Bucket: process.env.AWS_S3_BUCKET,
+        Key: `thumbnail/${thumbnailKey}`,
         Body: fileBuffer,
         ContentType: 'image/jpeg',
       }
@@ -160,12 +157,9 @@ export class ThumbnailService {
     try {
       this.logger.log(`🔄 Bắt đầu rollback thumbnail: Xóa file ${thumbnailKey}`)
 
-      // Tạo bucket name cho thumbnail bằng cách thêm "thumbnail" vào bucket chính
-      const thumbnailBucket = `${process.env.AWS_S3_BUCKET}/thumbnail`
-
       const params = {
-        Bucket: thumbnailBucket,
-        Key: thumbnailKey,
+        Bucket: process.env.AWS_S3_BUCKET,
+        Key: `thumbnail/${thumbnailKey}`,
       }
 
       await this.s3.deleteObject(params).promise()
@@ -183,16 +177,13 @@ export class ThumbnailService {
     try {
       const thumbnailKey = this.generateThumbnailKey(videoKey)
 
-      // Tạo bucket name cho thumbnail bằng cách thêm "thumbnail" vào bucket chính
-      const thumbnailBucket = `${process.env.AWS_S3_BUCKET}/thumbnail`
-
       const params = {
-        Bucket: thumbnailBucket,
-        Key: thumbnailKey,
+        Bucket: process.env.AWS_S3_BUCKET,
+        Key: `thumbnail/${thumbnailKey}`,
       }
 
       await this.s3.headObject(params).promise()
-      return `https://${thumbnailBucket}.s3.${process.env.AWS_REGION}.amazonaws.com/thumbnail/${thumbnailKey}`
+      return `https://${process.env.AWS_S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/thumbnail/${thumbnailKey}`
     } catch (error) {
       return null // Thumbnail chưa tồn tại
     }
