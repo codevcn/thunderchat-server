@@ -10,17 +10,24 @@ import type {
   MarkAsSeenDTO,
   SendDirectMessageDTO,
   TypingDTO,
+  CheckUserOnlineDTO,
+  JoinDirectChatDTO,
 } from './gateway.dto'
 import type { Socket } from 'socket.io'
-import type { TClientSocket, TSendDirectMessageRes } from './gateway.type'
+import type {
+  TClientSocket,
+  THandleCheckUserOnlineRes,
+  TSendDirectMessageRes,
+} from './gateway.type'
 import type {
   TFriendRequestPayload,
   TGetFriendRequestsData,
 } from '@/friend-request/friend-request.type'
 import type { TDirectChat } from '@/utils/entities/direct-chat.entity'
-import type { EChatType } from '@/utils/enums'
+import type { EChatType, EUserOnlineStatus } from '@/utils/enums'
 import type { TMessage } from '@/utils/entities/message.entity'
 import type { TGroupChat } from '@/utils/entities/group-chat.entity'
+import type { TUserId } from '@/user/user.type'
 
 export interface IEmitSocketEvents {
   [EInitEvents.client_connected]: (message: string) => void
@@ -40,11 +47,17 @@ export interface IEmitSocketEvents {
     directChat: TDirectChat | null,
     groupChat: TGroupChat | null,
     type: EChatType,
-    newMessage: TMessage,
+    newMessage: TMessage | null,
     sender: TUserWithProfile
   ) => void
-  [EClientSocketEvents.send_message_group]: () => void
-  [EClientSocketEvents.join_group_chat]: () => void
+  [EClientSocketEvents.broadcast_user_online_status]: (
+    userId: TUserId,
+    onlineStatus: EUserOnlineStatus
+  ) => void
+  [EClientSocketEvents.check_user_online_status]: () => void // not used
+  [EClientSocketEvents.send_message_group]: () => void // not used
+  [EClientSocketEvents.join_group_chat_room]: () => void // not used
+  [EClientSocketEvents.join_direct_chat_room]: () => void // not used
 }
 
 export interface IGateway {
@@ -55,4 +68,6 @@ export interface IGateway {
   handleMarkAsSeenInDirectChat: (data: MarkAsSeenDTO, client: TClientSocket) => Promise<void>
   handleTyping: (data: TypingDTO, client: TClientSocket) => Promise<void>
   handleJoinGroupChat: (data: JoinGroupChatDTO, client: TClientSocket) => Promise<TSuccess>
+  handleCheckUserOnlineStatus: (data: CheckUserOnlineDTO) => Promise<THandleCheckUserOnlineRes>
+  handleJoinDirectChat: (data: JoinDirectChatDTO, client: TClientSocket) => Promise<TSuccess>
 }

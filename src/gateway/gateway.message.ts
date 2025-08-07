@@ -6,4 +6,5 @@ export enum EGatewayMessages {
   INVALID_MESSAGE_FORMAT = 'Invalid message format',
   SENDER_NOT_FOUND = 'Sender was not found',
   INVALID_MESSAGE_TYPE = 'Invalid message type',
+  GROUP_CHAT_NOT_FOUND = 'Group chat not found',
 }

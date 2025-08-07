@@ -82,3 +82,12 @@ export enum EAppRoles {
 export enum EGlobalMessages {
   UNKNOWN_FILE_TYPE = 'Unknown file type',
 }
+
+export enum EInternalEvents {
+  CREATE_GROUP_CHAT = 'CREATE_GROUP_CHAT',
+}
+
+export enum EUserOnlineStatus {
+  ONLINE = 'ONLINE',
+  OFFLINE = 'OFFLINE',
+}

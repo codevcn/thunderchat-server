@@ -110,3 +110,17 @@ export class JoinGroupChatDTO {
   @Type(() => Number)
   groupId: number
 }
+
+export class CheckUserOnlineDTO {
+  @IsNumber()
+  @IsNotEmpty()
+  @Type(() => Number)
+  userId: number
+}
+
+export class JoinDirectChatDTO {
+  @IsNumber()
+  @IsNotEmpty()
+  @Type(() => Number)
+  directChatId: number
+}

@@ -9,6 +9,6 @@ import { GroupMemberService } from '@/group-member/group-member.service'
   imports: [UserModule],
   controllers: [GroupChatController],
   providers: [GroupChatService, S3UploadService, GroupMemberService],
-  exports: [GroupChatService],
+  exports: [GroupChatService, S3UploadService, GroupMemberService],
 })
 export class GroupChatModule {}

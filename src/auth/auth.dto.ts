@@ -4,8 +4,9 @@ import { TProfile } from '@/utils/entities/profile.entity'
 import type { TUserWithProfile } from '@/utils/entities/user.entity'
 import { EAppRoles } from '@/utils/enums'
 import { Exclude, Type } from 'class-transformer'
-import { IsDate, IsNotEmpty, IsNumber, IsOptional } from 'class-validator'
+import { IsDate, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator'
 import type { User } from '@prisma/client'
+import { TSocketId } from '@/gateway/socket/socket.type'
 
 export class LoginUserDTO {
   @IsNotEmpty()
@@ -63,4 +64,10 @@ export class ClientSocketAuthDTO {
   @IsNumber()
   @Type(() => Number)
   groupId?: number
+}
+
+export class LogoutPayloadDTO {
+  @IsOptional()
+  @IsString()
+  socketId?: TSocketId
 }

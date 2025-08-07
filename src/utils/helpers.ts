@@ -4,7 +4,6 @@ import { Worker } from 'worker_threads'
 import type { TRetryRequestOptions } from './types'
 import validator from 'validator'
 import { Express } from 'express'
-import { fileTypeFromBuffer, FileTypeResult } from 'file-type'
 import { EMessageMediaTypes } from '@/direct-message/direct-message.enum'
 import { EGlobalMessages } from './enums'
 
@@ -95,11 +94,7 @@ export function replaceHTMLTagInMessageContent(input: string): string {
  * @returns {Promise<EMessageMediaTypes>} Loại file
  */
 export async function detectFileType(file: Express.Multer.File): Promise<EMessageMediaTypes> {
-  const fileType: FileTypeResult | undefined = await fileTypeFromBuffer(file.buffer)
-
-  if (!fileType) throw new Error(EGlobalMessages.UNKNOWN_FILE_TYPE)
-
-  const mime = fileType.mime
+  const mime = file.mimetype
 
   if (mime.startsWith('image/')) return EMessageMediaTypes.IMAGE
   if (mime.startsWith('video/')) return EMessageMediaTypes.VIDEO

@@ -5,7 +5,7 @@ export enum EInitEvents {
 export enum EClientSocketEvents {
   send_message_direct = 'send_message:direct',
   send_message_group = 'send_message:group',
-  join_group_chat = 'join_group_chat',
+  join_group_chat_room = 'join_group_chat_room',
   send_friend_request = 'friend_request:send',
   error = 'error',
   recovered_connection = 'recovered_connection',
@@ -15,4 +15,7 @@ export enum EClientSocketEvents {
   pin_message = 'pin_message',
   pin_direct_chat = 'pin_direct_chat',
   new_conversation = 'new_conversation',
+  broadcast_user_online_status = 'broadcast_user_online_status',
+  check_user_online_status = 'check_user_online_status',
+  join_direct_chat_room = 'join_direct_chat_room',
 }

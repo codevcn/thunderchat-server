@@ -6,4 +6,5 @@ export enum EAuthMessages {
   INVALID_CREDENTIALS = 'Invalid credentials',
   USER_NOT_FOUND = 'User not found',
   USER_HAS_NO_PROFILE = 'User has no profile',
+  ADMIN_ACCESS_REQUIRED = 'Admin access required',
 }

@@ -79,7 +79,7 @@ export class SearchService {
     )
     const finalUsers = users.map((user) => ({
       ...user,
-      isOnline: this.socketService.checkUserOnlineStatus(user.id),
+      isOnline: this.socketService.checkUserIsOnline(user.id),
     }))
     const nextSearchOffset: TGlobalSearchData['nextSearchOffset'] = {
       messageSearchOffset: messageHits.at(-1)?.sort,

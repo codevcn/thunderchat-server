@@ -20,6 +20,7 @@ import { EAppRoles } from '@/utils/enums'
 import { EAdminMessages } from './role/admin/admin.message'
 import { PrismaService } from '@/configs/db/prisma.service'
 import { SocketService } from '@/gateway/socket/socket.service'
+import type { TSocketId } from '@/gateway/socket/socket.type'
 
 @Injectable()
 export class AuthService {
@@ -186,9 +187,9 @@ export class AuthService {
     }
   }
 
-  async logoutUser(res: Response, userId: number): Promise<void> {
+  async logoutUser(res: Response, userId: number, socketId?: TSocketId): Promise<void> {
     await this.jwtService.removeJWT({ response: res })
-    this.socketService.removeConnectedClient(userId)
+    this.socketService.removeConnectedClient(userId, socketId)
   }
 
   async validateSocketConnection(socket: Socket): Promise<void> {

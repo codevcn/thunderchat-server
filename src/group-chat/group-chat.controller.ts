@@ -62,7 +62,7 @@ export class GroupChatController implements IGroupChatsController {
   @Post('create-group-chat')
   async createGroupChat(@Body() body: CreateGroupChatDTO, @User() user: TUserWithProfile) {
     const { groupName, memberIds, avatarUrl } = body
-    return await this.groupChatService.createGroupChat(user.id, groupName, memberIds, avatarUrl)
+    return await this.groupChatService.createGroupChat(user, groupName, memberIds, avatarUrl)
   }
 
   @Get('fetch-group-chat')

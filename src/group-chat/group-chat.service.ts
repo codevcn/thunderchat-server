@@ -1,6 +1,6 @@
 import { PrismaService } from '@/configs/db/prisma.service'
 import { S3UploadService } from '@/upload/s3-upload.service'
-import { EProviderTokens } from '@/utils/enums'
+import { EInternalEvents, EProviderTokens } from '@/utils/enums'
 import { Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common'
 import type { Prisma } from '@prisma/client'
 import type {
@@ -12,13 +12,23 @@ import { UpdateGroupChatDTO } from './group-chat.dto'
 import { EGroupChatMessages } from './group-chat.message'
 import { EGroupChatRoles } from './group-chat.enum'
 import type { TGroupChat } from '@/utils/entities/group-chat.entity'
+import { TUserWithProfile } from '@/utils/entities/user.entity'
+import { EventEmitter2 } from '@nestjs/event-emitter'
 
 @Injectable()
 export class GroupChatService {
   constructor(
     private readonly s3UploadService: S3UploadService,
-    @Inject(EProviderTokens.PRISMA_CLIENT) private prismaService: PrismaService
+    @Inject(EProviderTokens.PRISMA_CLIENT) private prismaService: PrismaService,
+    private readonly eventEmitter: EventEmitter2
   ) {}
+
+  async findGroupChatById(groupId: number): Promise<TGroupChat | null> {
+    const groupChat = await this.prismaService.groupChat.findUnique({
+      where: { id: groupId },
+    })
+    return groupChat
+  }
 
   async uploadGroupChatAvatar(avatar: Express.Multer.File): Promise<TUploadGroupChatAvatar> {
     const uploadedFile = await this.s3UploadService.uploadGroupChatAvatar(avatar)
@@ -34,11 +44,12 @@ export class GroupChatService {
   }
 
   async createGroupChat(
-    creatorId: number,
+    creator: TUserWithProfile,
     groupName: string,
     memberIds: number[],
     avatarUrl?: string
   ): Promise<TGroupChat> {
+    const { id: creatorId } = creator
     const allMemberIds = [creatorId, ...memberIds]
     const groupChat = await this.prismaService.groupChat.create({
       data: {
@@ -53,6 +64,7 @@ export class GroupChatService {
         },
       },
     })
+    this.eventEmitter.emit(EInternalEvents.CREATE_GROUP_CHAT, groupChat, allMemberIds, creator)
     return groupChat
   }
 

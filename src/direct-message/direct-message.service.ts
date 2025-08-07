@@ -49,6 +49,17 @@ export class DirectMessageService {
     })
   }
 
+  createMessageContentForMedia(
+    originalContent: string,
+    stickerId?: number,
+    mediaId?: number
+  ): string {
+    if (stickerId || mediaId) {
+      return ''
+    }
+    return originalContent
+  }
+
   async createNewMessage(
     encryptedContent: string,
     authorId: number,
@@ -63,7 +74,7 @@ export class DirectMessageService {
   ): Promise<TGetDirectMessagesMessage> {
     const message = await this.PrismaService.message.create({
       data: {
-        content: encryptedContent,
+        content: this.createMessageContentForMedia(encryptedContent, stickerId, mediaId),
         authorId,
         createdAt: timestamp,
         status: EMessageStatus.SENT,
