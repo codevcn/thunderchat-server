@@ -10,8 +10,14 @@ export class DevLogger {
   private static errorsLogFile: string = join(this.logDir, 'errors.log')
   private static sqlQueriesLogFile: string = join(this.logDir, 'sql-queries.log')
   private static websocketLogFile: string = join(this.logDir, 'websocket.log')
+  private static maxDepth: number = 6
 
-  static safeStringifyMessage(msg: any, depth = 0, maxDepth = 4, seen = new WeakSet()): string {
+  static safeStringifyMessage(
+    msg: any,
+    depth = 0,
+    maxDepth = this.maxDepth,
+    seen = new WeakSet()
+  ): string {
     const indent = (level: number) => '  '.repeat(level)
 
     if (depth > maxDepth) return '[Object depth exceeded]'

@@ -15,7 +15,7 @@ import { ValidationPipe } from '@nestjs/common'
 export class DirectMessageController implements IDirectMessageController {
   constructor(private directMessageService: DirectMessageService) {}
 
-  @Get('get-direct-messages')
+  @Get('get-messages')
   async fetchMessages(@Query() params: FetchMsgsParamsDTO) {
     const { directChatId, msgOffset, limit, sortType, isFirstTime } = params
     return await this.directMessageService.getOlderDirectMessagesHandler(

@@ -163,6 +163,9 @@ export class SocketService {
     newMessage: TMessageFullInfo,
     createGroupChatRoomNameHandler: TCreateGroupChatRoomNameHandler
   ) {
+    // Lấy tất cả các room đã được tạo trong server của socketIO
+    const allRooms = Array.from(this.server.sockets.adapter.rooms.keys())
+    DevLogger.logInfo(`allRooms:`, allRooms)
     this.server
       .to(createGroupChatRoomNameHandler(groupChatId))
       .emit(EClientSocketEvents.send_message_group, newMessage)

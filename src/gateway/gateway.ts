@@ -146,11 +146,11 @@ export class AppGateway
       socketId: client.id,
       auth: client.handshake.auth,
     })
-    const { userId } = client.handshake.auth
-    if (userId) {
-      this.socketService.removeConnectedClient(userId, client.id)
-      this.socketService.broadcastUserOnlineStatus(userId, EUserOnlineStatus.OFFLINE)
-      this.messageTokensManager.removeAllTokens(userId)
+    const { clientId } = client.handshake.auth
+    if (clientId) {
+      this.socketService.removeConnectedClient(clientId, client.id)
+      this.socketService.broadcastUserOnlineStatus(clientId, EUserOnlineStatus.OFFLINE)
+      this.messageTokensManager.removeAllTokens(clientId)
     }
   }
 
@@ -454,6 +454,7 @@ export class AppGateway
     @MessageBody() data: JoinGroupChatDTO,
     @ConnectedSocket() client: Socket
   ) {
+    console.log('>>> join group chat:', { data, clientId: client.handshake.auth?.clientId })
     const { groupId } = data
     client.join(this.createGroupChatRoomName(groupId))
     return {
@@ -467,6 +468,7 @@ export class AppGateway
     groupMemberIds: number[],
     creator: TUserWithProfile
   ) {
+    console.log('>>> group chat created:', { groupChat, groupMemberIds, creator })
     this.socketService.broadcastCreateGroupChat(groupChat, groupMemberIds, creator)
   }
 
