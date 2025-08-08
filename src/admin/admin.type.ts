@@ -69,6 +69,14 @@ export type TViolationReport = {
   updatedAt: string
 }
 
+export type TViolationAction = {
+  id: number
+  actionType: TViolationReportActionType
+  actionReason: string
+  bannedUntil: string | null
+  createdAt: string
+}
+
 export type TViolationReportDetail = {
   id: number
   reporterId: number
@@ -96,6 +104,8 @@ export type TViolationReportDetail = {
     senderAvatar: string
     senderId: number
   }>
+  violationAction: TViolationAction | null
+  latestBanAction: TViolationAction | null
   createdAt: string
   updatedAt: string
 }

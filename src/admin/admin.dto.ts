@@ -8,6 +8,7 @@ import {
   Min,
   Max,
   IsDateString,
+  IsArray,
 } from 'class-validator'
 import { Type } from 'class-transformer'
 
@@ -150,9 +151,19 @@ export class BanReportedUserDTO {
   @Type(() => Number)
   banDuration?: number // Days for temporary ban
 
+  @IsOptional()
+  @IsDateString()
+  bannedUntil?: string // ISO datetime for temporary ban expiry
+
   @IsNotEmpty()
   @IsString()
   reason: string
+
+  @IsOptional()
+  @IsArray()
+  @IsNumber({}, { each: true })
+  @Type(() => Number)
+  messageIds?: number[] // IDs of messages to mark as deleted and violated
 }
 
 export class GetUserReportHistoryDTO {

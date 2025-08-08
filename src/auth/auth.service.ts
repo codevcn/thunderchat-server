@@ -84,16 +84,29 @@ export class AuthService {
       // Kiểm tra temporary ban
       if (banType === 'TEMPORARY_BAN' && bannedUntil) {
         if (now < bannedUntil) {
-          // Vẫn còn trong thời gian ban
-          const remainingTime = bannedUntil.getTime() - now.getTime()
-          const remainingDays = Math.ceil(remainingTime / (1000 * 60 * 60 * 24))
+          // Vẫn còn trong thời gian ban – tính chính xác ngày, giờ, phút
+          const remainingMs = Math.max(0, bannedUntil.getTime() - now.getTime())
+          const dayMs = 24 * 60 * 60 * 1000
+          const hourMs = 60 * 60 * 1000
+          const minuteMs = 60 * 1000
+
+          const days = Math.floor(remainingMs / dayMs)
+          const hours = Math.floor((remainingMs % dayMs) / hourMs)
+          const minutes = Math.floor((remainingMs % hourMs) / minuteMs)
+
+          const parts: string[] = []
+          if (days > 0) parts.push(`${days} ngày`)
+          if (hours > 0) parts.push(`${hours} giờ`)
+          // Hiển thị phút ngay cả khi 0 nếu không có phần nào khác
+          if (minutes > 0 || parts.length === 0) parts.push(`${minutes} phút`)
+          const remainingText = parts.join(' ')
 
           return {
             isBanned: true,
             banType: 'TEMPORARY_BAN',
             banReason,
             bannedUntil,
-            message: `Tài khoản của bạn đã bị cấm tạm thời. Lý do: ${banReason}. Thời gian cấm còn lại: ${remainingDays} ngày`,
+            message: `Tài khoản của bạn đã bị cấm tạm thời. Lý do: ${banReason}. Thời gian cấm còn lại: ${remainingText}`,
           }
         } else {
           // Hết thời gian ban

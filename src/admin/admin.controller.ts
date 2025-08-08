@@ -92,7 +92,9 @@ export class AdminController {
       parseInt(reportId),
       body.banType,
       body.reason,
-      body.banDuration
+      body.banDuration,
+      body.bannedUntil,
+      body.messageIds
     )
   }
 
