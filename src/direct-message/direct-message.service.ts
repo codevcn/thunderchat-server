@@ -110,20 +110,12 @@ export class DirectMessageService {
 
   async getNewerDirectMessages(
     messageOffset: TMessageOffset,
-    directChatId: number,
+    chatId: number,
     limit: number
   ): Promise<TGetDirectMessagesMessage[]> {
-    console.log(
-      '[getNewerDirectMessages] Nhận yêu cầu với directChatId:',
-      directChatId,
-      'offset:',
-      messageOffset,
-      'limit:',
-      limit
-    )
     const messages = await this.PrismaService.message.findMany({
       where: {
-        directChatId,
+        OR: [{ directChatId: chatId }, { groupChatId: chatId }],
         id: {
           gt: messageOffset,
         },
@@ -134,12 +126,6 @@ export class DirectMessageService {
       take: limit,
       include: this.messageFullInfo,
     })
-    console.log(
-      '[getNewerDirectMessages] Trả về',
-      messages.length,
-      'tin nhắn:',
-      messages.map((m) => m.id)
-    )
     return messages
   }
 
@@ -158,7 +144,7 @@ export class DirectMessageService {
 
   async getOlderDirectMessages(
     messageOffset: TMessageOffset | undefined,
-    directChatId: number,
+    chatId: number,
     limit: number,
     equalOffset: boolean
   ): Promise<TGetDirectMessagesMessage[]> {
@@ -167,7 +153,7 @@ export class DirectMessageService {
         id: {
           [equalOffset ? 'lte' : 'lt']: messageOffset,
         },
-        directChatId: directChatId,
+        OR: [{ directChatId: chatId }, { groupChatId: chatId }],
       },
       orderBy: {
         id: 'desc',
@@ -179,14 +165,14 @@ export class DirectMessageService {
 
   async getOlderDirectMessagesHandler(
     messageOffset: TMessageOffset | undefined,
-    directChatId: number,
+    chatId: number,
     limit: number,
     isFirstTime: boolean = false,
     sortType: ESortTypes = ESortTypes.TIME_ASC
   ): Promise<TGetDirectMessagesData> {
     const messages = await this.getOlderDirectMessages(
       messageOffset,
-      directChatId,
+      chatId,
       limit + 1,
       isFirstTime
     )
@@ -201,11 +187,6 @@ export class DirectMessageService {
         sortedMessages = this.sortFetchedMessages(sortedMessages, sortType)
       }
     }
-    // Thêm log để kiểm tra các type message trả về
-    // console.log(
-    //   '[DEBUG][getOlderDirectMessagesHandler] Message types:',
-    //   (sortedMessages || messages).map((m) => m.type)
-    // )
     return {
       hasMoreMessages: messages.length > limit,
       directMessages: sortedMessages || [],
@@ -247,31 +228,8 @@ export class DirectMessageService {
     })
   }
 
-  async getMediaMessages(
-    directChatId: number,
-    limit: number,
-    offset: number,
-    sortType: ESortTypes = ESortTypes.TIME_ASC
-  ) {
-    // Lấy tất cả message KHÔNG PHẢI TEXT
-    return this.PrismaService.message.findMany({
-      where: {
-        directChatId,
-        type: {
-          not: EMessageTypes.TEXT,
-        },
-      },
-      include: this.messageFullInfo,
-      orderBy: {
-        createdAt: sortType === ESortTypes.TIME_ASC ? 'asc' : 'desc',
-      },
-      take: limit,
-      skip: offset,
-    })
-  }
-
   async getVoiceMessages(
-    directChatId: number,
+    chatId: number,
     limit: number,
     offset: number,
     sortType: ESortTypes = ESortTypes.TIME_ASC
@@ -279,7 +237,7 @@ export class DirectMessageService {
     // Lấy chỉ voice messages
     const voiceMessages = await this.PrismaService.message.findMany({
       where: {
-        directChatId,
+        OR: [{ directChatId: chatId }, { groupChatId: chatId }],
         type: EMessageTypes.MEDIA,
         mediaId: {
           not: null,

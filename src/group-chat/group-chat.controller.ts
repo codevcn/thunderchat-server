@@ -16,6 +16,7 @@ import { GroupChatService } from './group-chat.service'
 import { FileInterceptor } from '@nestjs/platform-express'
 import { IGroupChatsController } from './group-chat.interface'
 import {
+  AddMembersToGroupChatDTO,
   CreateGroupChatDTO,
   DeleteGroupChatAvatarDTO,
   FetchGroupChatDTO,
@@ -88,6 +89,17 @@ export class GroupChatController implements IGroupChatsController {
     })
     return {
       success: true,
+    }
+  }
+
+  @Post('add-members')
+  @UseGuards(GroupChatRoleGuard)
+  @GroupChatRoles(EGroupChatRoles.ADMIN)
+  async addMembersToGroupChat(@Body() body: AddMembersToGroupChatDTO) {
+    const { groupChatId, memberIds } = body
+    const addedMembers = await this.groupChatService.addMembersToGroupChat(groupChatId, memberIds)
+    return {
+      addedMembers,
     }
   }
 }

@@ -2,7 +2,7 @@ import { DirectMessageService } from '@/direct-message/direct-message.service'
 import { ERoutes } from '@/utils/enums'
 import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common'
 import { IDirectMessageController } from './direct-message.interface'
-import { FetchMsgsParamsDTO } from './direct-message.dto'
+import { FetchMsgsParamsDTO, FetchMsgsParamsForGroupChatDTO } from './direct-message.dto'
 import { AuthGuard } from '@/auth/auth.guard'
 import { ESortTypes } from './direct-message.enum'
 import { canSendDirectMessage } from './can-send-message.helper'
@@ -74,5 +74,53 @@ export class DirectMessageController implements IDirectMessageController {
     } catch (error) {
       return { canSend: false }
     }
+  }
+
+  @Get('get-group-messages')
+  async fetchMessagesForGroupChat(@Query() params: FetchMsgsParamsForGroupChatDTO) {
+    const { groupChatId, msgOffset, limit, sortType, isFirstTime } = params
+    const result = await this.directMessageService.getOlderDirectMessagesHandler(
+      msgOffset,
+      groupChatId,
+      limit,
+      isFirstTime,
+      sortType
+    )
+    return {
+      hasMoreMessages: result.hasMoreMessages,
+      groupMessages: result.directMessages,
+    }
+  }
+
+  @Get('group-message/voices/:groupChatId')
+  async getVoiceMessagesForGroupChat(
+    @Param('groupChatId') groupChatId: number,
+    @Query('limit') limit?: number,
+    @Query('offset') offset?: number,
+    @Query('sortType') sortType?: string
+  ) {
+    const result = await this.directMessageService.getVoiceMessages(
+      groupChatId,
+      limit ? Number(limit) : 100,
+      offset ? Number(offset) : 0,
+      sortType as ESortTypes
+    )
+    return {
+      hasMoreMessages: result.hasMoreMessages,
+      groupMessages: result.directMessages,
+    }
+  }
+
+  @Get('get-newer-group-messages')
+  async getNewerMessagesForGroupChat(
+    @Query('groupChatId') groupChatId: number,
+    @Query('msgOffset') msgOffset: number,
+    @Query('limit') limit: number
+  ) {
+    return this.directMessageService.getNewerDirectMessages(
+      Number(msgOffset),
+      Number(groupChatId),
+      Number(limit)
+    )
   }
 }

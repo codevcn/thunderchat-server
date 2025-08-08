@@ -1,7 +1,13 @@
 import { PrismaService } from '@/configs/db/prisma.service'
 import { S3UploadService } from '@/upload/s3-upload.service'
 import { EInternalEvents, EProviderTokens } from '@/utils/enums'
-import { Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common'
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common'
 import type { Prisma } from '@prisma/client'
 import type {
   TFetchGroupChatData,
@@ -14,6 +20,7 @@ import { EGroupChatRoles } from './group-chat.enum'
 import type { TGroupChat } from '@/utils/entities/group-chat.entity'
 import { TUserWithProfile } from '@/utils/entities/user.entity'
 import { EventEmitter2 } from '@nestjs/event-emitter'
+import type { TGroupChatMemberWithUser } from '@/utils/entities/group-chat-member.entity'
 
 @Injectable()
 export class GroupChatService {
@@ -78,6 +85,17 @@ export class GroupChatService {
           },
         },
       },
+      include: {
+        Members: {
+          include: {
+            User: {
+              include: {
+                Profile: true,
+              },
+            },
+          },
+        },
+      },
     })
     if (!groupChat) {
       throw new NotFoundException(EGroupChatMessages.GROUP_CHAT_NOT_FOUND)
@@ -92,7 +110,11 @@ export class GroupChatService {
   ): Promise<TFetchGroupChatsData[]> {
     // Lấy các direct chat mà user là creator hoặc recipient
     const findCondition: Prisma.GroupChatWhereInput = {
-      creatorId: userId,
+      Members: {
+        some: {
+          userId,
+        },
+      },
     }
     if (lastId) {
       // Giả sử muốn lấy các direct chat có id < lastId (phân trang lùi)
@@ -122,5 +144,35 @@ export class GroupChatService {
       data: { avatarUrl, name: groupName },
     })
     return groupChat
+  }
+
+  async checkIfMembersInGroupChat(groupChatId: number, memberIds: number[]): Promise<boolean> {
+    const groupChatMembers = await this.prismaService.groupChatMember.findMany({
+      where: { groupChatId, userId: { in: memberIds } },
+    })
+    return groupChatMembers.length > 0
+  }
+
+  async addMembersToGroupChat(
+    groupChatId: number,
+    memberIds: number[]
+  ): Promise<TGroupChatMemberWithUser[]> {
+    const isMembersInGroupChat = await this.checkIfMembersInGroupChat(groupChatId, memberIds)
+    if (isMembersInGroupChat) {
+      throw new BadRequestException(EGroupChatMessages.MEMBERS_ALREADY_IN_GROUP_CHAT)
+    }
+    await this.prismaService.groupChat.update({
+      where: { id: groupChatId },
+      data: {
+        Members: {
+          create: memberIds.map((memberId) => ({ userId: memberId })),
+        },
+      },
+    })
+    const addedMembers = await this.prismaService.groupChatMember.findMany({
+      where: { groupChatId, userId: { in: memberIds } },
+      include: { User: { include: { Profile: true } } },
+    })
+    return addedMembers
   }
 }

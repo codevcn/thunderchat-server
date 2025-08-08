@@ -30,6 +30,32 @@ export class FetchMsgsParamsDTO {
   isFirstTime: boolean
 }
 
+export class FetchMsgsParamsForGroupChatDTO {
+  @IsNumber()
+  @IsOptional()
+  @Type(() => Number)
+  msgOffset?: TMessageOffset
+
+  @IsNumber()
+  @IsNotEmpty()
+  @Type(() => Number)
+  groupChatId: number
+
+  @IsNumber()
+  @IsNotEmpty()
+  @Type(() => Number)
+  limit: number
+
+  @IsOptional()
+  @IsEnum(ESortTypes)
+  sortType?: ESortTypes
+
+  @IsNotEmpty()
+  @IsBoolean()
+  @ToBoolean()
+  isFirstTime: boolean
+}
+
 export class FetchNewerMsgsParamsDTO {
   @IsNumber()
   directChatId: number

@@ -455,8 +455,8 @@ export class AppGateway
     @ConnectedSocket() client: Socket
   ) {
     console.log('>>> join group chat:', { data, clientId: client.handshake.auth?.clientId })
-    const { groupId } = data
-    client.join(this.createGroupChatRoomName(groupId))
+    const { groupChatId } = data
+    client.join(this.createGroupChatRoomName(groupChatId))
     return {
       success: true,
     }
@@ -484,12 +484,12 @@ export class AppGateway
   ) {
     const { clientId } = await this.authService.validateSocketAuth(client)
     const { type, msgPayload } = payload
-    const { groupId, token } = msgPayload
+    const { groupChatId, token } = msgPayload
 
     await this.checkUniqueMessage(token, clientId)
     const { timestamp, content, replyToId } = msgPayload
 
-    const groupChat = await this.checkGroupChatExists(groupId)
+    const groupChat = await this.checkGroupChatExists(groupChatId)
     if (!groupChat) {
       throw new BaseWsException(EGatewayMessages.GROUP_CHAT_NOT_FOUND)
     }
@@ -508,7 +508,7 @@ export class AppGateway
           {
             content,
             timestamp,
-            groupId,
+            groupId: groupChatId,
             type: EMessageTypes.TEXT,
             replyToId,
           }
@@ -520,7 +520,7 @@ export class AppGateway
           {
             content: '',
             timestamp,
-            groupId,
+            groupId: groupChatId,
             type: EMessageTypes.STICKER,
             stickerId: parseInt(content),
             replyToId,
@@ -533,7 +533,7 @@ export class AppGateway
           {
             content: '',
             timestamp,
-            groupId,
+            groupId: groupChatId,
             type: EMessageTypes.MEDIA,
             mediaId: parseInt(content),
             replyToId,
@@ -546,7 +546,7 @@ export class AppGateway
           {
             content: '',
             timestamp,
-            groupId,
+            groupId: groupChatId,
             type: EMessageTypes.MEDIA,
             mediaId: parseInt(content),
             replyToId,
@@ -559,7 +559,7 @@ export class AppGateway
           {
             content: msgPayload.content || '', // Tên file
             timestamp,
-            groupId,
+            groupId: groupChatId,
             type: EMessageTypes.MEDIA,
             mediaId: parseInt(content),
             replyToId,
@@ -572,7 +572,7 @@ export class AppGateway
           {
             content: msgPayload.content || '', // Caption nếu có
             timestamp,
-            groupId,
+            groupId: groupChatId,
             type: EMessageTypes.MEDIA,
             mediaId: parseInt(content),
             replyToId,

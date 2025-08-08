@@ -75,7 +75,7 @@ export class TypingDTO {
 export class SendGroupMessagePayloadDTO {
   @IsNumber()
   @IsNotEmpty()
-  groupId: number
+  groupChatId: number
 
   @IsNotEmpty()
   content: string
@@ -108,7 +108,7 @@ export class JoinGroupChatDTO {
   @IsNumber()
   @IsNotEmpty()
   @Type(() => Number)
-  groupId: number
+  groupChatId: number
 }
 
 export class CheckUserOnlineDTO {
