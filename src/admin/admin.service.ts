@@ -333,78 +333,89 @@ export class AdminService {
   }
 
   async getViolationReportDetail(reportId: number): Promise<TViolationReportDetail | null> {
-    const report = await this.prisma.violationReport.findUnique({
-      where: { id: reportId },
-      include: {
-        ReporterUser: {
-          include: {
-            Profile: {
-              select: {
-                fullName: true,
+    try {
+      const report = await this.prisma.violationReport.findUnique({
+        where: { id: reportId },
+        include: {
+          ReporterUser: {
+            include: {
+              Profile: {
+                select: {
+                  fullName: true,
+                },
+              },
+            },
+          },
+          ReportedUser: {
+            include: {
+              Profile: {
+                select: {
+                  fullName: true,
+                },
+              },
+            },
+          },
+          ReportImages: {
+            select: {
+              id: true,
+              imageUrl: true,
+            },
+          },
+          ReportedMessages: {
+            include: {
+              ReportedMessage: {
+                include: {
+                  Author: {
+                    include: {
+                      Profile: true,
+                    },
+                  },
+                },
               },
             },
           },
         },
-        ReportedUser: {
-          include: {
-            Profile: {
-              select: {
-                fullName: true,
-              },
-            },
-          },
-        },
-        ReportImages: {
-          select: {
-            id: true,
-            imageUrl: true,
-          },
-        },
-        ReportedMessages: {
-          select: {
-            id: true,
-            messageId: true,
-            messageType: true,
-            messageContent: true,
-            createdAt: true,
-          },
-        },
-      },
-    })
+      })
 
-    if (!report) {
-      return null
-    }
+      if (!report) {
+        return null
+      }
 
-    return {
-      id: report.id,
-      reporterId: report.reporterUserId,
-      reporterName: report.ReporterUser.Profile?.fullName || 'Unknown',
-      reporterEmail: report.ReporterUser.email,
-      reportedUserId: report.reportedUserId,
-      reportedUserName: report.ReportedUser.Profile?.fullName || 'Unknown',
-      reportedUserEmail: report.ReportedUser.email,
-      reportCategory: report.reportCategory,
-      reasonText: report.reasonText,
-      status: report.reportStatus,
-      evidenceCount: {
-        images: report.ReportImages.length,
-        messages: report.ReportedMessages.length,
-      },
-      reportImages: report.ReportImages.map((image) => ({
-        id: image.id,
-        imageUrl: image.imageUrl,
-        createdAt: report.createdAt.toISOString(), // Using report createdAt since ReportImage doesn't have createdAt
-      })),
-      reportedMessages: report.ReportedMessages.map((message) => ({
-        id: message.id,
-        messageId: message.messageId,
-        messageType: message.messageType,
-        messageContent: message.messageContent,
-        createdAt: message.createdAt.toISOString(), // Using actual message createdAt
-      })),
-      createdAt: report.createdAt.toISOString(),
-      updatedAt: report.createdAt.toISOString(), // Using createdAt as updatedAt since there's no updatedAt field
+      return {
+        id: report.id,
+        reporterId: report.reporterUserId,
+        reporterName: report.ReporterUser.Profile?.fullName || 'Unknown',
+        reporterEmail: report.ReporterUser.email,
+        reportedUserId: report.reportedUserId,
+        reportedUserName: report.ReportedUser.Profile?.fullName || 'Unknown',
+        reportedUserEmail: report.ReportedUser.email,
+        reportCategory: report.reportCategory,
+        reasonText: report.reasonText,
+        status: report.reportStatus,
+        evidenceCount: {
+          images: report.ReportImages.length,
+          messages: report.ReportedMessages.length,
+        },
+        reportImages: report.ReportImages.map((image) => ({
+          id: image.id,
+          imageUrl: image.imageUrl,
+          createdAt: report.createdAt.toISOString(), // Using report createdAt since ReportImage doesn't have createdAt
+        })),
+        reportedMessages: report.ReportedMessages.map((message) => ({
+          id: message.id,
+          messageId: message.messageId,
+          messageType: message.messageType,
+          messageContent: message.messageContent,
+          createdAt: message.createdAt.toISOString(), // Using actual message createdAt
+          senderName: message.ReportedMessage?.Author?.Profile?.fullName || 'Unknown User',
+          senderAvatar: message.ReportedMessage?.Author?.Profile?.avatar || '',
+          senderId: message.ReportedMessage?.Author?.id || 0,
+        })),
+        createdAt: report.createdAt.toISOString(),
+        updatedAt: report.createdAt.toISOString(), // Using createdAt as updatedAt since there's no updatedAt field
+      }
+    } catch (error) {
+      throw error
     }
   }
 

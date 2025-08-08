@@ -67,7 +67,10 @@ export class UploadService {
       throw new BadRequestException('File size exceeds 50MB limit')
     }
 
-    const fileKey = `${Date.now()}_${file.originalname}`
+    // Use file.originalname as fileKey if it contains folder structure
+    const fileKey = file.originalname.includes('/')
+      ? file.originalname
+      : `${Date.now()}_${file.originalname}`
     let uploadedFileUrl: string | null = null
 
     try {
@@ -167,7 +170,7 @@ export class UploadService {
    * Upload report image to S3
    */
   async uploadReportImage(file: Express.Multer.File): Promise<{ url: string }> {
-    // Use the existing uploadFile method but with custom fileKey
+    // Create fileKey with report-image folder
     const originalName = file.originalname
     const timestamp = Date.now()
     const fileKey = `report-image/${timestamp}_${originalName}`
@@ -221,69 +224,144 @@ export class UploadService {
   async uploadReportMessageFromUrl(
     fileUrl: string,
     messageId: number,
-    contentType: string
+    contentType: string,
+    retryCount: number = 0
   ): Promise<{ url: string }> {
     const https = require('https')
     const http = require('http')
+    const maxRetries = 3
+    const timeout = 30000 // 30 seconds timeout
 
     return new Promise((resolve, reject) => {
       const protocol = fileUrl.startsWith('https:') ? https : http
 
-      protocol
-        .get(fileUrl, (response: any) => {
-          if (response.statusCode !== 200) {
-            reject(new Error(`Failed to download file: HTTP ${response.statusCode}`))
+      const request = protocol.get(fileUrl, { timeout }, (response: any) => {
+        if (response.statusCode !== 200) {
+          const error = new Error(`Failed to download file: HTTP ${response.statusCode}`)
+          if (retryCount < maxRetries) {
+            setTimeout(
+              () => {
+                this.uploadReportMessageFromUrl(fileUrl, messageId, contentType, retryCount + 1)
+                  .then(resolve)
+                  .catch(reject)
+              },
+              2000 * (retryCount + 1)
+            ) // Exponential backoff
             return
           }
+          reject(error)
+          return
+        }
 
-          const chunks: Buffer[] = []
-          response.on('data', (chunk: Buffer) => {
-            chunks.push(chunk)
-          })
+        const chunks: Buffer[] = []
+        response.on('data', (chunk: Buffer) => {
+          chunks.push(chunk)
+        })
 
-          response.on('end', async () => {
-            try {
-              const fileBuffer = Buffer.concat(chunks)
+        response.on('end', async () => {
+          try {
+            const fileBuffer = Buffer.concat(chunks)
 
-              // Extract file extension from URL
-              const urlParts = fileUrl.split('?')[0] // Remove query parameters
-              const fileName = urlParts.split('/').pop() || 'file'
-              const fileExtension = fileName.includes('.')
-                ? fileName.split('.').pop() || this.getExtensionFromContentType(contentType)
-                : this.getExtensionFromContentType(contentType)
+            // Extract file extension from URL
+            const urlParts = fileUrl.split('?')[0] // Remove query parameters
+            const fileName = urlParts.split('/').pop() || 'file'
+            const fileExtension = fileName.includes('.')
+              ? fileName.split('.').pop() || this.getExtensionFromContentType(contentType)
+              : this.getExtensionFromContentType(contentType)
 
-              const fileKey = `report-message/${Date.now()}_message-${messageId}.${fileExtension}`
+            const fileKey = `report-message/${Date.now()}_message-${messageId}.${fileExtension}`
 
-              // Get proper content type based on file extension
-              const properContentType =
-                this.getContentTypeFromExtension(fileExtension) || contentType
+            // Get proper content type based on file extension
+            const properContentType = this.getContentTypeFromExtension(fileExtension) || contentType
 
-              const params = {
-                Bucket: process.env.AWS_S3_BUCKET,
-                Key: fileKey,
-                Body: fileBuffer,
-                ContentType: properContentType,
-              }
-
-              const data = await this.s3.upload(params).promise()
-              console.log(
-                '✅ Downloaded and uploaded report message media from URL:',
-                data.Location
-              )
-
-              resolve({ url: data.Location })
-            } catch (error) {
-              reject(error)
+            const params = {
+              Bucket: process.env.AWS_S3_BUCKET,
+              Key: fileKey,
+              Body: fileBuffer,
+              ContentType: properContentType,
             }
-          })
 
-          response.on('error', (error: any) => {
-            reject(new Error(`Failed to download file: ${error.message}`))
-          })
+            // Add retry logic for S3 upload
+            let data
+            try {
+              data = await this.s3.upload(params).promise()
+            } catch (s3Error) {
+              if (retryCount < maxRetries) {
+                setTimeout(
+                  async () => {
+                    try {
+                      const retryData = await this.s3.upload(params).promise()
+                      console.log(
+                        '✅ Downloaded and uploaded report message media from URL:',
+                        retryData.Location
+                      )
+                      resolve({ url: retryData.Location })
+                    } catch (retryError) {
+                      reject(retryError)
+                    }
+                  },
+                  2000 * (retryCount + 1)
+                ) // Exponential backoff
+                return
+              }
+              throw s3Error
+            }
+
+            resolve({ url: data.Location })
+          } catch (error) {
+            reject(error)
+          }
         })
-        .on('error', (error: any) => {
-          reject(new Error(`Failed to connect to URL: ${error.message}`))
+
+        response.on('error', (error: any) => {
+          const downloadError = new Error(`Failed to download file: ${error.message}`)
+          if (retryCount < maxRetries) {
+            setTimeout(
+              () => {
+                this.uploadReportMessageFromUrl(fileUrl, messageId, contentType, retryCount + 1)
+                  .then(resolve)
+                  .catch(reject)
+              },
+              2000 * (retryCount + 1)
+            ) // Exponential backoff
+            return
+          }
+          reject(downloadError)
         })
+      })
+
+      request.on('error', (error: any) => {
+        const connectError = new Error(`Failed to connect to URL: ${error.message}`)
+        if (retryCount < maxRetries) {
+          setTimeout(
+            () => {
+              this.uploadReportMessageFromUrl(fileUrl, messageId, contentType, retryCount + 1)
+                .then(resolve)
+                .catch(reject)
+            },
+            2000 * (retryCount + 1)
+          ) // Exponential backoff
+          return
+        }
+        reject(connectError)
+      })
+
+      request.setTimeout(timeout, () => {
+        request.destroy()
+        const timeoutError = new Error(`Request timeout after ${timeout}ms`)
+        if (retryCount < maxRetries) {
+          setTimeout(
+            () => {
+              this.uploadReportMessageFromUrl(fileUrl, messageId, contentType, retryCount + 1)
+                .then(resolve)
+                .catch(reject)
+            },
+            2000 * (retryCount + 1)
+          ) // Exponential backoff
+          return
+        }
+        reject(timeoutError)
+      })
     })
   }
 

@@ -92,6 +92,9 @@ export type TViolationReportDetail = {
     messageType: string
     messageContent: string
     createdAt: string
+    senderName: string
+    senderAvatar: string
+    senderId: number
   }>
   createdAt: string
   updatedAt: string

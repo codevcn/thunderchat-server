@@ -24,6 +24,10 @@ export class UserReportService implements IUserReportService {
     const { reportedUserId, reportCategory, reasonText, reportedMessages } =
       createViolationReportData
 
+    // Track uploaded files outside transaction for rollback
+    let uploadedMediaUrls: string[] = []
+    let uploadedImageUrls: string[] = []
+
     // Check if reported user exists
     const reportedUser = await this.prismaService.user.findUnique({
       where: { id: reportedUserId },
@@ -79,12 +83,8 @@ export class UserReportService implements IUserReportService {
           },
         })
 
-        DevLogger.logInfo('Created violation report:', violationReport.id)
-
         // 2. Handle report images if any
         if (reportImages && reportImages.length > 0) {
-          const uploadedImageUrls: string[] = []
-
           for (const image of reportImages) {
             try {
               // Upload to AWS S3 using the service method
@@ -107,13 +107,13 @@ export class UserReportService implements IUserReportService {
               throw new Error(`${EUserReportMessages.UPLOAD_FAILED}: ${error.message}`)
             }
           }
-          DevLogger.logInfo('All report images uploaded and saved')
         }
 
         // 3. Handle reported messages if any
         if (reportedMessages && reportedMessages.length > 0) {
-          const uploadedMediaUrls: string[] = []
+          const failedUploads: { messageId: number; error: string }[] = []
 
+          // Process messages sequentially to avoid concurrent upload issues
           for (const messageData of reportedMessages) {
             const { messageId, messageType, messageContent } = messageData
 
@@ -130,36 +130,58 @@ export class UserReportService implements IUserReportService {
               )
             }
 
-            let finalMessageContent = messageContent
+            let finalMessageContent = messageContent || ''
 
             // Handle media types that need AWS upload
             if (this.isMediaMessageType(messageType)) {
               // Check if content is already a URL (AWS S3, HTTP, etc.)
-              if (this.isUrl(messageContent)) {
+              if (messageContent && this.isUrl(messageContent)) {
                 // Content is a URL, download and upload to AWS S3
                 try {
-                  const { url } = await this.uploadService.uploadReportMessageFromUrl(
+                  // Add delay between uploads to avoid rate limiting
+                  if (uploadedMediaUrls.length > 0) {
+                    await new Promise((resolve) => setTimeout(resolve, 500)) // Reduced delay to 500ms
+                  }
+
+                  // Add timeout for upload operation
+                  const uploadPromise = this.uploadService.uploadReportMessageFromUrl(
                     messageContent,
                     messageId,
                     this.getContentTypeForMessageType(messageType)
                   )
+
+                  const result = await Promise.race([
+                    uploadPromise,
+                    new Promise<never>(
+                      (_, reject) =>
+                        setTimeout(
+                          () => reject(new Error(`Upload timeout for message ${messageId}`)),
+                          60000
+                        ) // 60 seconds timeout
+                    ),
+                  ])
+
+                  const { url } = result
+
+                  // Check if URL was returned from AWS
+                  if (!url || url.trim() === '') {
+                    throw new Error(`AWS upload failed: No URL returned for message ${messageId}`)
+                  }
+
                   finalMessageContent = url
                   uploadedMediaUrls.push(url)
-                  DevLogger.logInfo(
-                    `Successfully downloaded and uploaded media message ${messageId} from URL to AWS`
-                  )
                 } catch (error) {
                   DevLogger.logError(
-                    'Failed to download and upload reported message media from URL:',
+                    `Failed to download and upload reported message media ${messageId} from URL:`,
                     error
                   )
-                  // Rollback uploaded media files
-                  for (const uploadedUrl of uploadedMediaUrls) {
-                    await this.uploadService.deleteFileByUrl(uploadedUrl)
-                  }
-                  throw new Error(`${EUserReportMessages.UPLOAD_FAILED}: ${error.message}`)
+                  failedUploads.push({ messageId, error: error.message })
+
+                  // Rollback all uploaded files and throw error to rollback transaction
+                  await this.rollbackUploadedFiles(uploadedMediaUrls)
+                  throw new Error(`Media upload failed for message ${messageId}: ${error.message}`)
                 }
-              } else {
+              } else if (messageContent) {
                 // Content is a file path, need to upload to AWS
                 if (!messageContent.startsWith('/') && !messageContent.includes('\\')) {
                   throw new Error(
@@ -174,26 +196,55 @@ export class UserReportService implements IUserReportService {
                 }
 
                 try {
-                  const { url } = await this.uploadService.uploadReportMessageMedia(
+                  // Add delay between uploads to avoid rate limiting
+                  if (uploadedMediaUrls.length > 0) {
+                    await new Promise((resolve) => setTimeout(resolve, 500)) // Reduced delay to 500ms
+                  }
+
+                  // Add timeout for upload operation
+                  const uploadPromise = this.uploadService.uploadReportMessageMedia(
                     messageContent,
                     messageId,
                     this.getContentTypeForMessageType(messageType)
                   )
+
+                  const result = await Promise.race([
+                    uploadPromise,
+                    new Promise<never>(
+                      (_, reject) =>
+                        setTimeout(
+                          () => reject(new Error(`Upload timeout for message ${messageId}`)),
+                          60000
+                        ) // 60 seconds timeout
+                    ),
+                  ])
+
+                  const { url } = result
+
+                  // Check if URL was returned from AWS
+                  if (!url || url.trim() === '') {
+                    throw new Error(`AWS upload failed: No URL returned for message ${messageId}`)
+                  }
+
                   finalMessageContent = url
                   uploadedMediaUrls.push(url)
-                  DevLogger.logInfo(`Successfully uploaded media message ${messageId} to AWS`)
                 } catch (error) {
                   DevLogger.logError('Failed to upload reported message media:', error)
-                  // Rollback uploaded media files
-                  for (const uploadedUrl of uploadedMediaUrls) {
-                    await this.uploadService.deleteFileByUrl(uploadedUrl)
-                  }
-                  throw new Error(`${EUserReportMessages.UPLOAD_FAILED}: ${error.message}`)
+                  failedUploads.push({ messageId, error: error.message })
+
+                  // Rollback all uploaded files and throw error to rollback transaction
+                  await this.rollbackUploadedFiles(uploadedMediaUrls)
+                  throw new Error(`Media upload failed for message ${messageId}: ${error.message}`)
                 }
+              } else {
+                // No content provided for media message - this is NOT normal for media messages
+                throw new Error(
+                  `Media message ${messageId} (${messageType}) requires content but none was provided`
+                )
               }
             }
 
-            // Save to database
+            // Save to database (even if upload failed, we still save the record)
             await prisma.reportedMessage.create({
               data: {
                 messageId,
@@ -203,7 +254,6 @@ export class UserReportService implements IUserReportService {
               },
             })
           }
-          DevLogger.logInfo('All reported messages saved')
         }
 
         return {
@@ -214,6 +264,17 @@ export class UserReportService implements IUserReportService {
       })
     } catch (error) {
       DevLogger.logError('Transaction failed:', error)
+
+      // If transaction failed and we have uploaded files, rollback them
+      if (uploadedMediaUrls.length > 0 || uploadedImageUrls.length > 0) {
+        DevLogger.logError(
+          `Transaction failed, rolling back ${uploadedMediaUrls.length} media files and ${uploadedImageUrls.length} image files`
+        )
+
+        // Rollback all uploaded files
+        const allUploadedUrls = [...uploadedMediaUrls, ...uploadedImageUrls]
+        await this.rollbackUploadedFiles(allUploadedUrls)
+      }
 
       // Parse error message to determine the specific error type
       const errorMessage = error.message
@@ -287,6 +348,47 @@ export class UserReportService implements IUserReportService {
       return url.protocol === 'http:' || url.protocol === 'https:'
     } catch {
       return false
+    }
+  }
+
+  /**
+   * Rollback uploaded files with better error handling
+   */
+  private async rollbackUploadedFiles(uploadedUrls: string[]): Promise<void> {
+    if (uploadedUrls.length === 0) return
+
+    DevLogger.logError(`Rolling back ${uploadedUrls.length} uploaded files`)
+
+    const rollbackPromises = uploadedUrls.map(async (url) => {
+      try {
+        await this.uploadService.deleteFileByUrl(url)
+        DevLogger.logError(`Successfully rolled back: ${url}`)
+      } catch (error) {
+        DevLogger.logError(`Failed to rollback file ${url}:`, error)
+        // Continue with other rollbacks even if one fails
+      }
+    })
+
+    // Wait for all rollbacks to complete (with timeout)
+    try {
+      await Promise.race([
+        Promise.all(rollbackPromises),
+        new Promise(
+          (_, reject) => setTimeout(() => reject(new Error('Rollback timeout')), 30000) // 30 seconds timeout for rollback
+        ),
+      ])
+      DevLogger.logError(`Successfully completed rollback for ${uploadedUrls.length} files`)
+    } catch (error) {
+      DevLogger.logError('Rollback timeout or error:', error)
+      // Even if timeout, continue with individual rollbacks
+      for (const url of uploadedUrls) {
+        try {
+          await this.uploadService.deleteFileByUrl(url)
+          DevLogger.logError(`Successfully rolled back after timeout: ${url}`)
+        } catch (rollbackError) {
+          DevLogger.logError(`Failed to rollback file after timeout ${url}:`, rollbackError)
+        }
+      }
     }
   }
 }
