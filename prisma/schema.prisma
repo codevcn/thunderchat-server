@@ -108,7 +108,7 @@ model Message {
     replyToId    Int?              @map("reply_to_id")
     isDeleted    Boolean           @default(false) @map("is_deleted")
     isViolated   Boolean           @default(false) @map("is_violated")
-    mediaId      Int?              @unique @map("media_id")
+    mediaId      Int?              @map("media_id")
 
     DirectChat              DirectChat?       @relation("MessagesOnDirectChat", fields: [directChatId], references: [id])
     Author                  User              @relation("DirectMessagesAsSender", fields: [authorId], references: [id])
@@ -135,7 +135,7 @@ model MessageMedia {
     type         MessageMediaType
     createdAt    DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
 
-    Message Message? @relation("MessageMediaOnMessage")
+    Message Message[] @relation("MessageMediaOnMessage")
 
     @@map("message_medias")
 }

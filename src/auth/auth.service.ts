@@ -192,6 +192,16 @@ export class AuthService {
     this.socketService.removeConnectedClient(userId, socketId)
   }
 
+  async adminLogout(res: Response, userId: number): Promise<void> {
+    const user = await this.userService.findById(userId)
+    if (!user || user.role !== EAppRoles.ADMIN) {
+      throw new UnauthorizedException(EAdminMessages.ADMIN_ACCESS_REQUIRED)
+    }
+
+    await this.jwtService.removeJWT({ response: res })
+    this.socketService.removeConnectedClient(userId)
+  }
+
   async validateSocketConnection(socket: Socket): Promise<void> {
     const clientCookie = socket.handshake.headers.cookie
     if (!clientCookie) {

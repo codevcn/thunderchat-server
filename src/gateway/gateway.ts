@@ -146,11 +146,11 @@ export class AppGateway
       socketId: client.id,
       auth: client.handshake.auth,
     })
-    const { clientId } = client.handshake.auth
-    if (clientId) {
-      this.socketService.removeConnectedClient(clientId, client.id)
-      this.socketService.broadcastUserOnlineStatus(clientId, EUserOnlineStatus.OFFLINE)
-      this.messageTokensManager.removeAllTokens(clientId)
+    const { clientId: userId } = client.handshake.auth
+    if (userId) {
+      this.socketService.removeConnectedClient(userId, client.id)
+      this.socketService.broadcastUserOnlineStatus(userId, EUserOnlineStatus.OFFLINE)
+      this.messageTokensManager.removeAllTokens(userId)
     }
   }
 

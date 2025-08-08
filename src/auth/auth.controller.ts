@@ -66,6 +66,13 @@ export class AuthController implements IAuthController {
     return { success: true }
   }
 
+  @Post('admin/logout')
+  @UseGuards(AuthGuard)
+  async adminLogout(@Res({ passthrough: true }) res: Response, @User() user: TUserWithProfile) {
+    await this.authService.adminLogout(res, user.id)
+    return { success: true }
+  }
+
   @Get('check-auth')
   @UseGuards(AuthGuard)
   @UseInterceptors(ClassSerializerInterceptor)

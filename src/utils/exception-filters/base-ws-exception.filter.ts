@@ -5,6 +5,7 @@ import type { TClientSocket } from '@/gateway/gateway.type'
 import { EClientSocketEvents } from '@/gateway/gateway.event'
 import type { TWsErrorResponse } from '../types'
 import { DevLogger } from '@/dev/dev-logger'
+import { Prisma } from '@prisma/client'
 
 @Catch(WsException)
 export class BaseWsExceptionsFilter extends BaseWsExceptionFilter {
@@ -29,6 +30,21 @@ export class BaseWsExceptionsFilter extends BaseWsExceptionFilter {
   }
 }
 
+function handleSetErrorMessage(error: Prisma.PrismaClientKnownRequestError | Error): string {
+  if (error instanceof Prisma.PrismaClientKnownRequestError) {
+    switch (error.code) {
+      case 'P2002': // Unique constraint failed
+        const target = (error.meta?.target as string[])?.join(', ')
+        return `Giá trị đã tồn tại cho trường: ${target}`
+      default:
+        return `Lỗi cơ sở dữ liệu (code: ${error.code})`
+    }
+  } else if (error instanceof Error) {
+    return error.message
+  }
+  return 'Unknown error'
+}
+
 // catch socket exceptions at methods level
 export function CatchInternalSocketError() {
   return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
@@ -38,12 +54,15 @@ export function CatchInternalSocketError() {
         // call original function
         return await originalMethod.apply(this, args)
       } catch (error) {
-        DevLogger.logError('catched ws error:', error)
-        // return error data to client
+        DevLogger.logError('Caught WS error:', error)
+
+        let clientMessage = handleSetErrorMessage(error)
+        let httpStatus = error.status || 500
+
         return {
           isError: true,
-          message: error.message || 'Unknow Error',
-          httpStatus: error.status,
+          message: clientMessage,
+          httpStatus,
         }
       }
     }

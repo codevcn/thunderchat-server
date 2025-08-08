@@ -97,7 +97,21 @@ GET /api/auth/admin/check-auth
 }
 ```
 
-### 4. Bảo vệ routes admin
+### 4. Admin Logout
+```bash
+POST /api/auth/admin/logout
+```
+
+**Response:**
+```json
+{
+  "success": true
+}
+```
+
+**Lưu ý:** API này chỉ cho phép admin logout. Nếu user không có quyền admin, sẽ trả về lỗi `ADMIN_ACCESS_REQUIRED`.
+
+### 5. Bảo vệ routes admin
 ```typescript
 @Controller('admin')
 @UseGuards(AuthGuard, AdminGuard)
@@ -124,6 +138,7 @@ export class AdminController {
 3. **Nếu có quyền admin** → Cho phép truy cập trang đăng nhập admin
 4. **Nếu không có quyền admin** → Báo lỗi ngay lập tức, không cho truy cập
 5. **User nhập password** → Chỉ những admin mới được nhập password
+6. **Admin logout** → Gọi API `/api/auth/admin/logout` để đăng xuất an toàn
 
 ## Error Messages
 

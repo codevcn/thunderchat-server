@@ -102,8 +102,16 @@ export class SocketService {
     }
   }
 
-  getConnectedClientsCount(): number {
-    return this.connectedClients.size
+  getConnectedClientsCountForAdmin(): number {
+    // hàm chỉ dùng cho admin
+    const connectedClients = this.connectedClients
+    let count = 0
+    for (const [_, value] of connectedClients) {
+      if (value && value.length > 0) {
+        count += 1
+      }
+    }
+    return count
   }
 
   async emitToDirectChat(directChatId: number, event: EClientSocketEvents, payload: any) {
