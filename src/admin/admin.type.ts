@@ -121,12 +121,10 @@ export type TSystemOverviewData = {
   totalGroupMessages: number
   activeGroupChats: number
   totalUsers: number
-  newUsersThisPeriod: number
-  messagesThisPeriod: number
-  groupChatsThisPeriod: number
   totalViolationReports: number
   resolvedViolationReports: number
   pendingViolationReports: number
+  dismissedViolationReports: number
   timeRange: {
     startDate: string
     endDate: string
@@ -136,6 +134,16 @@ export type TSystemOverviewData = {
     userGrowth?: Array<{ date: string; count: number }>
     messageActivity?: Array<{ date: string; count: number }>
     groupChatActivity?: Array<{ date: string; count: number }>
+    // Bar chart: Số tin nhắn theo loại chính (TEXT, STICKER, MEDIA)
+    messageTypeDistribution?: Array<{
+      type: 'TEXT' | 'STICKER' | 'MEDIA'
+      count: number
+    }>
+    // Stacked bar: Tin nhắn media theo loại (IMAGE, VIDEO, AUDIO, DOCUMENT)
+    mediaMessageDistribution?: Array<{
+      type: 'IMAGE' | 'VIDEO' | 'AUDIO' | 'DOCUMENT'
+      count: number
+    }>
   }
 }
 

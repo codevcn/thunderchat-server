@@ -739,56 +739,27 @@ export class AdminService {
       },
     })
 
-    // Get total direct messages
+    // Get total direct messages (excluding PIN_NOTICE)
     const totalDirectMessages = await this.prisma.message.count({
-      where: { directChatId: { not: null } },
+      where: {
+        directChatId: { not: null },
+        type: { not: 'PIN_NOTICE' },
+      },
     })
 
-    // Get total group messages
+    // Get total group messages (excluding PIN_NOTICE)
     const totalGroupMessages = await this.prisma.message.count({
-      where: { groupChatId: { not: null } },
+      where: {
+        groupChatId: { not: null },
+        type: { not: 'PIN_NOTICE' },
+      },
     })
 
     // Get total messages (sum of direct and group messages)
     const totalMessages = totalDirectMessages + totalGroupMessages
 
-    // Get direct messages in this period
-    const directMessagesThisPeriod = await this.prisma.message.count({
-      where: {
-        directChatId: { not: null },
-        createdAt: {
-          gte: periodStart,
-          lte: periodEnd,
-        },
-      },
-    })
-
-    // Get group messages in this period
-    const groupMessagesThisPeriod = await this.prisma.message.count({
-      where: {
-        groupChatId: { not: null },
-        createdAt: {
-          gte: periodStart,
-          lte: periodEnd,
-        },
-      },
-    })
-
-    // Total messages in this period
-    const messagesThisPeriod = directMessagesThisPeriod + groupMessagesThisPeriod
-
     // Get active group chats (all group chats)
     const activeGroupChats = await this.prisma.groupChat.count()
-
-    // Get new group chats in this period
-    const groupChatsThisPeriod = await this.prisma.groupChat.count({
-      where: {
-        createdAt: {
-          gte: periodStart,
-          lte: periodEnd,
-        },
-      },
-    })
 
     // Get violation reports statistics
     const totalViolationReports = await this.prisma.violationReport.count()
@@ -802,6 +773,12 @@ export class AdminService {
     const pendingViolationReports = await this.prisma.violationReport.count({
       where: {
         reportStatus: 'PENDING',
+      },
+    })
+
+    const dismissedViolationReports = await this.prisma.violationReport.count({
+      where: {
+        reportStatus: 'DISMISSED',
       },
     })
 
@@ -821,12 +798,10 @@ export class AdminService {
       totalGroupMessages,
       activeGroupChats,
       totalUsers,
-      newUsersThisPeriod,
-      messagesThisPeriod,
-      groupChatsThisPeriod,
       totalViolationReports,
       resolvedViolationReports,
       pendingViolationReports,
+      dismissedViolationReports,
       timeRange: {
         startDate: periodStart.toISOString(),
         endDate: periodEnd.toISOString(),
@@ -883,25 +858,41 @@ export class AdminService {
     // Transform to user message stats format
     const userStats = await Promise.all(
       users.map(async (user) => {
-        // Count direct messages
+        // Count direct messages (excluding PIN_NOTICE)
         const directMessageCount = await this.prisma.message.count({
-          where: { authorId: user.id, directChatId: { not: null } },
+          where: {
+            authorId: user.id,
+            directChatId: { not: null },
+            type: { not: 'PIN_NOTICE' },
+          },
         })
 
-        // Count group messages
+        // Count group messages (excluding PIN_NOTICE)
         const groupMessageCount = await this.prisma.message.count({
-          where: { authorId: user.id, groupChatId: { not: null } },
+          where: {
+            authorId: user.id,
+            groupChatId: { not: null },
+            type: { not: 'PIN_NOTICE' },
+          },
         })
 
-        // Get last message time
+        // Get last message time (excluding PIN_NOTICE)
         const lastDirectMessage = await this.prisma.message.findFirst({
-          where: { authorId: user.id, directChatId: { not: null } },
+          where: {
+            authorId: user.id,
+            directChatId: { not: null },
+            type: { not: 'PIN_NOTICE' },
+          },
           orderBy: { createdAt: 'desc' },
           select: { createdAt: true },
         })
 
         const lastGroupMessage = await this.prisma.message.findFirst({
-          where: { authorId: user.id, groupChatId: { not: null } },
+          where: {
+            authorId: user.id,
+            groupChatId: { not: null },
+            type: { not: 'PIN_NOTICE' },
+          },
           orderBy: { createdAt: 'desc' },
           select: { createdAt: true },
         })
@@ -1005,10 +996,11 @@ export class AdminService {
         },
       })
 
-      // Count messages for this day within the specified time range
+      // Count messages for this day within the specified time range (excluding PIN_NOTICE)
       const directMessages = await this.prisma.message.count({
         where: {
           directChatId: { not: null },
+          type: { not: 'PIN_NOTICE' },
           createdAt: {
             gte: currentDate,
             lt: nextDate,
@@ -1019,6 +1011,7 @@ export class AdminService {
       const groupMessages = await this.prisma.message.count({
         where: {
           groupChatId: { not: null },
+          type: { not: 'PIN_NOTICE' },
           createdAt: {
             gte: currentDate,
             lt: nextDate,
@@ -1043,10 +1036,87 @@ export class AdminService {
       groupChatActivity.push({ date: dateStr, count: newGroupChats })
     }
 
+    // Generate message type distribution (Bar chart)
+    const messageTypeDistribution = await this.generateMessageTypeDistribution()
+
+    // Generate media message distribution (Stacked bar chart)
+    const mediaMessageDistribution = await this.generateMediaMessageDistribution()
+
     return {
       userGrowth,
       messageActivity,
       groupChatActivity,
+      messageTypeDistribution,
+      mediaMessageDistribution,
     }
+  }
+
+  /**
+   * Generate message type distribution for bar chart
+   * Counts messages by main type: TEXT, STICKER, MEDIA
+   */
+  private async generateMessageTypeDistribution() {
+    // Get TEXT messages
+    const textCount = await this.prisma.message.count({
+      where: {
+        type: 'TEXT',
+        isDeleted: false,
+      },
+    })
+
+    // Get STICKER messages
+    const stickerCount = await this.prisma.message.count({
+      where: {
+        type: 'STICKER',
+        isDeleted: false,
+      },
+    })
+
+    // Get MEDIA messages
+    const mediaCount = await this.prisma.message.count({
+      where: {
+        type: 'MEDIA',
+        isDeleted: false,
+      },
+    })
+
+    return [
+      { type: 'TEXT' as const, count: textCount },
+      { type: 'STICKER' as const, count: stickerCount },
+      { type: 'MEDIA' as const, count: mediaCount },
+    ]
+  }
+
+  /**
+   * Generate media message distribution for stacked bar chart
+   * Counts only media messages by type: IMAGE, VIDEO, AUDIO, DOCUMENT
+   */
+  private async generateMediaMessageDistribution() {
+    // Get all media messages with their types
+    const mediaMessages = await this.prisma.message.findMany({
+      where: {
+        type: 'MEDIA',
+        isDeleted: false,
+        Media: {
+          isNot: null,
+        },
+      },
+      include: {
+        Media: true,
+      },
+    })
+
+    // Count media messages by type
+    const imageCount = mediaMessages.filter((msg) => msg.Media?.type === 'IMAGE').length
+    const videoCount = mediaMessages.filter((msg) => msg.Media?.type === 'VIDEO').length
+    const audioCount = mediaMessages.filter((msg) => msg.Media?.type === 'AUDIO').length
+    const documentCount = mediaMessages.filter((msg) => msg.Media?.type === 'DOCUMENT').length
+
+    return [
+      { type: 'IMAGE' as const, count: imageCount },
+      { type: 'VIDEO' as const, count: videoCount },
+      { type: 'AUDIO' as const, count: audioCount },
+      { type: 'DOCUMENT' as const, count: documentCount },
+    ]
   }
 }
