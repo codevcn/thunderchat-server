@@ -583,6 +583,8 @@ export class AppGateway
         throw new BaseWsException(EGatewayMessages.INVALID_MESSAGE_FORMAT)
     }
 
+    console.log('>>> send group message:', { newMessage, groupChat })
+
     await this.handleEmitNewMessage({
       client: { id: clientId, socket: client },
       newMessage,

@@ -166,11 +166,32 @@ export class SocketService {
     }
   }
 
+  printOutAllRooms(): void {
+    // Lấy Map<roomName, Set<socketId>>
+    const roomsMap = this.server.sockets.adapter.rooms
+
+    // Trả về mảng tên room (loại bỏ room của từng socket riêng lẻ)
+    const rooms = [...roomsMap.keys()].filter((room) => {
+      const socketsInRoom = roomsMap.get(room)
+      // Nếu tên room == socketId → đây không phải room thực sự
+      return socketsInRoom && !socketsInRoom.has(room)
+    })
+
+    for (const room of rooms) {
+      console.log('>>> room:', room)
+    }
+  }
+
   sendNewMessageToGroupChat(
     groupChatId: TGroupChat['id'],
     newMessage: TMessageFullInfo,
     createGroupChatRoomNameHandler: TCreateGroupChatRoomNameHandler
   ) {
+    try {
+      this.printOutAllRooms()
+    } catch (error) {
+      console.error('>>> error at send new message to group chat:', error)
+    }
     this.server
       .to(createGroupChatRoomNameHandler(groupChatId))
       .emit(EClientSocketEvents.send_message_group, newMessage)
