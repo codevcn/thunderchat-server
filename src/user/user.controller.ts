@@ -1,8 +1,10 @@
 import { Body, Controller, Get, Post, Query, Res, UseGuards } from '@nestjs/common'
 import {
   ChangePasswordDTO,
+  BlockUserDTO,
   CreateUserDTO,
   GetUserByEmailDTO,
+  CheckBlockedUserDTO,
   SearchUsersDTO,
 } from '@/user/user.dto'
 import { UserService } from '@/user/user.service'
@@ -12,12 +14,15 @@ import type { Response } from 'express'
 import type { IUserController } from './user.interface'
 import { AuthGuard } from '@/auth/auth.guard'
 import { User } from './user.decorator'
+import { BlockUserService } from '@/user/block-user.service'
+import { TUserWithProfile } from '@/utils/entities/user.entity'
 
 @Controller(ERoutes.USER)
 export class UserController implements IUserController {
   constructor(
     private userService: UserService,
-    private jwtService: JWTService
+    private jwtService: JWTService,
+    private blockUserService: BlockUserService
   ) {}
 
   @Post('register')
@@ -48,8 +53,21 @@ export class UserController implements IUserController {
 
   @Post('change-password')
   @UseGuards(AuthGuard)
-  async changePassword(@User() user, @Body() dto: ChangePasswordDTO) {
+  async changePassword(@User() user: TUserWithProfile, @Body() dto: ChangePasswordDTO) {
     await this.userService.changePassword(user.id, dto.oldPassword, dto.newPassword)
     return { success: true }
+  }
+
+  @Post('block-user')
+  @UseGuards(AuthGuard)
+  async blockUser(@User() user: TUserWithProfile, @Body() dto: BlockUserDTO) {
+    await this.blockUserService.blockUser(user.id, dto.blockedUserId, dto.blockType)
+    return { success: true }
+  }
+
+  @Get('check-blocked-user')
+  @UseGuards(AuthGuard)
+  async checkBlockedUser(@User() user: TUserWithProfile, @Query() dto: CheckBlockedUserDTO) {
+    return await this.blockUserService.checkBlockedUser(user.id, dto.otherUserId)
   }
 }

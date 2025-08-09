@@ -21,6 +21,19 @@ model MessageMapping {
     @@map("message_mappings")
 }
 
+model BlockedUser {
+    id            Int       @id @default(autoincrement())
+    blockerUserId Int       @map("blocker_user_id")
+    blockedUserId Int       @map("blocked_user_id")
+    createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+    blockType     BlockType @default(MESSAGE) @map("block_type")
+
+    UserBlocked User @relation("BlockedUsers", fields: [blockedUserId], references: [id])
+    UserBlocker User @relation("BlockedByUsers", fields: [blockerUserId], references: [id])
+
+    @@map("blocked_users")
+}
+
 model User {
     id        Int      @id @default(autoincrement())
     email     String   @unique @db.VarChar(255)
@@ -45,6 +58,8 @@ model User {
     UserSettings              UserSettings?     @relation("UserToUserSettings")
     ReportsMade               ViolationReport[] @relation("ReportsMade")
     ReportsAbout              ViolationReport[] @relation("ReportsAbout")
+    BlockedUsers              BlockedUser[]     @relation("BlockedUsers")
+    BlockedByUsers            BlockedUser[]     @relation("BlockedByUsers")
 
     @@index([email], type: BTree)
     @@map("users")
@@ -379,4 +394,8 @@ enum MessageMediaType {
     VIDEO
     AUDIO
     DOCUMENT
+}
+
+enum BlockType {
+    MESSAGE
 }

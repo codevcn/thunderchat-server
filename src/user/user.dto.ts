@@ -1,7 +1,16 @@
-import { IsEmail, IsISO8601, IsNotEmpty, IsNumber, IsOptional, MinLength } from 'class-validator'
+import {
+  IsEmail,
+  IsEnum,
+  IsISO8601,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  MinLength,
+} from 'class-validator'
 import { ELengths } from '@/utils/enums'
 import { EValidationMessages } from '@/utils/messages'
 import { Type } from 'class-transformer'
+import { EBlockType } from '@/user/block-user.enum'
 
 export class CreateUserDTO {
   @IsNotEmpty()
@@ -47,4 +56,22 @@ export class ChangePasswordDTO {
   @IsNotEmpty()
   @MinLength(8, { message: 'Mật khẩu mới phải từ 8 ký tự trở lên' })
   newPassword: string
+}
+
+export class BlockUserDTO {
+  @IsNotEmpty()
+  @IsNumber()
+  @Type(() => Number)
+  blockedUserId: number
+
+  @IsNotEmpty()
+  @IsEnum(EBlockType)
+  blockType: EBlockType
+}
+
+export class CheckBlockedUserDTO {
+  @IsNotEmpty()
+  @IsNumber()
+  @Type(() => Number)
+  otherUserId: number
 }
