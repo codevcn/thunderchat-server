@@ -7,12 +7,13 @@ import { EClientSocketEvents } from '../gateway.event'
 import { EFriendRequestStatus } from '@/friend-request/friend-request.enum'
 import type { TGetFriendRequestsData } from '@/friend-request/friend-request.type'
 import type { TUserId } from '@/user/user.type'
-import type { TCreateGroupChatRoomNameHandler, TServerMiddleware, TSocketId } from './socket.type'
+import type { TServerMiddleware, TSocketId } from './socket.type'
 import { DevLogger } from '@/dev/dev-logger'
 import { TMessageFullInfo } from '@/utils/entities/message.entity'
 import { TGroupChat } from '@/utils/entities/group-chat.entity'
 import { TDirectChat } from '@/utils/entities/direct-chat.entity'
 import { EChatType, EUserOnlineStatus } from '@/utils/enums'
+import { createDirectChatRoomName, createGroupChatRoomName } from '@/utils/helpers'
 
 @Injectable()
 export class SocketService {
@@ -42,17 +43,6 @@ export class SocketService {
 
   getConnectedClient<T extends EventsMap = EventsMap>(clientId: TUserId): Socket<T>[] | null {
     return this.connectedClients.get(clientId) || null
-  }
-
-  getConnectedClientsList<T extends EventsMap = EventsMap>(clientIds: TUserId[]): Socket<T>[][] {
-    const clientsSet: Socket<T>[][] = []
-    for (const clientId of clientIds) {
-      const clients = this.getConnectedClient(clientId)
-      if (clients && clients.length > 0) {
-        clientsSet.push(clients)
-      }
-    }
-    return clientsSet
   }
 
   removeConnectedClient(userId: TUserId, socketId?: TSocketId): void {
@@ -116,7 +106,7 @@ export class SocketService {
 
   async emitToDirectChat(directChatId: number, event: EClientSocketEvents, payload: any) {
     if (this.server) {
-      const room = `direct_chat_room-${directChatId}`
+      const room = createDirectChatRoomName(directChatId)
       this.server.to(room).emit(event, payload)
     }
   }
@@ -166,34 +156,9 @@ export class SocketService {
     }
   }
 
-  printOutAllRooms(): void {
-    // Lấy Map<roomName, Set<socketId>>
-    const roomsMap = this.server.sockets.adapter.rooms
-
-    // Trả về mảng tên room (loại bỏ room của từng socket riêng lẻ)
-    const rooms = [...roomsMap.keys()].filter((room) => {
-      const socketsInRoom = roomsMap.get(room)
-      // Nếu tên room == socketId → đây không phải room thực sự
-      return socketsInRoom && !socketsInRoom.has(room)
-    })
-
-    for (const room of rooms) {
-      console.log('>>> room:', room)
-    }
-  }
-
-  sendNewMessageToGroupChat(
-    groupChatId: TGroupChat['id'],
-    newMessage: TMessageFullInfo,
-    createGroupChatRoomNameHandler: TCreateGroupChatRoomNameHandler
-  ) {
-    try {
-      this.printOutAllRooms()
-    } catch (error) {
-      console.error('>>> error at send new message to group chat:', error)
-    }
+  sendNewMessageToGroupChat(groupChatId: TGroupChat['id'], newMessage: TMessageFullInfo) {
     this.server
-      .to(createGroupChatRoomNameHandler(groupChatId))
+      .to(createGroupChatRoomName(groupChatId))
       .emit(EClientSocketEvents.send_message_group, newMessage)
   }
 
@@ -202,10 +167,10 @@ export class SocketService {
     groupMemberIds: number[],
     creator: TUserWithProfile
   ) {
-    const groupChatSockets = this.getConnectedClientsList<IEmitSocketEvents>(groupMemberIds)
-    if (groupChatSockets && groupChatSockets.length > 0) {
-      for (const socketsList of groupChatSockets) {
-        for (const socket of socketsList) {
+    for (const groupMemberId of groupMemberIds) {
+      const groupMemberSockets = this.getConnectedClient<IEmitSocketEvents>(groupMemberId)
+      if (groupMemberSockets && groupMemberSockets.length > 0) {
+        for (const socket of groupMemberSockets) {
           socket.emit(
             EClientSocketEvents.new_conversation,
             null,
@@ -221,5 +186,24 @@ export class SocketService {
 
   broadcastUserOnlineStatus(userId: TUserId, onlineStatus: EUserOnlineStatus) {
     this.server.emit(EClientSocketEvents.broadcast_user_online_status, userId, onlineStatus)
+  }
+
+  broadcastAddMembersToGroupChat(
+    groupChat: TGroupChat,
+    groupMemberIds: number[],
+    executor: TUserWithProfile
+  ) {
+    this.broadcastCreateGroupChat(groupChat, groupMemberIds, executor)
+  }
+
+  broadcastRemoveGroupChatMembers(groupChat: TGroupChat, groupMemberIds: number[]) {
+    for (const groupMemberId of groupMemberIds) {
+      const groupMemberSockets = this.getConnectedClient<IEmitSocketEvents>(groupMemberId)
+      if (groupMemberSockets && groupMemberSockets.length > 0) {
+        for (const socket of groupMemberSockets) {
+          socket.emit(EClientSocketEvents.remove_group_chat_members, groupMemberIds, groupChat)
+        }
+      }
+    }
   }
 }

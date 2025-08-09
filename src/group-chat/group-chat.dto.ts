@@ -58,13 +58,3 @@ export class SearchGroupChatMembersDTO {
   @IsString()
   keyword: string
 }
-
-export class AddMembersToGroupChatDTO {
-  @IsNumber()
-  @Type(() => Number)
-  groupChatId: number
-
-  @IsArray()
-  @IsNumber({}, { each: true })
-  memberIds: number[]
-}

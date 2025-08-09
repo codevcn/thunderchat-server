@@ -11,6 +11,7 @@ export enum ERoutes {
   GROUP_CHAT = 'group-chat',
   GROUP_MEMBER = 'group-member',
   PROFILE = 'profile',
+  PIN_CONVERSATION = 'pin-conversation',
 }
 
 export enum EClientCookieNames {
@@ -85,6 +86,8 @@ export enum EGlobalMessages {
 
 export enum EInternalEvents {
   CREATE_GROUP_CHAT = 'CREATE_GROUP_CHAT',
+  ADD_MEMBERS_TO_GROUP_CHAT = 'ADD_MEMBERS_TO_GROUP_CHAT',
+  REMOVE_GROUP_CHAT_MEMBERS = 'REMOVE_GROUP_CHAT_MEMBERS',
 }
 
 export enum EUserOnlineStatus {

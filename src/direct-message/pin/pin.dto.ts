@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer'
-import { IsBoolean, IsNotEmpty, IsNumber } from 'class-validator'
+import { IsBoolean, IsNotEmpty, IsNumber, IsOptional } from 'class-validator'
 
 // DTO cho chức năng ghim tin nhắn đồng bộ trong direct chat
 
@@ -11,14 +11,19 @@ export class PinMessageDTO {
   messageId: number // ID của tin nhắn cần ghim/bỏ ghim
 
   @IsNumber()
-  @IsNotEmpty()
+  @IsOptional()
   @Type(() => Number)
-  directChatId: number // ID của cuộc trò chuyện
+  directChatId?: number // ID của cuộc trò chuyện
 
   @IsBoolean()
   @IsNotEmpty()
   @Type(() => Boolean)
   isPinned: boolean // Trạng thái ghim (true: ghim, false: bỏ ghim)
+
+  @IsNumber()
+  @IsOptional()
+  @Type(() => Number)
+  groupChatId: number // ID của nhóm
 }
 
 export class PinnedCountDTO {

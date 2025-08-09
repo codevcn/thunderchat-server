@@ -58,6 +58,8 @@ import { GroupChatService } from '@/group-chat/group-chat.service'
 import { TGroupChat } from '@/utils/entities/group-chat.entity'
 import { TUserWithProfile } from '@/utils/entities/user.entity'
 import { OnEvent } from '@nestjs/event-emitter'
+import { GroupMemberService } from '@/group-member/group-member.service'
+import { createDirectChatRoomName, createGroupChatRoomName } from '@/utils/helpers'
 
 @WebSocketGateway({
   cors: {
@@ -88,7 +90,8 @@ export class AppGateway
     private directChatService: DirectChatService,
     private syncDataToESService: SyncDataToESService,
     private userService: UserService,
-    private groupChatService: GroupChatService
+    private groupChatService: GroupChatService,
+    private groupMemberService: GroupMemberService
   ) {}
 
   /**
@@ -224,11 +227,7 @@ export class AppGateway
         )
       }
     } else if (groupChat) {
-      this.socketService.sendNewMessageToGroupChat(
-        groupChat.id,
-        newMessage,
-        this.createGroupChatRoomName
-      )
+      this.socketService.sendNewMessageToGroupChat(groupChat.id, newMessage)
     }
   }
 
@@ -249,7 +248,6 @@ export class AppGateway
       replyToId,
     } = message
     if (directChatId && receiverId) {
-      await canSendDirectMessage(this.messageService['PrismaService'], id, receiverId) // Kiểm tra quyền gửi tin nhắn 1-1
       const newMessage = await this.messageService.createNewMessage(
         content,
         id,
@@ -290,6 +288,8 @@ export class AppGateway
     const { clientId } = await this.authService.validateSocketAuth(client)
     const { type, msgPayload } = payload
     const { receiverId, token } = msgPayload
+
+    await canSendDirectMessage(this.messageService['PrismaService'], clientId, receiverId) // Kiểm tra quyền gửi tin nhắn 1-1
 
     await this.checkUniqueMessage(token, clientId)
     const { timestamp, content, replyToId } = msgPayload
@@ -444,36 +444,17 @@ export class AppGateway
     }
   }
 
-  private createGroupChatRoomName(groupId: number): string {
-    return `group_chat_room-${groupId}`
-  }
-
   @SubscribeMessage(EClientSocketEvents.join_group_chat_room)
   @CatchInternalSocketError()
   async handleJoinGroupChat(
     @MessageBody() data: JoinGroupChatDTO,
     @ConnectedSocket() client: Socket
   ) {
-    console.log('>>> join group chat:', { data, clientId: client.handshake.auth?.clientId })
     const { groupChatId } = data
-    client.join(this.createGroupChatRoomName(groupChatId))
+    client.join(createGroupChatRoomName(groupChatId))
     return {
       success: true,
     }
-  }
-
-  @OnEvent(EInternalEvents.CREATE_GROUP_CHAT)
-  async broadcastCreateGroupChat(
-    groupChat: TGroupChat,
-    groupMemberIds: number[],
-    creator: TUserWithProfile
-  ) {
-    console.log('>>> group chat created:', { groupChat, groupMemberIds, creator })
-    this.socketService.broadcastCreateGroupChat(groupChat, groupMemberIds, creator)
-  }
-
-  async checkGroupChatExists(groupId: number): Promise<TGroupChat | null> {
-    return await this.groupChatService.findGroupChatById(groupId)
   }
 
   @SubscribeMessage(EClientSocketEvents.send_message_group)
@@ -489,16 +470,12 @@ export class AppGateway
     await this.checkUniqueMessage(token, clientId)
     const { timestamp, content, replyToId } = msgPayload
 
-    const groupChat = await this.checkGroupChatExists(groupChatId)
-    if (!groupChat) {
-      throw new BaseWsException(EGatewayMessages.GROUP_CHAT_NOT_FOUND)
+    const member = await this.groupMemberService.findMemberInGroupChat(groupChatId, clientId)
+    if (!member) {
+      throw new BaseWsException(EGatewayMessages.USER_NOT_IN_GROUP_CHAT)
     }
 
-    const sender = await this.userService.findUserWithProfileById(clientId)
-    if (!sender) {
-      throw new BaseWsException(EGatewayMessages.SENDER_NOT_FOUND)
-    }
-
+    const groupChat = member.GroupChat
     let newMessage: TMessageFullInfo
 
     switch (type) {
@@ -583,12 +560,10 @@ export class AppGateway
         throw new BaseWsException(EGatewayMessages.INVALID_MESSAGE_FORMAT)
     }
 
-    console.log('>>> send group message:', { newMessage, groupChat })
-
     await this.handleEmitNewMessage({
       client: { id: clientId, socket: client },
       newMessage,
-      sender,
+      sender: member.User,
       groupChat,
     })
 
@@ -608,10 +583,6 @@ export class AppGateway
     }
   }
 
-  createDirectChatRoomName(directChatId: number): string {
-    return `direct_chat_room-${directChatId}`
-  }
-
   @SubscribeMessage(EClientSocketEvents.join_direct_chat_room)
   @CatchInternalSocketError()
   async handleJoinDirectChat(
@@ -619,9 +590,32 @@ export class AppGateway
     @ConnectedSocket() client: TClientSocket
   ) {
     const { directChatId } = data
-    client.join(this.createDirectChatRoomName(directChatId))
+    client.join(createDirectChatRoomName(directChatId))
     return {
       success: true,
     }
+  }
+
+  @OnEvent(EInternalEvents.REMOVE_GROUP_CHAT_MEMBERS)
+  async broadcastRemoveGroupChatMembers(groupChat: TGroupChat, removedMemberIds: number[]) {
+    this.socketService.broadcastRemoveGroupChatMembers(groupChat, removedMemberIds)
+  }
+
+  @OnEvent(EInternalEvents.ADD_MEMBERS_TO_GROUP_CHAT)
+  async broadcastAddMembersToGroupChat(
+    groupChat: TGroupChat,
+    newMemberIds: number[],
+    executor: TUserWithProfile
+  ) {
+    this.socketService.broadcastAddMembersToGroupChat(groupChat, newMemberIds, executor)
+  }
+
+  @OnEvent(EInternalEvents.CREATE_GROUP_CHAT)
+  async broadcastCreateGroupChat(
+    groupChat: TGroupChat,
+    groupMemberIds: number[],
+    creator: TUserWithProfile
+  ) {
+    this.socketService.broadcastCreateGroupChat(groupChat, groupMemberIds, creator)
   }
 }

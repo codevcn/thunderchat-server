@@ -1,6 +1,5 @@
 import type { TSuccess } from '@/utils/types'
 import type {
-  AddMembersToGroupChatDTO,
   CreateGroupChatDTO,
   DeleteGroupChatAvatarDTO,
   FetchGroupChatDTO,
@@ -8,7 +7,6 @@ import type {
   UpdateGroupChatDTO,
 } from './group-chat.dto'
 import type {
-  TAddMembersToGroupChatRes,
   TFetchGroupChatData,
   TFetchGroupChatsData,
   TUploadGroupChatAvatar,
@@ -23,5 +21,4 @@ export interface IGroupChatsController {
   fetchGroupChat(query: FetchGroupChatDTO, user: TUser): Promise<TFetchGroupChatData>
   fetchGroupChats(query: FetchGroupChatsDTO, user: TUser): Promise<TFetchGroupChatsData[]>
   updateGroupChat(body: UpdateGroupChatDTO, user: TUser): Promise<TSuccess>
-  addMembersToGroupChat(body: AddMembersToGroupChatDTO): Promise<TAddMembersToGroupChatRes>
 }

@@ -1,15 +1,41 @@
 import { PrismaService } from '@/configs/db/prisma.service'
-import { DevLogger } from '@/dev/dev-logger'
 import type {
   TGroupChatMember,
   TGroupChatMemberWithUser,
+  TGroupChatMemberWithUserAndGroupChat,
 } from '@/utils/entities/group-chat-member.entity'
-import { EProviderTokens } from '@/utils/enums'
-import { Inject, Injectable, InternalServerErrorException } from '@nestjs/common'
+import { EInternalEvents, EProviderTokens } from '@/utils/enums'
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common'
+import { EGroupMemberMessages } from './group-member.message'
+import { EventEmitter2 } from '@nestjs/event-emitter'
+import { TUserWithProfile } from '@/utils/entities/user.entity'
 
 @Injectable()
 export class GroupMemberService {
-  constructor(@Inject(EProviderTokens.PRISMA_CLIENT) private prismaService: PrismaService) {}
+  constructor(
+    @Inject(EProviderTokens.PRISMA_CLIENT) private prismaService: PrismaService,
+    private readonly eventEmitter: EventEmitter2
+  ) {}
+
+  async findMemberInGroupChat(
+    groupChatId: number,
+    userId: number
+  ): Promise<TGroupChatMemberWithUserAndGroupChat | null> {
+    return await this.prismaService.groupChatMember.findFirst({
+      where: { groupChatId, userId },
+      include: {
+        User: {
+          include: { Profile: true },
+        },
+        GroupChat: true,
+      },
+    })
+  }
 
   async fetchGroupChatMembers(groupChatId: number): Promise<TGroupChatMemberWithUser[]> {
     const members = await this.prismaService.groupChatMember.findMany({
@@ -48,14 +74,54 @@ export class GroupMemberService {
         where: { groupChatId_userId: { groupChatId, userId: memberId } },
       })
     } catch (error) {
-      DevLogger.logError('Error removing group chat member:', error)
-      throw new InternalServerErrorException('Failed to remove group chat member')
+      throw new InternalServerErrorException(EGroupMemberMessages.FAILED_TO_REMOVE_MEMBER)
     }
+    const groupChat = await this.prismaService.groupChat.findUnique({
+      where: { id: groupChatId },
+    })
+    this.eventEmitter.emit(EInternalEvents.REMOVE_GROUP_CHAT_MEMBERS, groupChat, [memberId])
   }
 
   async getGroupChatMember(groupChatId: number, userId: number): Promise<TGroupChatMember | null> {
     return await this.prismaService.groupChatMember.findFirst({
       where: { groupChatId, userId },
     })
+  }
+
+  async checkIfMembersInGroupChat(groupChatId: number, memberIds: number[]): Promise<boolean> {
+    const groupChatMembers = await this.prismaService.groupChatMember.findMany({
+      where: { groupChatId, userId: { in: memberIds } },
+    })
+    return groupChatMembers.length > 0
+  }
+
+  async addMembersToGroupChat(
+    groupChatId: number,
+    memberIds: number[],
+    executor: TUserWithProfile
+  ): Promise<TGroupChatMemberWithUser[]> {
+    const isMembersInGroupChat = await this.checkIfMembersInGroupChat(groupChatId, memberIds)
+    if (isMembersInGroupChat) {
+      throw new BadRequestException(EGroupMemberMessages.MEMBERS_ALREADY_IN_GROUP_CHAT)
+    }
+    const groupChat = await this.prismaService.groupChat.update({
+      where: { id: groupChatId },
+      data: {
+        Members: {
+          create: memberIds.map((memberId) => ({ userId: memberId })),
+        },
+      },
+    })
+    const addedMembers = await this.prismaService.groupChatMember.findMany({
+      where: { groupChatId, userId: { in: memberIds } },
+      include: { User: { include: { Profile: true } } },
+    })
+    this.eventEmitter.emit(
+      EInternalEvents.ADD_MEMBERS_TO_GROUP_CHAT,
+      groupChat,
+      memberIds,
+      executor
+    )
+    return addedMembers
   }
 }

@@ -141,3 +141,11 @@ export function formatBytes(bytes: number, decimals = 2): string {
 
   return `${value} ${sizes[i]}`
 }
+
+export function createDirectChatRoomName(directChatId: number): string {
+  return `direct_chat_room-${directChatId}`
+}
+
+export function createGroupChatRoomName(groupChatId: number): string {
+  return `group_chat_room-${groupChatId}`
+}

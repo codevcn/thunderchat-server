@@ -13,9 +13,11 @@ export enum EClientSocketEvents {
   typing_direct = 'typing:direct',
   friend_request_action = 'friend_request_action',
   pin_message = 'pin_message',
+  pin_message_group = 'pin_message:group',
   pin_direct_chat = 'pin_direct_chat',
   new_conversation = 'new_conversation',
   broadcast_user_online_status = 'broadcast_user_online_status',
   check_user_online_status = 'check_user_online_status',
   join_direct_chat_room = 'join_direct_chat_room',
+  remove_group_chat_members = 'remove_group_chat_members',
 }

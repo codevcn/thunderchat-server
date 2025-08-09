@@ -84,12 +84,14 @@ model DirectChat {
 
 model PinnedChat {
     id           Int      @id @default(autoincrement())
-    directChatId Int      @map("direct_chat_id")
+    directChatId Int?     @map("direct_chat_id")
+    groupChatId  Int?     @map("group_chat_id")
     pinnedBy     Int      @map("pinned_by")
     pinnedAt     DateTime @default(now()) @map("pinned_at") @db.Timestamptz(3)
 
-    DirectChat DirectChat @relation("PinnedChatsOnDirectChat", fields: [directChatId], references: [id])
-    PinnedBy   User       @relation("PinnedChatsByUser", fields: [pinnedBy], references: [id])
+    DirectChat DirectChat? @relation("PinnedChatsOnDirectChat", fields: [directChatId], references: [id])
+    GroupChat  GroupChat?  @relation("PinnedChatsOnGroupChat", fields: [groupChatId], references: [id])
+    PinnedBy   User        @relation("PinnedChatsByUser", fields: [pinnedBy], references: [id])
 
     @@map("pinned_chats")
 }
@@ -233,6 +235,7 @@ model GroupChat {
     Members         GroupChatMember[] @relation("GroupChatMembers")
     LastSentMessage Message?          @relation("LastSentMessageOnGroupChat", fields: [lastSentMessageId], references: [id])
     PinnedMessages  PinnedMessage[]   @relation("PinnedMessagesOnGroupChat")
+    PinnedChats     PinnedChat[]      @relation("PinnedChatsOnGroupChat")
 
     @@map("group_chats")
 }

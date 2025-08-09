@@ -48,6 +48,7 @@ import { UploadModule } from './upload/upload.module'
 import { GroupMemberModule } from './group-member/group-member.module'
 import { DeleteMessageModule } from './direct-message/delete-message/delete-message.module'
 import { AdminModule } from './admin/admin.module'
+import { PinConversationModule } from './pin-conversation/pin-conversation.module'
 
 @Module({
   imports: [
@@ -65,7 +66,7 @@ import { AdminModule } from './admin/admin.module'
     SearchModule,
     GroupChatModule,
     UploadModule,
-
+    PinConversationModule,
     GroupMemberModule,
     DevModule,
     ProfileModule,

@@ -13,7 +13,3 @@ export type TFetchGroupChatsData = TGroupChat & {
   LastSentMessage: TMessage | null
   Creator: TUserWithProfile
 }
-
-export type TAddMembersToGroupChatRes = {
-  addedMembers: TGroupChatMemberWithUser[]
-}

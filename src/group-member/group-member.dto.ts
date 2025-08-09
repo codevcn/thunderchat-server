@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer'
-import { IsNumber } from 'class-validator'
+import { IsArray, IsNumber } from 'class-validator'
 
 export class FetchGroupChatMembersDTO {
   @IsNumber()
@@ -15,4 +15,14 @@ export class RemoveGroupChatMemberDTO {
   @IsNumber()
   @Type(() => Number)
   memberId: number
+}
+
+export class AddMembersToGroupChatDTO {
+  @IsNumber()
+  @Type(() => Number)
+  groupChatId: number
+
+  @IsArray()
+  @IsNumber({}, { each: true })
+  memberIds: number[]
 }

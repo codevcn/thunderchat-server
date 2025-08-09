@@ -1,8 +1,13 @@
 import type { TGroupChatMemberWithUser } from '@/utils/entities/group-chat-member.entity'
-import type { FetchGroupChatMembersDTO, RemoveGroupChatMemberDTO } from './group-member.dto'
+import type {
+  AddMembersToGroupChatDTO,
+  FetchGroupChatMembersDTO,
+  RemoveGroupChatMemberDTO,
+} from './group-member.dto'
 import type { TUserWithProfile } from '@/utils/entities/user.entity'
 import type { SearchGroupChatMembersDTO } from '@/group-chat/group-chat.dto'
 import type { TSuccess } from '@/utils/types'
+import type { TAddMembersToGroupChatRes } from './group-member.type'
 
 export interface IGroupMemberController {
   fetchGroupChatMembers: (
@@ -17,4 +22,8 @@ export interface IGroupMemberController {
     body: RemoveGroupChatMemberDTO,
     user: TUserWithProfile
   ) => Promise<TSuccess>
+  addMembersToGroupChat(
+    body: AddMembersToGroupChatDTO,
+    user: TUserWithProfile
+  ): Promise<TAddMembersToGroupChatRes>
 }

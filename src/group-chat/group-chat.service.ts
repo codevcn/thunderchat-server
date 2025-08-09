@@ -98,7 +98,7 @@ export class GroupChatService {
       },
     })
     if (!groupChat) {
-      throw new NotFoundException(EGroupChatMessages.GROUP_CHAT_NOT_FOUND)
+      throw new NotFoundException(EGroupChatMessages.GROUP_CHAT_NOT_FOUND_OR_NOT_A_MEMBER)
     }
     return groupChat
   }
@@ -144,35 +144,5 @@ export class GroupChatService {
       data: { avatarUrl, name: groupName },
     })
     return groupChat
-  }
-
-  async checkIfMembersInGroupChat(groupChatId: number, memberIds: number[]): Promise<boolean> {
-    const groupChatMembers = await this.prismaService.groupChatMember.findMany({
-      where: { groupChatId, userId: { in: memberIds } },
-    })
-    return groupChatMembers.length > 0
-  }
-
-  async addMembersToGroupChat(
-    groupChatId: number,
-    memberIds: number[]
-  ): Promise<TGroupChatMemberWithUser[]> {
-    const isMembersInGroupChat = await this.checkIfMembersInGroupChat(groupChatId, memberIds)
-    if (isMembersInGroupChat) {
-      throw new BadRequestException(EGroupChatMessages.MEMBERS_ALREADY_IN_GROUP_CHAT)
-    }
-    await this.prismaService.groupChat.update({
-      where: { id: groupChatId },
-      data: {
-        Members: {
-          create: memberIds.map((memberId) => ({ userId: memberId })),
-        },
-      },
-    })
-    const addedMembers = await this.prismaService.groupChatMember.findMany({
-      where: { groupChatId, userId: { in: memberIds } },
-      include: { User: { include: { Profile: true } } },
-    })
-    return addedMembers
   }
 }

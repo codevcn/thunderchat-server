@@ -54,10 +54,15 @@ export interface IEmitSocketEvents {
     userId: TUserId,
     onlineStatus: EUserOnlineStatus
   ) => void
+  [EClientSocketEvents.remove_group_chat_members]: (
+    memberIds: number[],
+    groupChat: TGroupChat
+  ) => void
   [EClientSocketEvents.check_user_online_status]: () => void // not used
   [EClientSocketEvents.send_message_group]: () => void // not used
   [EClientSocketEvents.join_group_chat_room]: () => void // not used
   [EClientSocketEvents.join_direct_chat_room]: () => void // not used
+  [EClientSocketEvents.pin_message_group]: () => void // not used
 }
 
 export interface IGateway {
@@ -70,4 +75,14 @@ export interface IGateway {
   handleJoinGroupChat: (data: JoinGroupChatDTO, client: TClientSocket) => Promise<TSuccess>
   handleCheckUserOnlineStatus: (data: CheckUserOnlineDTO) => Promise<THandleCheckUserOnlineRes>
   handleJoinDirectChat: (data: JoinDirectChatDTO, client: TClientSocket) => Promise<TSuccess>
+  broadcastAddMembersToGroupChat: (
+    groupChat: TGroupChat,
+    groupMemberIds: number[],
+    adder: TUserWithProfile
+  ) => Promise<void>
+  broadcastCreateGroupChat: (
+    groupChat: TGroupChat,
+    groupMemberIds: number[],
+    creator: TUserWithProfile
+  ) => Promise<void>
 }
