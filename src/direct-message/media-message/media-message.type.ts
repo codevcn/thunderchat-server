@@ -1,5 +1,5 @@
 import type { TMessageFullInfo } from '@/utils/entities/message.entity'
-import { EMessageTypes } from '../direct-message.enum'
+import { EMessageMediaTypes, EMessageTypes } from '../direct-message.enum'
 
 export type TMediaItem = TMessageFullInfo
 
@@ -19,12 +19,12 @@ export type TGetMediaMessagesResponse = {
   }
   message?: string
   errorCode?: string | null
-  errors?: any
+  errors?: unknown
 }
 
 export type TMediaFilters = {
-  type?: 'image' | 'video' | 'file' | 'voice'
-  types?: ('image' | 'video' | 'file' | 'voice')[]
+  type?: EMessageMediaTypes
+  types?: EMessageMediaTypes[]
   senderId?: number
   fromDate?: string
   toDate?: string

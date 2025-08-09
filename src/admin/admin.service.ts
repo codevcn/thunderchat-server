@@ -2,7 +2,9 @@ import { Injectable, Inject } from '@nestjs/common'
 import { PrismaService } from '@/configs/db/prisma.service'
 import { UserService } from '@/user/user.service'
 import { SocketService } from '@/gateway/socket/socket.service'
+import { UploadService } from '@/upload/upload.service'
 import { EProviderTokens, EAppRoles } from '@/utils/enums'
+import { EClientSocketEvents } from '@/gateway/gateway.event'
 import {
   TAdminUsersData,
   TGetAdminUsersParams,
@@ -15,12 +17,16 @@ import {
   TViolationReport,
   TGetUserReportHistoryParams,
   TUserReportHistoryData,
+  TUserReportHistoryItem,
   TSystemOverviewData,
   TGetSystemOverviewParams,
   TUserMessageStats,
   TGetUserMessageStatsParams,
   TGetUserMessageStatsData,
+  TViolationReportStatus,
+  TViolationReportActionType,
 } from './admin.type'
+import { Prisma } from '@prisma/client'
 
 @Injectable()
 export class AdminService {
@@ -28,14 +34,15 @@ export class AdminService {
     @Inject(EProviderTokens.PRISMA_CLIENT)
     private prisma: PrismaService,
     private userService: UserService,
-    private socketService: SocketService
+    private socketService: SocketService,
+    private uploadService: UploadService
   ) {}
 
   async getUsers(params: TGetAdminUsersParams): Promise<TAdminUsersData> {
     const { page, limit, search, status } = params
 
     // Build where clause for filtering
-    const where: any = {
+    const where: Prisma.UserWhereInput = {
       role: EAppRoles.USER, // Only get users with role USER
     }
 
@@ -186,7 +193,7 @@ export class AdminService {
     const { page, limit, search, status, category, startDate, endDate, sortBy, sortOrder } = params
 
     // Build where clause for filtering
-    const where: any = {}
+    const where: Prisma.ViolationReportWhereInput = {}
 
     // Search filter
     if (search) {
@@ -329,83 +336,133 @@ export class AdminService {
   }
 
   async getViolationReportDetail(reportId: number): Promise<TViolationReportDetail | null> {
-    const report = await this.prisma.violationReport.findUnique({
-      where: { id: reportId },
-      include: {
-        ReporterUser: {
-          include: {
-            Profile: {
-              select: {
-                fullName: true,
+    try {
+      const report = await this.prisma.violationReport.findUnique({
+        where: { id: reportId },
+        include: {
+          ReporterUser: {
+            include: {
+              Profile: {
+                select: {
+                  fullName: true,
+                },
               },
             },
           },
-        },
-        ReportedUser: {
-          include: {
-            Profile: {
-              select: {
-                fullName: true,
+          ReportedUser: {
+            include: {
+              Profile: {
+                select: {
+                  fullName: true,
+                },
               },
             },
           },
-        },
-        ReportImages: {
-          select: {
-            id: true,
-            imageUrl: true,
+          ReportImages: {
+            select: {
+              id: true,
+              imageUrl: true,
+            },
+          },
+          ReportedMessages: {
+            include: {
+              ReportedMessage: {
+                include: {
+                  Author: {
+                    include: {
+                      Profile: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+          Actions: {
+            select: {
+              id: true,
+              actionType: true,
+              actionReason: true,
+              bannedUntil: true,
+              createdAt: true,
+            },
+            orderBy: { createdAt: 'desc' },
           },
         },
-        ReportedMessages: {
-          select: {
-            id: true,
-            messageId: true,
-            messageType: true,
-            messageContent: true,
-          },
+      })
+
+      if (!report) {
+        return null
+      }
+
+      // Lấy latest ban action của user bị báo cáo
+      const latestBanAction = await this.prisma.violationAction.findFirst({
+        where: {
+          Report: { reportedUserId: report.reportedUserId },
+          actionType: { in: ['TEMPORARY_BAN', 'PERMANENT_BAN'] },
         },
-      },
-    })
+        orderBy: { createdAt: 'desc' },
+      })
 
-    if (!report) {
-      return null
-    }
-
-    return {
-      id: report.id,
-      reporterId: report.reporterUserId,
-      reporterName: report.ReporterUser.Profile?.fullName || 'Unknown',
-      reporterEmail: report.ReporterUser.email,
-      reportedUserId: report.reportedUserId,
-      reportedUserName: report.ReportedUser.Profile?.fullName || 'Unknown',
-      reportedUserEmail: report.ReportedUser.email,
-      reportCategory: report.reportCategory,
-      reasonText: report.reasonText,
-      status: report.reportStatus,
-      evidenceCount: {
-        images: report.ReportImages.length,
-        messages: report.ReportedMessages.length,
-      },
-      reportImages: report.ReportImages.map((image) => ({
-        id: image.id,
-        imageUrl: image.imageUrl,
-        createdAt: report.createdAt.toISOString(), // Using report createdAt since ReportImage doesn't have createdAt
-      })),
-      reportedMessages: report.ReportedMessages.map((message) => ({
-        id: message.id,
-        messageId: message.messageId,
-        messageType: message.messageType,
-        messageContent: message.messageContent,
-        createdAt: report.createdAt.toISOString(), // Using report createdAt since ReportedMessage doesn't have createdAt in schema
-      })),
-      createdAt: report.createdAt.toISOString(),
-      updatedAt: report.createdAt.toISOString(), // Using createdAt as updatedAt since there's no updatedAt field
+      return {
+        id: report.id,
+        reporterId: report.reporterUserId,
+        reporterName: report.ReporterUser.Profile?.fullName || 'Unknown',
+        reporterEmail: report.ReporterUser.email,
+        reportedUserId: report.reportedUserId,
+        reportedUserName: report.ReportedUser.Profile?.fullName || 'Unknown',
+        reportedUserEmail: report.ReportedUser.email,
+        reportCategory: report.reportCategory,
+        reasonText: report.reasonText,
+        status: report.reportStatus,
+        evidenceCount: {
+          images: report.ReportImages.length,
+          messages: report.ReportedMessages.length,
+        },
+        reportImages: report.ReportImages.map((image) => ({
+          id: image.id,
+          imageUrl: image.imageUrl,
+          createdAt: report.createdAt.toISOString(), // Using report createdAt since ReportImage doesn't have createdAt
+        })),
+        reportedMessages: report.ReportedMessages.map((message) => ({
+          id: message.id,
+          messageId: message.messageId,
+          messageType: message.messageType,
+          messageContent: message.messageContent,
+          createdAt: message.createdAt.toISOString(), // Using actual message createdAt
+          senderName: message.ReportedMessage?.Author?.Profile?.fullName || 'Unknown User',
+          senderAvatar: message.ReportedMessage?.Author?.Profile?.avatar || '',
+          senderId: message.ReportedMessage?.Author?.id || 0,
+        })),
+        violationAction:
+          report.Actions.length > 0
+            ? {
+                id: report.Actions[0].id,
+                actionType: report.Actions[0].actionType,
+                actionReason: report.Actions[0].actionReason,
+                bannedUntil: report.Actions[0].bannedUntil?.toISOString() || null,
+                createdAt: report.Actions[0].createdAt.toISOString(),
+              }
+            : null,
+        latestBanAction: latestBanAction
+          ? {
+              id: latestBanAction.id,
+              actionType: latestBanAction.actionType,
+              actionReason: latestBanAction.actionReason,
+              bannedUntil: latestBanAction.bannedUntil?.toISOString() || null,
+              createdAt: latestBanAction.createdAt.toISOString(),
+            }
+          : null,
+        createdAt: report.createdAt.toISOString(),
+        updatedAt: report.createdAt.toISOString(), // Using createdAt as updatedAt since there's no updatedAt field
+      }
+    } catch (error) {
+      throw error
     }
   }
 
   async updateViolationReportStatus(
     reportId: number,
-    status: string
+    status: TViolationReportStatus
   ): Promise<TUpdateViolationReportStatusResponse> {
     const report = await this.prisma.violationReport.findUnique({
       where: { id: reportId },
@@ -431,7 +488,7 @@ export class AdminService {
     await this.prisma.violationReport.update({
       where: { id: reportId },
       data: {
-        reportStatus: status as any, // Type assertion for enum
+        reportStatus: status,
       },
     })
 
@@ -443,77 +500,152 @@ export class AdminService {
 
   async banReportedUser(
     reportId: number,
-    banType: string,
+    banType: TViolationReportActionType,
     reason: string,
-    banDuration?: number
+    banDuration?: number,
+    bannedUntilIso?: string,
+    messageIds?: number[]
   ): Promise<TBanUserResponse> {
-    const report = await this.prisma.violationReport.findUnique({
-      where: { id: reportId },
-      include: {
-        ReportedUser: true,
-      },
-    })
+    return await this.prisma.$transaction(async (tx) => {
+      const report = await tx.violationReport.findUnique({
+        where: { id: reportId },
+        include: {
+          ReportedUser: true,
+        },
+      })
 
-    if (!report) {
-      return {
-        success: false,
-        message: 'Violation report not found',
-        error: 'REPORT_NOT_FOUND',
+      if (!report) {
+        return {
+          success: false,
+          message: 'Violation report not found',
+          error: 'REPORT_NOT_FOUND',
+        }
       }
-    }
 
-    const reportedUser = report.ReportedUser
-    if (!reportedUser) {
-      return {
-        success: false,
-        message: 'Reported user not found',
-        error: 'USER_NOT_FOUND',
+      const reportedUser = report.ReportedUser
+      if (!reportedUser) {
+        return {
+          success: false,
+          message: 'Reported user not found',
+          error: 'USER_NOT_FOUND',
+        }
       }
-    }
 
-    // Check if report is already processed
-    if (report.reportStatus !== 'PENDING') {
-      return {
-        success: false,
-        message: `Cannot perform action. Report is already ${report.reportStatus.toLowerCase()}`,
-        error: 'REPORT_ALREADY_PROCESSED',
+      // Check if report is already processed
+      if (report.reportStatus !== 'PENDING') {
+        return {
+          success: false,
+          message: `Cannot perform action. Report is already ${report.reportStatus.toLowerCase()}`,
+          error: 'REPORT_ALREADY_PROCESSED',
+        }
       }
-    }
 
-    // Create violation action
-    const actionData: any = {
-      reportId: reportId,
-      actionType: banType,
-      actionReason: reason,
-      // Note: adminId field doesn't exist in schema, would need to be added
-    }
+      // Create violation action
+      const actionData: Prisma.ViolationActionCreateInput = {
+        Report: { connect: { id: reportId } },
+        actionType: banType,
+        actionReason: reason,
+        // Note: adminId field doesn't exist in schema, would need to be added
+      }
 
-    if (banType === 'TEMPORARY_BAN' && banDuration) {
-      actionData.bannedUntil = new Date(Date.now() + banDuration * 24 * 60 * 60 * 1000)
-    }
-    // For WARNING, no ban duration is set
+      if (banType === 'TEMPORARY_BAN') {
+        if (bannedUntilIso) {
+          const parsed = new Date(bannedUntilIso)
+          if (isNaN(parsed.getTime())) {
+            return {
+              success: false,
+              message: 'Invalid bannedUntil value',
+              error: 'INVALID_BANNED_UNTIL',
+            }
+          }
+          actionData.bannedUntil = parsed
+        } else if (banDuration) {
+          actionData.bannedUntil = new Date(Date.now() + banDuration * 24 * 60 * 60 * 1000)
+        }
+      }
+      // For WARNING, no ban duration is set
 
-    await this.prisma.violationAction.create({
-      data: actionData,
+      await tx.violationAction.create({
+        data: actionData,
+      })
+
+      // Update report status
+      await tx.violationReport.update({
+        where: { id: reportId },
+        data: {
+          reportStatus: 'RESOLVED',
+        },
+      })
+
+      // Update messages if messageIds provided
+      if (messageIds && messageIds.length > 0) {
+        // Get messages with their types and related data
+        const messages = await tx.message.findMany({
+          where: { id: { in: messageIds } },
+          include: {
+            Media: true,
+          },
+        })
+
+        // Collect media IDs to delete and their URLs
+        const mediaIdsToDelete: number[] = []
+        const mediaUrlsToDelete: string[] = []
+
+        // Process each message
+        for (const message of messages) {
+          const updateData: any = {
+            isDeleted: true,
+            isViolated: true,
+            content: '', // Clear content
+          }
+
+          // Handle different message types
+          if (message.type === 'STICKER') {
+            updateData.stickerId = null // Remove sticker reference
+          } else if (message.type === 'MEDIA' && message.mediaId && message.Media) {
+            updateData.mediaId = null // Remove media reference
+            mediaIdsToDelete.push(message.mediaId) // Mark media for deletion
+            mediaUrlsToDelete.push(message.Media.url) // Collect URL for S3 deletion
+          }
+
+          // Update the message
+          await tx.message.update({
+            where: { id: message.id },
+            data: updateData,
+          })
+        }
+
+        // Delete related MessageMedia records if any
+        if (mediaIdsToDelete.length > 0) {
+          await tx.messageMedia.deleteMany({
+            where: { id: { in: mediaIdsToDelete } },
+          })
+        }
+
+        // Delete files from S3 (outside transaction to avoid timeout)
+        if (mediaUrlsToDelete.length > 0) {
+          // Use Promise.allSettled to handle potential failures gracefully
+          await Promise.allSettled(
+            mediaUrlsToDelete.map((url) => this.uploadService.deleteFileByUrl(url))
+          )
+        }
+
+        // Emit socket events for deleted messages to update clients in real-time
+        if (messageIds && messageIds.length > 0) {
+          await this.emitDeletedMessagesUpdate(messageIds)
+        }
+      }
+
+      const actionMessage =
+        banType === 'WARNING'
+          ? 'Warning issued successfully'
+          : `User banned successfully with ${banType}`
+
+      return {
+        success: true,
+        message: actionMessage,
+      }
     })
-
-    // Update report status
-    await this.prisma.violationReport.update({
-      where: { id: reportId },
-      data: {
-        reportStatus: 'RESOLVED',
-      },
-    })
-
-    const actionMessage =
-      banType === 'WARNING'
-        ? 'Warning issued successfully'
-        : `User banned successfully with ${banType}`
-
-    return {
-      success: true,
-      message: actionMessage,
-    }
   }
 
   async getUserReportHistory(params: TGetUserReportHistoryParams): Promise<{
@@ -526,7 +658,7 @@ export class AdminService {
       const { userId, type, page = 1, limit = 10 } = params
       const skip = (page - 1) * limit
 
-      let reports: any[] = []
+      let reports: TUserReportHistoryItem[] = []
       let total = 0
 
       if (type === 'reported') {
@@ -802,7 +934,7 @@ export class AdminService {
     const { page, limit, search, sortBy = 'totalMessageCount', sortOrder = 'desc' } = params
 
     // Build where clause for filtering users
-    const where: any = {
+    const where: Prisma.UserWhereInput = {
       role: EAppRoles.USER, // Only get users with role USER
     }
 
@@ -1105,5 +1237,64 @@ export class AdminService {
       { type: 'AUDIO' as const, count: audioCount },
       { type: 'DOCUMENT' as const, count: documentCount },
     ]
+  }
+
+  /**
+   * Emit socket events for deleted messages to update clients in real-time
+   */
+  private async emitDeletedMessagesUpdate(messageIds: number[]) {
+    try {
+      // Get all deleted messages with their chat information
+      const deletedMessages = await this.prisma.message.findMany({
+        where: { id: { in: messageIds } },
+        include: {
+          DirectChat: true,
+          GroupChat: true,
+          Author: {
+            include: {
+              Profile: true,
+            },
+          },
+          Media: true,
+          Sticker: true,
+          ReplyTo: {
+            include: {
+              Author: {
+                include: {
+                  Profile: true,
+                },
+              },
+              Media: true,
+              Sticker: true,
+            },
+          },
+        },
+      })
+
+      // Group messages by chat and emit updates
+      for (const message of deletedMessages) {
+        if (message.directChatId && message.DirectChat) {
+          // Emit for direct chat
+          const creatorSockets = this.socketService.getConnectedClient(message.DirectChat.creatorId)
+          const recipientSockets = this.socketService.getConnectedClient(
+            message.DirectChat.recipientId
+          )
+          if (creatorSockets && recipientSockets) {
+            for (const creatorSocket of creatorSockets) {
+              creatorSocket?.emit(EClientSocketEvents.send_message_direct, message)
+            }
+            for (const recipientSocket of recipientSockets) {
+              recipientSocket?.emit(EClientSocketEvents.send_message_direct, message)
+            }
+          }
+        } else if (message.groupChatId && message.GroupChat) {
+          // Emit for group chat (if needed)
+          // This would require getting all group members and emitting to them
+          // For now, we'll focus on direct chats
+        }
+      }
+    } catch (error) {
+      console.error('Error emitting deleted messages update:', error)
+    }
   }
 }

@@ -96,9 +96,17 @@ export function replaceHTMLTagInMessageContent(input: string): string {
 export async function detectFileType(file: Express.Multer.File): Promise<EMessageMediaTypes> {
   const mime = file.mimetype
 
+  // Special handling for WebM files
+  if (
+    file.originalname &&
+    file.originalname.toLowerCase().endsWith('.webm') &&
+    file.originalname.toLowerCase().includes('voice-')
+  ) {
+    return EMessageMediaTypes.AUDIO
+  }
+
   if (mime.startsWith('image/')) return EMessageMediaTypes.IMAGE
   if (mime.startsWith('video/')) return EMessageMediaTypes.VIDEO
-  if (mime.startsWith('audio/')) return EMessageMediaTypes.AUDIO
 
   // Kiểm tra document (pdf, word, excel...)
   if (

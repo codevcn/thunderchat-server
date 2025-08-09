@@ -2,16 +2,16 @@ import { Inject, Injectable } from '@nestjs/common'
 import { PrismaService } from '@/configs/db/prisma.service'
 import { EProviderTokens } from '@/utils/enums'
 import { EMessageMediaTypes, EMessageTypes } from '@/direct-message/direct-message.enum'
-import { EMediaTypes, ESortOrder } from './media-message.enum'
+import { ESortOrder } from './media-message.enum'
 import type {
   TMediaItem,
   TPaginationInfo,
   TGetMediaMessagesResponse,
   TMediaFilters,
-  TCountMessageMedia,
 } from '@/direct-message/media-message/media-message.type'
 import dayjs from 'dayjs'
-import { countMessageMedia } from '@prisma/client/sql'
+import { Prisma } from '@prisma/client'
+import { DevLogger } from '@/dev/dev-logger'
 
 @Injectable()
 export class MediaMessageService {
@@ -23,6 +23,7 @@ export class MediaMessageService {
         Profile: true,
       },
     },
+    Media: true,
   }
 
   /**
@@ -44,12 +45,12 @@ export class MediaMessageService {
 
       // Get total count
       const totalItems = await this.PrismaService.message.count({
-        // where: whereClause,
+        where: whereClause,
       })
 
       // Get items
       const items = await this.PrismaService.message.findMany({
-        // where: whereClause,
+        where: whereClause,
         include: this.messageIncludeAuthor,
         orderBy: {
           createdAt: sort === ESortOrder.ASC ? 'asc' : 'desc',
@@ -107,15 +108,6 @@ export class MediaMessageService {
     const baseWhere = {
       directChatId,
       isDeleted: false,
-      type: {
-        in: [
-          EMessageMediaTypes.IMAGE.toString(),
-          EMessageMediaTypes.VIDEO.toString(),
-          EMessageMediaTypes.DOCUMENT.toString(),
-          EMessageMediaTypes.AUDIO.toString(),
-          EMessageTypes.TEXT.toString(),
-        ],
-      }, // Include real media types + TEXT (for links)
     }
 
     // Handle media type filter
@@ -123,66 +115,114 @@ export class MediaMessageService {
 
     // Priority: types array > single type > default
     if (filters.types && filters.types.length > 0) {
-      // Handle multiple types
-      const backendTypes: string[] = []
+      // Handle multiple types - filter by Media.type for MEDIA messages
+      const mediaTypes: string[] = []
       filters.types.forEach((type) => {
         switch (type) {
-          case EMediaTypes.IMAGE:
-            backendTypes.push(EMessageMediaTypes.IMAGE)
+          case EMessageMediaTypes.IMAGE:
+            mediaTypes.push(EMessageMediaTypes.IMAGE)
             break
-          case EMediaTypes.VIDEO:
-            backendTypes.push(EMessageMediaTypes.VIDEO)
+          case EMessageMediaTypes.VIDEO:
+            mediaTypes.push(EMessageMediaTypes.VIDEO)
             break
-          case EMediaTypes.FILE:
-            backendTypes.push(EMessageMediaTypes.DOCUMENT)
+          case EMessageMediaTypes.DOCUMENT:
+            mediaTypes.push(EMessageMediaTypes.DOCUMENT)
             break
-          case EMediaTypes.VOICE:
-            backendTypes.push(EMessageMediaTypes.AUDIO)
+          case EMessageMediaTypes.AUDIO:
+            mediaTypes.push(EMessageMediaTypes.AUDIO)
             break
         }
       })
-      typeCondition = { type: { in: backendTypes } }
+      typeCondition = {
+        type: EMessageTypes.MEDIA,
+        Media: {
+          type: { in: mediaTypes },
+        },
+      }
+    } else if (filters.types && filters.types.length === 0) {
+      // Special case: empty types array means we want only TEXT messages (for links tab)
+      typeCondition = {
+        type: EMessageTypes.TEXT,
+      }
     } else if (filters.type) {
       // Handle single type
       switch (filters.type) {
-        case EMediaTypes.IMAGE:
-          typeCondition = { type: EMessageMediaTypes.IMAGE }
+        case EMessageMediaTypes.IMAGE:
+          typeCondition = {
+            type: EMessageTypes.MEDIA,
+            Media: {
+              type: EMessageMediaTypes.IMAGE,
+            },
+          }
           break
-        case EMediaTypes.VIDEO:
-          typeCondition = { type: EMessageMediaTypes.VIDEO }
+        case EMessageMediaTypes.VIDEO:
+          typeCondition = {
+            type: EMessageTypes.MEDIA,
+            Media: {
+              type: EMessageMediaTypes.VIDEO,
+            },
+          }
           break
-        case EMediaTypes.FILE:
-          typeCondition = { type: EMessageMediaTypes.DOCUMENT }
+        case EMessageMediaTypes.DOCUMENT:
+          typeCondition = {
+            type: EMessageTypes.MEDIA,
+            Media: {
+              type: EMessageMediaTypes.DOCUMENT,
+            },
+          }
           break
-        case EMediaTypes.VOICE:
-          typeCondition = { type: EMessageMediaTypes.AUDIO }
+        case EMessageMediaTypes.AUDIO:
+          typeCondition = {
+            type: EMessageTypes.MEDIA,
+            Media: {
+              type: EMessageMediaTypes.AUDIO,
+            },
+          }
           break
         default:
           // If no specific type, get all real media types + TEXT
           typeCondition = {
-            type: {
-              in: [
-                EMessageMediaTypes.IMAGE,
-                EMessageMediaTypes.VIDEO,
-                EMessageMediaTypes.DOCUMENT,
-                EMessageMediaTypes.AUDIO,
-                EMessageTypes.TEXT,
-              ],
-            },
+            OR: [
+              {
+                type: EMessageTypes.MEDIA,
+                Media: {
+                  type: {
+                    in: [
+                      EMessageMediaTypes.IMAGE,
+                      EMessageMediaTypes.VIDEO,
+                      EMessageMediaTypes.DOCUMENT,
+                      EMessageMediaTypes.AUDIO,
+                    ],
+                  },
+                },
+              },
+              {
+                type: EMessageTypes.TEXT,
+              },
+            ],
           }
       }
     } else {
       // Default: get all real media types + TEXT messages (for links)
       typeCondition = {
-        type: {
-          in: [
-            EMessageMediaTypes.IMAGE,
-            EMessageMediaTypes.VIDEO,
-            EMessageMediaTypes.DOCUMENT,
-            EMessageMediaTypes.AUDIO,
-            EMessageTypes.TEXT,
-          ],
-        },
+        OR: [
+          {
+            type: EMessageTypes.MEDIA,
+            Media: {
+              type: {
+                in: [
+                  EMessageMediaTypes.IMAGE,
+                  EMessageMediaTypes.VIDEO,
+                  EMessageMediaTypes.DOCUMENT,
+                  EMessageMediaTypes.AUDIO,
+                ],
+              },
+            },
+          },
+          {
+            type: EMessageTypes.TEXT,
+          },
+        ],
       }
     }
 
@@ -192,7 +232,7 @@ export class MediaMessageService {
     // Handle date filters
     let dateCondition = {}
     if (filters.fromDate || filters.toDate) {
-      const dateFilter: any = {}
+      const dateFilter: Prisma.DateTimeFilter = {}
       if (filters.fromDate) {
         dateFilter.gte = dayjs(filters.fromDate).startOf('day').toDate()
       }
@@ -215,25 +255,34 @@ export class MediaMessageService {
    */
   async getMediaStatistics(directChatId: number) {
     try {
-      console.log('[MediaMessageService] Fetching media statistics from database...')
-
-      // const stats = await this.PrismaService.message.groupBy({
-      //   by: ['type'],
-      //   where: {
-      //     directChatId,
-      //     isDeleted: false,
-      //     type: {
-      //       in: [EMessageTypes.TEXT, EMessageTypes.MEDIA],
-      //     }, // Only include real media types
-      //   },
-      //   _count: {
-      //     type: true,
-      //   },
-      // })
-
-      const stats = await this.PrismaService.$queryRawTyped<TCountMessageMedia>(
-        countMessageMedia(directChatId)
-      )
+      // Get all media messages for this chat
+      const messages = await this.PrismaService.message.findMany({
+        where: {
+          directChatId,
+          isDeleted: false,
+          OR: [
+            {
+              type: EMessageTypes.MEDIA,
+              Media: {
+                type: {
+                  in: [
+                    EMessageMediaTypes.IMAGE,
+                    EMessageMediaTypes.VIDEO,
+                    EMessageMediaTypes.DOCUMENT,
+                    EMessageMediaTypes.AUDIO,
+                  ],
+                },
+              },
+            },
+            {
+              type: EMessageTypes.TEXT,
+            },
+          ],
+        },
+        include: {
+          Media: true,
+        },
+      })
 
       const result = {
         total: 0,
@@ -243,29 +292,23 @@ export class MediaMessageService {
         voices: 0,
       }
 
-      stats.forEach((stat) => {
-        const count = Number(stat.total)
-        result.total += count!
-
-        const stateType = stat.message_type as EMessageTypes
-        const mediaType = stat.message_type as EMessageMediaTypes
-        if (stateType === EMessageTypes.MEDIA) {
-          result.images = count
-        }
-
-        switch (stat.message_type) {
-          case EMessageMediaTypes.IMAGE:
-            result.images = count
-            break
-          case EMessageMediaTypes.VIDEO:
-            result.videos = count
-            break
-          case EMessageMediaTypes.DOCUMENT:
-            result.files = count
-            break
-          case EMessageMediaTypes.AUDIO:
-            result.voices = count
-            break
+      messages.forEach((message) => {
+        if (message.type === EMessageTypes.MEDIA && message.Media) {
+          result.total++
+          switch (message.Media.type) {
+            case EMessageMediaTypes.IMAGE:
+              result.images++
+              break
+            case EMessageMediaTypes.VIDEO:
+              result.videos++
+              break
+            case EMessageMediaTypes.DOCUMENT:
+              result.files++
+              break
+            case EMessageMediaTypes.AUDIO:
+              result.voices++
+              break
+          }
         }
       })
 
@@ -276,7 +319,7 @@ export class MediaMessageService {
 
       return response
     } catch (error) {
-      console.error('[MediaMessageService] Error getting media statistics:', error)
+      DevLogger.logError('[MediaMessageService] Error getting media statistics:', error)
       return {
         success: false,
         data: null,

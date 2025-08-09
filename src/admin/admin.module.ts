@@ -5,9 +5,10 @@ import { AdminExceptionFilter } from './admin.exception-filter'
 import { PrismaModule } from '@/configs/db/prisma.module'
 import { UserModule } from '@/user/user.module'
 import { SocketModule } from '@/gateway/socket/socket.module'
+import { UploadModule } from '@/upload/upload.module'
 
 @Module({
-  imports: [PrismaModule, UserModule, SocketModule],
+  imports: [PrismaModule, UserModule, SocketModule, UploadModule],
   controllers: [AdminController],
   providers: [AdminService, AdminExceptionFilter],
   exports: [AdminService],
