@@ -37,7 +37,7 @@ export class AuthService {
    * @param userId ID của user cần kiểm tra
    * @returns Thông tin về trạng thái ban của user
    */
-  private async checkUserBanStatus(userId: number): Promise<{
+  async checkUserBanStatus(userId: number): Promise<{
     isBanned: boolean
     banType?: 'TEMPORARY_BAN' | 'PERMANENT_BAN'
     banReason?: string

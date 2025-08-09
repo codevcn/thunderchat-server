@@ -12,6 +12,7 @@ export enum EMessageTypes {
   TEXT = 'TEXT',
   STICKER = 'STICKER',
   MEDIA = 'MEDIA',
+  PIN_NOTICE = 'PIN_NOTICE',
 }
 
 export enum EMessageMediaTypes {

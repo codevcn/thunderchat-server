@@ -12,12 +12,14 @@ import { JWTService } from './jwt/jwt.service'
 import { UserService } from '@/user/user.service'
 import { EAuthMessages } from './auth.message'
 import { TUserWithProfile } from '@/utils/entities/user.entity'
+import { AuthService } from './auth.service'
 
 @Injectable()
 export class AuthGuard implements CanActivate {
   constructor(
     private jwtService: JWTService,
-    private userService: UserService
+    private userService: UserService,
+    private authService: AuthService
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -50,6 +52,10 @@ export class AuthGuard implements CanActivate {
     }
     if (!user.Profile) {
       throw new InternalServerErrorException(EAuthMessages.USER_HAS_NO_PROFILE)
+    }
+    const banResult = await this.authService.checkUserBanStatus(user.id)
+    if (banResult.isBanned) {
+      throw new UnauthorizedException(banResult.message || EAuthMessages.USER_BANNED)
     }
 
     req['user'] = user

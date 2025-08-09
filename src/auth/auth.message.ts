@@ -7,4 +7,5 @@ export enum EAuthMessages {
   USER_NOT_FOUND = 'User not found',
   USER_HAS_NO_PROFILE = 'User has no profile',
   ADMIN_ACCESS_REQUIRED = 'Admin access required',
+  USER_BANNED = 'User is banned',
 }

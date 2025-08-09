@@ -5,7 +5,6 @@ import {
   UseGuards,
   UseInterceptors,
   UploadedFiles,
-  BadRequestException,
   UseFilters,
 } from '@nestjs/common'
 import { FileFieldsInterceptor } from '@nestjs/platform-express'
@@ -16,6 +15,7 @@ import { User } from '@/user/user.decorator'
 import { EUserReportMessages } from './user-report.message'
 import { UserReportExceptionFilter } from './user-report.exception-filter'
 import { DevLogger } from '@/dev/dev-logger'
+import { TUserWithProfile } from '@/utils/entities/user.entity'
 
 @Controller('user-report')
 @UseFilters(UserReportExceptionFilter)
@@ -30,7 +30,7 @@ export class UserReportController {
     ])
   )
   async createViolationReport(
-    @User() user,
+    @User() user: TUserWithProfile,
     @Body() createViolationReportData: CreateViolationReportDTO,
     @UploadedFiles() files?: { reportImages?: Express.Multer.File[] }
   ) {

@@ -143,25 +143,14 @@ export class UserReportService implements IUserReportService {
                     await new Promise((resolve) => setTimeout(resolve, 500)) // Reduced delay to 500ms
                   }
 
-                  // Add timeout for upload operation
-                  const uploadPromise = this.uploadService.uploadReportMessageFromUrl(
-                    messageContent,
-                    messageId,
-                    this.getContentTypeForMessageType(messageType)
-                  )
+                  // // Add timeout for upload operation
+                  // const uploadPromise = this.uploadService.uploadReportMessageFromUrl(
+                  //   messageContent,
+                  //   messageId,
+                  //   this.getContentTypeForMessageType(messageType)
+                  // )
 
-                  const result = await Promise.race([
-                    uploadPromise,
-                    new Promise<never>(
-                      (_, reject) =>
-                        setTimeout(
-                          () => reject(new Error(`Upload timeout for message ${messageId}`)),
-                          60000
-                        ) // 60 seconds timeout
-                    ),
-                  ])
-
-                  const { url } = result
+                  const url = messageContent
 
                   // Check if URL was returned from AWS
                   if (!url || url.trim() === '') {

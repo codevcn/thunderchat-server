@@ -498,6 +498,19 @@ export class AdminService {
     }
   }
 
+  private converBanTypeToReadableMessage(banType: TViolationReportActionType): string {
+    switch (banType) {
+      case 'TEMPORARY_BAN':
+        return 'Temporary ban'
+      case 'PERMANENT_BAN':
+        return 'Permanent ban'
+      case 'WARNING':
+        return 'Warning'
+      default:
+        return 'Unknown'
+    }
+  }
+
   async banReportedUser(
     reportId: number,
     banType: TViolationReportActionType,
@@ -639,7 +652,7 @@ export class AdminService {
       const actionMessage =
         banType === 'WARNING'
           ? 'Warning issued successfully'
-          : `User banned successfully with ${banType}`
+          : `User banned successfully with ${this.converBanTypeToReadableMessage(banType)}`
 
       return {
         success: true,

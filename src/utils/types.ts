@@ -1,9 +1,11 @@
 import type { Request } from 'express'
 import type { EClientCookieNames } from './enums'
-import type { TUser } from './entities/user.entity'
+import type { TUser, TUserWithProfile } from './entities/user.entity'
 import type { HttpStatus } from '@nestjs/common'
 
 export type TRequestWithUser = Request & { user: TUser }
+
+export type TRequestWithUserProfile = Request & { user: TUserWithProfile }
 
 export type THttpErrorResBody = {
   name: string

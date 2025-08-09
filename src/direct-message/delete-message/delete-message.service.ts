@@ -29,8 +29,8 @@ export class DeleteMessageService {
     // Sử dụng transaction để đảm bảo tính toàn vẹn dữ liệu
     return await this.prisma
       .$transaction(async (tx) => {
-        // Xóa file S3 nếu là media message
-        await this.deleteS3Files(msg)
+        // // Xóa file S3 nếu là media message
+        // await this.deleteS3Files(msg)
 
         // Chuẩn bị data update
         const updateData = this.prepareUpdateData(msg)
@@ -41,8 +41,8 @@ export class DeleteMessageService {
           data: updateData,
         })
 
-        // Xóa record trong message_media nếu là media message
-        await this.deleteMessageMediaRecord(tx, msg)
+        // // Xóa record trong message_media nếu là media message
+        // await this.deleteMessageMediaRecord(tx, msg)
 
         // Tìm và emit tin nhắn reply
         await this.handleReplyMessages(tx, msgId, updated)
@@ -138,22 +138,22 @@ export class DeleteMessageService {
       ReplyTo: { disconnect: true },
     }
 
-    // Nếu là MEDIA thì set mediaId thành null
-    if (msg.type === EMessageTypes.MEDIA) {
-      updateData = {
-        ...updateData,
-        Media: { disconnect: true },
-      }
-    }
+    // // Nếu là MEDIA thì set mediaId thành null
+    // if (msg.type === EMessageTypes.MEDIA) {
+    //   updateData = {
+    //     ...updateData,
+    //     Media: { disconnect: true },
+    //   }
+    // }
     // Nếu là STICKER thì set stickerId thành null
-    else if (msg.type === EMessageTypes.STICKER) {
+    if (msg.type === EMessageTypes.STICKER) {
       updateData = {
         ...updateData,
         Sticker: { disconnect: true },
       }
     }
     // Nếu là PIN_NOTICE thì chỉ set content thành rỗng (system message)
-    else if (msg.type === 'PIN_NOTICE') {
+    else if (msg.type === EMessageTypes.PIN_NOTICE) {
       updateData = {
         ...updateData,
         content: '',
@@ -210,16 +210,28 @@ export class DeleteMessageService {
 
     if (directChat) {
       // Emit tin nhắn đã thu hồi
-      const creatorSocket = this.socketService.getConnectedClient(directChat.creatorId)
-      const recipientSocket = this.socketService.getConnectedClient(directChat.recipientId)
+      const creatorSockets = this.socketService.getConnectedClient(directChat.creatorId)
+      const recipientSockets = this.socketService.getConnectedClient(directChat.recipientId)
 
-      creatorSocket?.emit(EClientSocketEvents.send_message_direct, updated)
-      recipientSocket?.emit(EClientSocketEvents.send_message_direct, updated)
+      if (creatorSockets && recipientSockets) {
+        for (const creatorSocket of creatorSockets) {
+          creatorSocket?.emit(EClientSocketEvents.send_message_direct, updated)
+        }
+        for (const recipientSocket of recipientSockets) {
+          recipientSocket?.emit(EClientSocketEvents.send_message_direct, updated)
+        }
+      }
 
       // Emit tất cả tin nhắn reply để cập nhật reply preview
-      for (const replyMsg of replyMessages) {
-        creatorSocket?.emit(EClientSocketEvents.send_message_direct, replyMsg)
-        recipientSocket?.emit(EClientSocketEvents.send_message_direct, replyMsg)
+      if (creatorSockets && recipientSockets) {
+        for (const replyMsg of replyMessages) {
+          for (const creatorSocket of creatorSockets) {
+            creatorSocket?.emit(EClientSocketEvents.send_message_direct, replyMsg)
+          }
+          for (const recipientSocket of recipientSockets) {
+            recipientSocket?.emit(EClientSocketEvents.send_message_direct, replyMsg)
+          }
+        }
       }
     }
   }
