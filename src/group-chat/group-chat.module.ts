@@ -4,9 +4,10 @@ import { GroupChatService } from './group-chat.service'
 import { S3UploadService } from '@/upload/s3-upload.service'
 import { UserModule } from '@/user/user.module'
 import { GroupMemberService } from '@/group-member/group-member.service'
+import { DirectMessageModule } from '@/direct-message/direct-message.module'
 
 @Module({
-  imports: [UserModule],
+  imports: [UserModule, DirectMessageModule],
   controllers: [GroupChatController],
   providers: [GroupChatService, S3UploadService, GroupMemberService],
   exports: [GroupChatService, S3UploadService, GroupMemberService],

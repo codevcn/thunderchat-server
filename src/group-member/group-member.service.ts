@@ -17,6 +17,9 @@ import { TUserWithProfile } from '@/utils/entities/user.entity'
 
 @Injectable()
 export class GroupMemberService {
+  private readonly MAX_ADD_MEMBER_AT_ONCE: number = 10
+  private readonly MAX_ADD_MEMBER_TOTAL: number = 100
+
   constructor(
     @Inject(EProviderTokens.PRISMA_CLIENT) private prismaService: PrismaService,
     private readonly eventEmitter: EventEmitter2
@@ -100,6 +103,15 @@ export class GroupMemberService {
     memberIds: number[],
     executor: TUserWithProfile
   ): Promise<TGroupChatMemberWithUser[]> {
+    if (memberIds.length > this.MAX_ADD_MEMBER_AT_ONCE) {
+      throw new BadRequestException(EGroupMemberMessages.MAX_ADD_MEMBER_AT_ONCE)
+    }
+    const totalMembers = await this.prismaService.groupChatMember.count({
+      where: { groupChatId },
+    })
+    if (totalMembers + memberIds.length > this.MAX_ADD_MEMBER_TOTAL) {
+      throw new BadRequestException(EGroupMemberMessages.MAX_ADD_MEMBER_TOTAL)
+    }
     const isMembersInGroupChat = await this.checkIfMembersInGroupChat(groupChatId, memberIds)
     if (isMembersInGroupChat) {
       throw new BadRequestException(EGroupMemberMessages.MEMBERS_ALREADY_IN_GROUP_CHAT)
@@ -108,7 +120,7 @@ export class GroupMemberService {
       where: { id: groupChatId },
       data: {
         Members: {
-          create: memberIds.map((memberId) => ({ userId: memberId })),
+          create: memberIds.map((memberId) => ({ userId: memberId, joinedBy: executor.id })),
         },
       },
     })

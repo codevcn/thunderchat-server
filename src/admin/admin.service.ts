@@ -869,7 +869,6 @@ export class AdminService {
 
     // Get active users (currently connected users)
     const activeUsers = this.socketService.getConnectedClientsCountForAdmin()
-    console.log('>>> activeUsers', activeUsers)
 
     // Get total direct messages (excluding PIN_NOTICE)
     const totalDirectMessages = await this.prisma.message.count({

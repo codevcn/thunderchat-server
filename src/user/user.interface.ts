@@ -8,6 +8,7 @@ import type {
   CreateUserDTO,
   GetUserByEmailDTO,
   SearchUsersDTO,
+  UnblockUserDTO,
 } from './user.dto'
 import type { Response } from 'express'
 
@@ -24,4 +25,6 @@ export interface IUserController {
     user: TUserWithProfile,
     checkBlockedUserPayload: CheckBlockedUserDTO
   ) => Promise<TBlockedUserFullInfo | null>
+  unblockUser: (user: TUserWithProfile, unblockUserPayload: UnblockUserDTO) => Promise<TSuccess>
+  getBlockedUsersList: (user: TUserWithProfile) => Promise<TBlockedUserFullInfo[]>
 }

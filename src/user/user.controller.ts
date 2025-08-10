@@ -62,7 +62,7 @@ export class UserController implements IUserController {
   @Post('block-user')
   @UseGuards(AuthGuard)
   async blockUser(@User() user: TUserWithProfile, @Body() dto: BlockUserDTO) {
-    await this.blockUserService.blockUser(user.id, dto.blockedUserId, dto.blockType)
+    await this.blockUserService.blockUser(user.id, dto.blockedUserId)
     return { success: true }
   }
 
@@ -77,5 +77,11 @@ export class UserController implements IUserController {
   async unblockUser(@User() user: TUserWithProfile, @Body() dto: UnblockUserDTO) {
     await this.blockUserService.unblockUser(user.id, dto.blockedUserId)
     return { success: true }
+  }
+
+  @Get('get-blocked-users-list')
+  @UseGuards(AuthGuard)
+  async getBlockedUsersList(@User() user: TUserWithProfile) {
+    return await this.blockUserService.getBlockedUsersList(user.id)
   }
 }

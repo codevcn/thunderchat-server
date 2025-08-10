@@ -1,13 +1,7 @@
 import { PrismaService } from '@/configs/db/prisma.service'
 import { S3UploadService } from '@/upload/s3-upload.service'
 import { EInternalEvents, EProviderTokens } from '@/utils/enums'
-import {
-  BadRequestException,
-  Inject,
-  Injectable,
-  InternalServerErrorException,
-  NotFoundException,
-} from '@nestjs/common'
+import { Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common'
 import type { Prisma } from '@prisma/client'
 import type {
   TFetchGroupChatData,
@@ -20,7 +14,6 @@ import { EGroupChatRoles } from './group-chat.enum'
 import type { TGroupChat } from '@/utils/entities/group-chat.entity'
 import { TUserWithProfile } from '@/utils/entities/user.entity'
 import { EventEmitter2 } from '@nestjs/event-emitter'
-import type { TGroupChatMemberWithUser } from '@/utils/entities/group-chat-member.entity'
 
 @Injectable()
 export class GroupChatService {
@@ -67,6 +60,7 @@ export class GroupChatService {
           create: allMemberIds.map((memberId) => ({
             userId: memberId,
             role: memberId === creatorId ? EGroupChatRoles.ADMIN : EGroupChatRoles.MEMBER,
+            joinedBy: creatorId,
           })),
         },
       },
@@ -89,6 +83,11 @@ export class GroupChatService {
         Members: {
           include: {
             User: {
+              include: {
+                Profile: true,
+              },
+            },
+            JoinedBy: {
               include: {
                 Profile: true,
               },

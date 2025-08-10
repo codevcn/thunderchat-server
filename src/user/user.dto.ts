@@ -10,7 +10,6 @@ import {
 import { ELengths } from '@/utils/enums'
 import { EValidationMessages } from '@/utils/messages'
 import { Type } from 'class-transformer'
-import { EBlockType } from '@/user/block-user.enum'
 
 export class CreateUserDTO {
   @IsNotEmpty()
@@ -63,10 +62,6 @@ export class BlockUserDTO {
   @IsNumber()
   @Type(() => Number)
   blockedUserId: number
-
-  @IsNotEmpty()
-  @IsEnum(EBlockType)
-  blockType: EBlockType
 }
 
 export class CheckBlockedUserDTO {
