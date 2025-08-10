@@ -6,6 +6,7 @@ import {
   GetUserByEmailDTO,
   CheckBlockedUserDTO,
   SearchUsersDTO,
+  UnblockUserDTO,
 } from '@/user/user.dto'
 import { UserService } from '@/user/user.service'
 import { ERoutes } from '@/utils/enums'
@@ -69,5 +70,12 @@ export class UserController implements IUserController {
   @UseGuards(AuthGuard)
   async checkBlockedUser(@User() user: TUserWithProfile, @Query() dto: CheckBlockedUserDTO) {
     return await this.blockUserService.checkBlockedUser(user.id, dto.otherUserId)
+  }
+
+  @Post('unblock-user')
+  @UseGuards(AuthGuard)
+  async unblockUser(@User() user: TUserWithProfile, @Body() dto: UnblockUserDTO) {
+    await this.blockUserService.unblockUser(user.id, dto.blockedUserId)
+    return { success: true }
   }
 }

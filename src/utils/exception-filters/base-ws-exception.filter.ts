@@ -35,9 +35,9 @@ function handleSetErrorMessage(error: Prisma.PrismaClientKnownRequestError | Err
     switch (error.code) {
       case 'P2002': // Unique constraint failed
         const target = (error.meta?.target as string[])?.join(', ')
-        return `Giá trị đã tồn tại cho trường: ${target}`
+        return `Value already exists for field: ${target}`
       default:
-        return `Lỗi cơ sở dữ liệu (code: ${error.code})`
+        return `Database error (code: ${error.code})`
     }
   } else if (error instanceof Error) {
     return error.message

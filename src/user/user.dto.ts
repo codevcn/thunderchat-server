@@ -75,3 +75,10 @@ export class CheckBlockedUserDTO {
   @Type(() => Number)
   otherUserId: number
 }
+
+export class UnblockUserDTO {
+  @IsNotEmpty()
+  @IsNumber()
+  @Type(() => Number)
+  blockedUserId: number
+}

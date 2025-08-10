@@ -1,6 +1,7 @@
 import { ForbiddenException, BadRequestException } from '@nestjs/common'
 import { PrismaService } from '../configs/db/prisma.service'
 import { EMsgMessages } from './direct-message.message'
+import { EUserSettingsMessages } from '@/user-settings/user-settings.message'
 
 export async function canSendDirectMessage(
   prisma: PrismaService,
@@ -31,5 +32,5 @@ export async function canSendDirectMessage(
   if (isFriend) return
 
   // 4. Nếu không phải bạn bè, throw exception
-  throw new ForbiddenException(EMsgMessages.ONLY_RECEIVE_FRIEND_MESSAGE)
+  throw new ForbiddenException(EUserSettingsMessages.ONLY_RECEIVE_FRIEND_MESSAGE)
 }

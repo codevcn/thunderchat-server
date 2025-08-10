@@ -8,7 +8,13 @@ import type { OnGatewayConnection, OnGatewayInit, OnGatewayDisconnect } from '@n
 import { Server } from 'socket.io'
 import { EClientSocketEvents, EInitEvents } from './gateway.event'
 import { EMessageTypeAllTypes, ESocketNamespaces } from './gateway.enum'
-import { HttpStatus, UseFilters, UsePipes, UseInterceptors } from '@nestjs/common'
+import {
+  HttpStatus,
+  UseFilters,
+  UsePipes,
+  UseInterceptors,
+  ForbiddenException,
+} from '@nestjs/common'
 import { FriendService } from '@/friend/friend.service'
 import { BaseWsException } from '../utils/exceptions/base-ws.exception'
 import { EFriendMessages } from '@/friend/friend.message'
@@ -53,13 +59,16 @@ import { EChatType, EInternalEvents, EUserOnlineStatus } from '@/utils/enums'
 import { UserService } from '@/user/user.service'
 import { EGatewayMessages } from './gateway.message'
 import { GatewayInterceptor } from './gateway.interceptor'
-import { canSendDirectMessage } from '@/direct-message/can-send-message.helper'
 import { GroupChatService } from '@/group-chat/group-chat.service'
 import { TGroupChat } from '@/utils/entities/group-chat.entity'
 import { TUserWithProfile } from '@/utils/entities/user.entity'
 import { OnEvent } from '@nestjs/event-emitter'
 import { GroupMemberService } from '@/group-member/group-member.service'
 import { createDirectChatRoomName, createGroupChatRoomName } from '@/utils/helpers'
+import { UserSettingsService } from '@/user-settings/user-settings.service'
+import { BlockUserService } from '@/user/block-user.service'
+import { EUserSettingsMessages } from '@/user-settings/user-settings.message'
+import { EUserMessages } from '@/user/user.message'
 
 @WebSocketGateway({
   cors: {
@@ -91,7 +100,9 @@ export class AppGateway
     private syncDataToESService: SyncDataToESService,
     private userService: UserService,
     private groupChatService: GroupChatService,
-    private groupMemberService: GroupMemberService
+    private groupMemberService: GroupMemberService,
+    private userSettingsService: UserSettingsService,
+    private blockUserService: BlockUserService
   ) {}
 
   /**
@@ -279,6 +290,20 @@ export class AppGateway
     throw new BaseWsException(EGatewayMessages.INVALID_MESSAGE_TYPE)
   }
 
+  async checkCanSendMessageInDirectChat(clientId: number, receiverId: number): Promise<void> {
+    const settings = await this.userSettingsService.findByUserId(receiverId)
+    if (settings?.onlyReceiveFriendMessage) {
+      const isFriend = await this.friendService.isFriend(clientId, receiverId)
+      if (isFriend) return
+      throw new ForbiddenException(EUserSettingsMessages.ONLY_RECEIVE_FRIEND_MESSAGE)
+    }
+    const isBlocked = await this.blockUserService.checkBlockedUser(clientId, receiverId)
+    if (isBlocked?.blockedUserId === clientId)
+      throw new ForbiddenException(EUserMessages.YOU_ARE_BLOCKED_BY_THIS_USER)
+    if (isBlocked?.blockedUserId === receiverId)
+      throw new ForbiddenException(EUserMessages.YOU_HAVE_BLOCKED_THIS_USER)
+  }
+
   @SubscribeMessage(EClientSocketEvents.send_message_direct)
   @CatchInternalSocketError()
   async handleSendDirectMessage(
@@ -289,7 +314,7 @@ export class AppGateway
     const { type, msgPayload } = payload
     const { receiverId, token } = msgPayload
 
-    await canSendDirectMessage(this.messageService['PrismaService'], clientId, receiverId) // Kiểm tra quyền gửi tin nhắn 1-1
+    await this.checkCanSendMessageInDirectChat(clientId, receiverId)
 
     await this.checkUniqueMessage(token, clientId)
     const { timestamp, content, replyToId } = msgPayload

@@ -7,6 +7,8 @@ import { DirectMessageModule } from '@/direct-message/direct-message.module'
 import { SyncDataToESModule } from '@/configs/elasticsearch/sync-data-to-ES/sync-data-to-ES.module'
 import { GroupChatModule } from '@/group-chat/group-chat.module'
 import { DirectChatsModule } from '@/direct-chat/direct-chat.module'
+import { UserSettingsModule } from '@/user-settings/user-settings.module'
+import { FriendModule } from '@/friend/friend.module'
 
 @Module({
   imports: [
@@ -16,6 +18,8 @@ import { DirectChatsModule } from '@/direct-chat/direct-chat.module'
     SyncDataToESModule,
     GroupChatModule,
     DirectChatsModule,
+    UserSettingsModule,
+    FriendModule,
   ],
   providers: [AppGateway, FriendService],
 })

@@ -6,6 +6,10 @@ import { UpdateUserSettingsDto } from './user-settings.dto'
 export class UserSettingsService {
   constructor(private readonly prisma: PrismaService) {}
 
+  async findByUserId(userId: number) {
+    return this.prisma.userSettings.findUnique({ where: { userId } })
+  }
+
   async updateOnlyReceiveFriendMessage(userId: number, dto: UpdateUserSettingsDto) {
     return this.prisma.userSettings.upsert({
       where: { userId },

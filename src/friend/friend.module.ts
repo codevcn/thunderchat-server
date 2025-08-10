@@ -5,8 +5,9 @@ import { UserModule } from '@/user/user.module'
 import { SocketModule } from '@/gateway/socket/socket.module'
 
 @Module({
-   imports: [UserModule, SocketModule],
-   controllers: [FriendController],
-   providers: [FriendService],
+  imports: [UserModule, SocketModule],
+  controllers: [FriendController],
+  providers: [FriendService],
+  exports: [FriendService],
 })
 export class FriendModule {}
