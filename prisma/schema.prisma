@@ -26,9 +26,11 @@ model BlockedUser {
     blockerUserId Int      @map("blocker_user_id")
     blockedUserId Int      @map("blocked_user_id")
     createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+    groupChatId   Int?     @map("group_chat_id")
 
-    UserBlocked User @relation("BlockedUsers", fields: [blockedUserId], references: [id])
-    UserBlocker User @relation("BlockedByUsers", fields: [blockerUserId], references: [id])
+    UserBlocked User       @relation("BlockedUsers", fields: [blockedUserId], references: [id])
+    UserBlocker User       @relation("BlockedByUsers", fields: [blockerUserId], references: [id])
+    GroupChat   GroupChat? @relation("BlockedGroupChat", fields: [groupChatId], references: [id])
 
     @@map("blocked_users")
 }
@@ -206,22 +208,10 @@ model Sticker {
     categoryId  Int      @map("category_id")
     createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
 
-    Messages Message[]        @relation("StickerOnMessage")
-    Category StickerCategory  @relation(fields: [categoryId], references: [id])
-    Greeting GreetingSticker? @relation("StickerOnGreetingSticker")
+    Messages Message[]       @relation("StickerOnMessage")
+    Category StickerCategory @relation(fields: [categoryId], references: [id])
 
     @@map("stickers")
-}
-
-model GreetingSticker {
-    id        Int      @id @default(autoincrement())
-    stickerId Int      @unique @map("sticker_id")
-    createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
-
-    Sticker Sticker @relation("StickerOnGreetingSticker", fields: [stickerId], references: [id])
-
-    @@index(fields: [stickerId], type: BTree)
-    @@map("greeting_stickers")
 }
 
 model StickerCategory {
@@ -237,6 +227,20 @@ model StickerCategory {
     @@map("sticker_categories")
 }
 
+model GroupMemberPermission {
+    id           Int     @id @default(autoincrement())
+    groupChatId  Int     @unique @map("group_chat_id")
+    sendMessage  Boolean @default(true) @map("send_message")
+    pinMessage   Boolean @default(true) @map("pin_message")
+    addMember    Boolean @default(true) @map("add_member")
+    removeMember Boolean @default(true) @map("remove_member")
+    updateInfo   Boolean @default(false) @map("update_info")
+
+    GroupChat GroupChat @relation(fields: [groupChatId], references: [id])
+
+    @@map("group_member_permissions")
+}
+
 model GroupChat {
     id                Int      @id @default(autoincrement())
     name              String   @db.VarChar(255)
@@ -244,13 +248,16 @@ model GroupChat {
     avatarUrl         String?  @map("avatar_url")
     createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
     lastSentMessageId Int?     @unique @map("last_sent_message_id")
+    inviteCode        String?  @unique @map("invite_code")
 
-    Messages        Message[]         @relation("MessagesOnGroupChat")
-    Creator         User              @relation("GroupChatCreator", fields: [creatorId], references: [id])
-    Members         GroupChatMember[] @relation("GroupChatMembers")
-    LastSentMessage Message?          @relation("LastSentMessageOnGroupChat", fields: [lastSentMessageId], references: [id])
-    PinnedMessages  PinnedMessage[]   @relation("PinnedMessagesOnGroupChat")
-    PinnedChats     PinnedChat[]      @relation("PinnedChatsOnGroupChat")
+    Messages              Message[]              @relation("MessagesOnGroupChat")
+    Creator               User                   @relation("GroupChatCreator", fields: [creatorId], references: [id])
+    Members               GroupChatMember[]      @relation("GroupChatMembers")
+    LastSentMessage       Message?               @relation("LastSentMessageOnGroupChat", fields: [lastSentMessageId], references: [id])
+    PinnedMessages        PinnedMessage[]        @relation("PinnedMessagesOnGroupChat")
+    PinnedChats           PinnedChat[]           @relation("PinnedChatsOnGroupChat")
+    BlockedUsers          BlockedUser[]          @relation("BlockedGroupChat")
+    GroupMemberPermission GroupMemberPermission?
 
     @@map("group_chats")
 }

@@ -8,6 +8,7 @@ import type { EMessageTypes } from '@/direct-message/direct-message.enum'
 import type { TUserWithProfile } from '@/utils/entities/user.entity'
 import type { TGroupChat } from '@/utils/entities/group-chat.entity'
 import type { EUserOnlineStatus } from '@/utils/enums'
+import type { TGroupChatMemberWithUserAndGroupChat } from '@/utils/entities/group-chat-member.entity'
 
 export type TClientSocket = Socket<{}, IEmitSocketEvents>
 
@@ -63,4 +64,8 @@ export type THandleEmitNewMessageParams = {
 
 export type THandleCheckUserOnlineRes = TSuccess & {
   onlineStatus: EUserOnlineStatus
+}
+
+export type TCheckCanSendMessageInGroupChat = {
+  member: TGroupChatMemberWithUserAndGroupChat
 }

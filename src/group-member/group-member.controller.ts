@@ -3,6 +3,7 @@ import { GroupMemberService } from './group-member.service'
 import {
   AddMembersToGroupChatDTO,
   FetchGroupChatMembersDTO,
+  LeaveGroupChatDTO,
   RemoveGroupChatMemberDTO,
 } from './group-member.dto'
 import { ERoutes } from '@/utils/enums'
@@ -63,5 +64,12 @@ export class GroupMemberController implements IGroupMemberController {
     return {
       addedMembers,
     }
+  }
+
+  @Post('leave-group-chat')
+  async leaveGroupChat(@Body() body: LeaveGroupChatDTO, @User() user: TUserWithProfile) {
+    const { groupChatId } = body
+    await this.groupMemberService.leaveGroupChat(groupChatId, user.id)
+    return { success: true }
   }
 }

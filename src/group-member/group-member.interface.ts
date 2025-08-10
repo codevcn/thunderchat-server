@@ -2,6 +2,7 @@ import type { TGroupChatMemberWithUser } from '@/utils/entities/group-chat-membe
 import type {
   AddMembersToGroupChatDTO,
   FetchGroupChatMembersDTO,
+  LeaveGroupChatDTO,
   RemoveGroupChatMemberDTO,
 } from './group-member.dto'
 import type { TUserWithProfile } from '@/utils/entities/user.entity'
@@ -26,4 +27,5 @@ export interface IGroupMemberController {
     body: AddMembersToGroupChatDTO,
     user: TUserWithProfile
   ): Promise<TAddMembersToGroupChatRes>
+  leaveGroupChat: (body: LeaveGroupChatDTO, user: TUserWithProfile) => Promise<TSuccess>
 }

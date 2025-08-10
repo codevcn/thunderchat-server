@@ -1,5 +1,6 @@
+import { EGroupMemberPermissions } from '@/group-member/group-member.enum'
 import { Type } from 'class-transformer'
-import { IsArray, IsNumber, IsOptional, IsString } from 'class-validator'
+import { IsArray, IsEnum, IsNumber, IsOptional, IsString } from 'class-validator'
 
 export class DeleteGroupChatAvatarDTO {
   @IsString()
@@ -57,4 +58,25 @@ export class SearchGroupChatMembersDTO {
 
   @IsString()
   keyword: string
+}
+
+export class CreateInviteLinkDTO {
+  @IsNumber()
+  @Type(() => Number)
+  groupChatId: number
+}
+
+export class JoinGroupByInviteLinkDTO {
+  @IsString()
+  token: string
+}
+
+export class UpdateGroupChatPermissionDTO {
+  @IsNumber()
+  @Type(() => Number)
+  groupChatId: number
+
+  @IsArray()
+  @IsEnum(EGroupMemberPermissions, { each: true })
+  permissions: EGroupMemberPermissions[]
 }

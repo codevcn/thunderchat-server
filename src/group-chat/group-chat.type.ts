@@ -15,3 +15,16 @@ export type TFetchGroupChatsData = TGroupChat & {
   LastSentMessage: TMessage | null
   Creator: TUserWithProfile
 }
+
+export type TGenerateInviteLink = {
+  token: string
+}
+
+export type TCreateNewInviteLink = {
+  inviteCode: string
+}
+
+export type TJoinGroupChatByInviteLink = {
+  groupChatId: number
+  message?: string
+}

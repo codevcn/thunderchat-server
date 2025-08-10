@@ -14,6 +14,7 @@ import { EGroupChatRoles } from './group-chat.enum'
 import type { TGroupChat } from '@/utils/entities/group-chat.entity'
 import { TUserWithProfile } from '@/utils/entities/user.entity'
 import { EventEmitter2 } from '@nestjs/event-emitter'
+import { EGroupMemberPermissions } from '@/group-member/group-member.enum'
 
 @Injectable()
 export class GroupChatService {
@@ -62,6 +63,15 @@ export class GroupChatService {
             role: memberId === creatorId ? EGroupChatRoles.ADMIN : EGroupChatRoles.MEMBER,
             joinedBy: creatorId,
           })),
+        },
+        GroupMemberPermission: {
+          create: {
+            sendMessage: true,
+            pinMessage: true,
+            addMember: true,
+            removeMember: true,
+            updateInfo: true,
+          },
         },
       },
     })
@@ -143,5 +153,22 @@ export class GroupChatService {
       data: { avatarUrl, name: groupName },
     })
     return groupChat
+  }
+
+  async updateGroupChatPermission(
+    groupChatId: number,
+    permissions: EGroupMemberPermissions[]
+  ): Promise<void> {
+    const permissionData: Prisma.GroupMemberPermissionUpdateInput = permissions.reduce(
+      (acc, permission) => {
+        acc[permission] = true
+        return acc
+      },
+      {} as Prisma.GroupMemberPermissionUpdateInput
+    )
+    await this.prismaService.groupMemberPermission.update({
+      where: { groupChatId },
+      data: permissionData,
+    })
   }
 }

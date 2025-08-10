@@ -10,15 +10,18 @@ import {
   Inject,
   Injectable,
   InternalServerErrorException,
+  NotFoundException,
 } from '@nestjs/common'
 import { EGroupMemberMessages } from './group-member.message'
 import { EventEmitter2 } from '@nestjs/event-emitter'
 import { TUserWithProfile } from '@/utils/entities/user.entity'
+import { EGroupMemberPermissions } from './group-member.enum'
 
 @Injectable()
 export class GroupMemberService {
   private readonly MAX_ADD_MEMBER_AT_ONCE: number = 10
   private readonly MAX_ADD_MEMBER_TOTAL: number = 100
+  private readonly MIN_MEMBER_IN_GROUP_CHAT: number = 2
 
   constructor(
     @Inject(EProviderTokens.PRISMA_CLIENT) private prismaService: PrismaService,
@@ -72,6 +75,14 @@ export class GroupMemberService {
   }
 
   async removeGroupChatMember(groupChatId: number, memberId: number): Promise<void> {
+    const totalMembers = await this.prismaService.groupChatMember.count({
+      where: { groupChatId },
+    })
+    if (totalMembers) {
+      if (totalMembers < this.MIN_MEMBER_IN_GROUP_CHAT + 1) {
+        throw new BadRequestException(EGroupMemberMessages.MIN_MEMBER_IN_GROUP_CHAT)
+      }
+    }
     try {
       await this.prismaService.groupChatMember.delete({
         where: { groupChatId_userId: { groupChatId, userId: memberId } },
@@ -135,5 +146,28 @@ export class GroupMemberService {
       executor
     )
     return addedMembers
+  }
+
+  async leaveGroupChat(groupChatId: number, userId: number): Promise<void> {
+    // kiểm tra nếu là admin thì không được rời khỏi group chat
+    const groupChat = await this.prismaService.groupChat.findFirst({
+      where: { id: groupChatId, creatorId: userId },
+    })
+    if (groupChat && groupChat.creatorId === userId)
+      throw new BadRequestException(EGroupMemberMessages.ADMIN_CANNOT_LEAVE_GROUP_CHAT)
+    await this.prismaService.groupChatMember.delete({
+      where: { groupChatId_userId: { groupChatId, userId } },
+    })
+  }
+
+  async checkMemberPermission(
+    groupChatId: number,
+    permission: EGroupMemberPermissions
+  ): Promise<boolean> {
+    const groupChatPermission = await this.prismaService.groupMemberPermission.findUnique({
+      where: { groupChatId },
+    })
+    if (!groupChatPermission) return true
+    return groupChatPermission[permission]
   }
 }

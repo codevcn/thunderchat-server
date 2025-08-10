@@ -17,10 +17,13 @@ import { FileInterceptor } from '@nestjs/platform-express'
 import { IGroupChatsController } from './group-chat.interface'
 import {
   CreateGroupChatDTO,
+  CreateInviteLinkDTO,
   DeleteGroupChatAvatarDTO,
   FetchGroupChatDTO,
   FetchGroupChatsDTO,
+  JoinGroupByInviteLinkDTO,
   UpdateGroupChatDTO,
+  UpdateGroupChatPermissionDTO,
 } from './group-chat.dto'
 import { ERoutes } from '@/utils/enums'
 import { join } from 'path'
@@ -30,13 +33,17 @@ import { AuthGuard } from '@/auth/auth.guard'
 import { GroupChatRoles } from '@/auth/role/group-chat/group-chat-role.decorator'
 import { EGroupChatRoles } from './group-chat.enum'
 import { GroupChatRoleGuard } from '@/auth/role/group-chat/group-chat-role.guard'
+import { InviteLinkService } from './invite-link.service'
 
 @Controller(ERoutes.GROUP_CHAT)
 @UseGuards(AuthGuard)
 export class GroupChatController implements IGroupChatsController {
   static readonly tempImagesDir = join(process.cwd(), 'src', 'upload', 'temp-images')
 
-  constructor(private readonly groupChatService: GroupChatService) {}
+  constructor(
+    private readonly groupChatService: GroupChatService,
+    private readonly inviteLinkService: InviteLinkService
+  ) {}
 
   @Post('upload-group-avatar')
   @UseInterceptors(FileInterceptor('avatar', { dest: GroupChatController.tempImagesDir }))
@@ -86,6 +93,36 @@ export class GroupChatController implements IGroupChatsController {
       avatarUrl,
       groupName,
     })
+    return {
+      success: true,
+    }
+  }
+
+  @UseGuards(AuthGuard)
+  @Post('create-invite-link')
+  @UseGuards(GroupChatRoleGuard)
+  @GroupChatRoles(EGroupChatRoles.ADMIN)
+  async createInviteLink(@Body() body: CreateInviteLinkDTO) {
+    const { groupChatId } = body
+    return await this.inviteLinkService.createNewInviteLinkForGroupChat(groupChatId)
+  }
+
+  @Get('join-group-by-invite-link')
+  @UseGuards(AuthGuard)
+  async joinGroupChatByInviteLink(
+    @Query() query: JoinGroupByInviteLinkDTO,
+    @User() user: TUserWithProfile
+  ) {
+    const { token } = query
+    return await this.inviteLinkService.joinGroupChatByInviteLink(token, user.id)
+  }
+
+  @Put('update-group-chat-permission')
+  @UseGuards(GroupChatRoleGuard)
+  @GroupChatRoles(EGroupChatRoles.ADMIN)
+  async updateGroupChatPermission(@Body() body: UpdateGroupChatPermissionDTO) {
+    const { groupChatId, permissions } = body
+    await this.groupChatService.updateGroupChatPermission(groupChatId, permissions)
     return {
       success: true,
     }

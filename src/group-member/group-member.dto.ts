@@ -26,3 +26,9 @@ export class AddMembersToGroupChatDTO {
   @IsNumber({}, { each: true })
   memberIds: number[]
 }
+
+export class LeaveGroupChatDTO {
+  @IsNumber()
+  @Type(() => Number)
+  groupChatId: number
+}

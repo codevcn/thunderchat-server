@@ -14,6 +14,7 @@ import {
   UsePipes,
   UseInterceptors,
   ForbiddenException,
+  BadGatewayException,
 } from '@nestjs/common'
 import { FriendService } from '@/friend/friend.service'
 import { BaseWsException } from '../utils/exceptions/base-ws.exception'
@@ -24,6 +25,7 @@ import {
 } from '@/utils/exception-filters/base-ws-exception.filter'
 import { DirectMessageService } from '@/direct-message/direct-message.service'
 import type {
+  TCheckCanSendMessageInGroupChat,
   TClientSocket,
   TFindDirectChatWithOtherUser,
   THandleEmitNewMessageParams,
@@ -69,6 +71,8 @@ import { UserSettingsService } from '@/user-settings/user-settings.service'
 import { BlockUserService } from '@/user/block-user.service'
 import { EUserSettingsMessages } from '@/user-settings/user-settings.message'
 import { EUserMessages } from '@/user/user.message'
+import { EGroupMemberPermissions } from '@/group-member/group-member.enum'
+import { EGroupMemberMessages } from '@/group-member/group-member.message'
 
 @WebSocketGateway({
   cors: {
@@ -482,6 +486,27 @@ export class AppGateway
     }
   }
 
+  async checkCanSendMessageInGroupChat(
+    clientId: number,
+    messageType: EMessageTypeAllTypes,
+    groupChatId: number
+  ): Promise<TCheckCanSendMessageInGroupChat> {
+    const hasPermission = await this.groupMemberService.checkMemberPermission(
+      groupChatId,
+      messageType === EMessageTypeAllTypes.PIN_NOTICE
+        ? EGroupMemberPermissions.PIN_MESSAGE
+        : EGroupMemberPermissions.SEND_MESSAGE
+    )
+    if (!hasPermission) {
+      throw new BadGatewayException(EGroupMemberMessages.USER_HAS_NO_PERMISSION_SEND_MESSAGE)
+    }
+    const member = await this.groupMemberService.findMemberInGroupChat(groupChatId, clientId)
+    if (!member) {
+      throw new BadGatewayException(EGatewayMessages.USER_NOT_IN_GROUP_CHAT)
+    }
+    return { member }
+  }
+
   @SubscribeMessage(EClientSocketEvents.send_message_group)
   @CatchInternalSocketError()
   async handleSendGroupMessage(
@@ -495,10 +520,7 @@ export class AppGateway
     await this.checkUniqueMessage(token, clientId)
     const { timestamp, content, replyToId } = msgPayload
 
-    const member = await this.groupMemberService.findMemberInGroupChat(groupChatId, clientId)
-    if (!member) {
-      throw new BaseWsException(EGatewayMessages.USER_NOT_IN_GROUP_CHAT)
-    }
+    const { member } = await this.checkCanSendMessageInGroupChat(clientId, type, groupChatId)
 
     const groupChat = member.GroupChat
     let newMessage: TMessageFullInfo
