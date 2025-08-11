@@ -16,6 +16,7 @@ import { GroupChatService } from '@/group-chat/group-chat.service'
 import { PrismaService } from '@/configs/db/prisma.service'
 import { EProviderTokens } from '@/utils/enums'
 import { Inject } from '@nestjs/common'
+import { DevLogger } from '@/dev/dev-logger'
 
 @Injectable()
 export class SearchService {
@@ -51,11 +52,11 @@ export class SearchService {
     const userIds = userHits.filter((user) => !!user._source).map((user) => parseInt(user._id!))
     // find messages and users by ids in database
     const [messages, users] = await Promise.all([
-      this.directMessageService.findMessagesByIds(messageIds, limit),
-      this.userService.findUsersByIdsNotSelfUser(userIds, selfUserId, limit),
+      this.directMessageService.findMessagesForGlobalSearch(messageIds, limit),
+      this.userService.findUsersForGlobalSearch(userIds, selfUserId, limit),
     ])
     const finalMessages = messages.map<TGlobalSearchData['messages'][number]>(
-      ({ id, GroupChat, content, directChatId, groupChatId, createdAt, Recipient }) => {
+      ({ id, GroupChat, content, directChatId, groupChatId, createdAt, Recipient, Media }) => {
         let avatarUrl: string | undefined,
           conversationName: string = ''
         if (Recipient) {
@@ -65,11 +66,13 @@ export class SearchService {
           avatarUrl = GroupChat!.Members[0].User.Profile!.avatar || undefined
           conversationName = GroupChat!.name
         }
+        console.log('>>> msg:', { content, Media })
         return {
           id,
           avatarUrl,
           conversationName,
           messageContent: replaceHTMLTagInMessageContent(content),
+          mediaContent: Media?.fileName,
           highlights: messageIdObjects.find((m) => m.id === id)!.highlight?.content || [],
           chatType: directChatId ? EChatType.DIRECT : EChatType.GROUP,
           chatId: (directChatId || groupChatId)!,

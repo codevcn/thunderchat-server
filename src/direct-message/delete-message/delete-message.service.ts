@@ -2,20 +2,21 @@ import { Injectable, Inject } from '@nestjs/common'
 import { PrismaService } from '@/configs/db/prisma.service'
 import { SocketService } from '@/gateway/socket/socket.service'
 import { EClientSocketEvents } from '@/gateway/gateway.event'
-import { EProviderTokens } from '@/utils/enums'
+import { EProviderTokens, ESyncDataToESWorkerType } from '@/utils/enums'
 import type { TDeleteMessageResult } from './delete-message.type'
 import { EMessageTypes } from '@/direct-message/direct-message.enum'
 import { UploadService } from '@/upload/upload.service'
 import { Prisma } from '@prisma/client'
-import { DevLogger } from '@/dev/dev-logger'
-import type { TMessage, TMessageFullInfo } from '@/utils/entities/message.entity'
+import type { TMessageFullInfo } from '@/utils/entities/message.entity'
+import { SyncDataToESService } from '@/configs/elasticsearch/sync-data-to-ES/sync-data-to-ES.service'
 
 @Injectable()
 export class DeleteMessageService {
   constructor(
     @Inject(EProviderTokens.PRISMA_CLIENT) private prisma: PrismaService,
     private socketService: SocketService,
-    private uploadService: UploadService
+    private uploadService: UploadService,
+    private syncDataToESService: SyncDataToESService
   ) {}
 
   async recallMessage(msgId: number, userId: number): Promise<TDeleteMessageResult> {
@@ -28,7 +29,7 @@ export class DeleteMessageService {
     const msg = validationResult.data!
 
     // Sử dụng transaction để đảm bảo tính toàn vẹn dữ liệu
-    return await this.prisma
+    const result = await this.prisma
       .$transaction(async (tx) => {
         // // Xóa file S3 nếu là media message
         // await this.deleteS3Files(msg)
@@ -86,6 +87,13 @@ export class DeleteMessageService {
           errors: error,
         }
       })
+
+    this.syncDataToESService.syncDataToES({
+      type: ESyncDataToESWorkerType.DELETE_MESSAGE,
+      data: msg,
+    })
+
+    return result
   }
 
   /**

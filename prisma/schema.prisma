@@ -43,25 +43,26 @@ model User {
     role      AppRole  @default(USER)
 
     Profile                   Profile?
-    DirectChatsAsSender       DirectChat[]      @relation("DirectChatsAsSender")
-    DirectChatsAsRecipient    DirectChat[]      @relation("DirectChatsAsRecipient")
-    Messages                  Message[]         @relation("DirectMessagesAsSender")
-    FriendsAsRecipient        Friend[]          @relation("FriendsAsRecipient")
-    FriendsAsSender           Friend[]          @relation("FriendsAsSender")
-    FriendRequestsSent        FriendRequest[]   @relation("FriendRequestsSent")
-    FriendRequestsReceived    FriendRequest[]   @relation("FriendRequestsReceived")
-    DirectMessagesAsRecipient Message[]         @relation("DirectMessagesAsRecipient")
-    MessageMappings           MessageMapping[]  @relation("MessageMappings")
-    GroupChatCreator          GroupChat[]       @relation("GroupChatCreator")
-    GroupChatMembers          GroupChatMember[] @relation("GroupChatMembers")
-    PinnedMessages            PinnedMessage[]   @relation("PinnedMessagesByUser")
-    PinnedChats               PinnedChat[]      @relation("PinnedChatsByUser")
-    UserSettings              UserSettings?     @relation("UserToUserSettings")
-    ReportsMade               ViolationReport[] @relation("ReportsMade")
-    ReportsAbout              ViolationReport[] @relation("ReportsAbout")
-    BlockedUsers              BlockedUser[]     @relation("BlockedUsers")
-    BlockedByUsers            BlockedUser[]     @relation("BlockedByUsers")
-    GroupChatMembersJoinedBy  GroupChatMember[] @relation("GroupChatMembersJoinedBy")
+    DirectChatsAsSender       DirectChat[]       @relation("DirectChatsAsSender")
+    DirectChatsAsRecipient    DirectChat[]       @relation("DirectChatsAsRecipient")
+    Messages                  Message[]          @relation("DirectMessagesAsSender")
+    FriendsAsRecipient        Friend[]           @relation("FriendsAsRecipient")
+    FriendsAsSender           Friend[]           @relation("FriendsAsSender")
+    FriendRequestsSent        FriendRequest[]    @relation("FriendRequestsSent")
+    FriendRequestsReceived    FriendRequest[]    @relation("FriendRequestsReceived")
+    DirectMessagesAsRecipient Message[]          @relation("DirectMessagesAsRecipient")
+    MessageMappings           MessageMapping[]   @relation("MessageMappings")
+    GroupChatCreator          GroupChat[]        @relation("GroupChatCreator")
+    GroupChatMembers          GroupChatMember[]  @relation("GroupChatMembers")
+    PinnedMessages            PinnedMessage[]    @relation("PinnedMessagesByUser")
+    PinnedChats               PinnedChat[]       @relation("PinnedChatsByUser")
+    UserSettings              UserSettings?      @relation("UserToUserSettings")
+    ReportsMade               ViolationReport[]  @relation("ReportsMade")
+    ReportsAbout              ViolationReport[]  @relation("ReportsAbout")
+    BlockedUsers              BlockedUser[]      @relation("BlockedUsers")
+    BlockedByUsers            BlockedUser[]      @relation("BlockedByUsers")
+    GroupChatMembersJoinedBy  GroupChatMember[]  @relation("GroupChatMembersJoinedBy")
+    GroupJoinRequest          GroupJoinRequest[] @relation("UserRequests")
 
     @@index([email], type: BTree)
     @@map("users")
@@ -257,8 +258,22 @@ model GroupChat {
     PinnedChats         PinnedChat[]         @relation("PinnedChatsOnGroupChat")
     BlockedUsers        BlockedUser[]        @relation("BlockedGroupChat")
     GroupChatPermission GroupChatPermission?
+    GroupJoinRequest    GroupJoinRequest[]
 
     @@map("group_chats")
+}
+
+model GroupJoinRequest {
+    id          Int               @id @default(autoincrement())
+    groupChatId Int               @map("group_chat_id")
+    userId      Int               @map("user_id")
+    status      JoinRequestStatus @default(PENDING)
+    createdAt   DateTime          @default(now()) @map("created_at")
+
+    GroupChat GroupChat @relation(fields: [groupChatId], references: [id])
+    Requester User      @relation("UserRequests", fields: [userId], references: [id])
+
+    @@map("group_join_requests")
 }
 
 model GroupChatMember {
@@ -403,4 +418,10 @@ enum MessageMediaType {
     VIDEO
     AUDIO
     DOCUMENT
+}
+
+enum JoinRequestStatus {
+    PENDING
+    APPROVED
+    REJECTED
 }

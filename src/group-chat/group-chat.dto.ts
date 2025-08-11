@@ -1,5 +1,14 @@
 import { Type } from 'class-transformer'
-import { IsArray, IsBoolean, IsNumber, IsOptional, IsString, ValidateNested } from 'class-validator'
+import {
+  IsArray,
+  IsBoolean,
+  IsEnum,
+  IsNumber,
+  IsOptional,
+  IsString,
+  ValidateNested,
+} from 'class-validator'
+import { EJoinRequestStatus } from './group-chat.enum'
 
 export class DeleteGroupChatAvatarDTO {
   @IsString()
@@ -98,4 +107,34 @@ export class FetchGroupChatPermissionsDTO {
   @IsNumber()
   @Type(() => Number)
   groupChatId: number
+}
+
+export class FetchJoinRequestsDTO {
+  @IsNumber()
+  @Type(() => Number)
+  groupChatId: number
+
+  @IsOptional()
+  @IsEnum(EJoinRequestStatus)
+  status?: EJoinRequestStatus
+}
+
+export class CreateJoinRequestDTO {
+  @IsNumber()
+  @Type(() => Number)
+  groupChatId: number
+}
+
+export class ProcessJoinRequestDTO {
+  @IsNumber()
+  @Type(() => Number)
+  joinRequestId: number
+
+  @IsEnum(EJoinRequestStatus)
+  status: EJoinRequestStatus
+}
+
+export class FetchGroupChatByInviteCodeDTO {
+  @IsString()
+  inviteCode: string
 }

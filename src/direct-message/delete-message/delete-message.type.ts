@@ -1,9 +1,9 @@
-import { Message } from '@prisma/client'
+import type { TMessageWithMedia } from '@/utils/entities/message.entity'
 
 export type TDeleteMessageResult = {
   success: boolean
   message: string
-  data: Message | null
+  data: TMessageWithMedia | null
   errorCode: string | null
   errors: unknown
 }

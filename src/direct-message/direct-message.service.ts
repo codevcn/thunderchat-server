@@ -1,7 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common'
 import { PrismaService } from '../configs/db/prisma.service'
 import { EProviderTokens, ESyncDataToESWorkerType } from '@/utils/enums'
-import type { TMessage, TMessageWithRecipients } from '@/utils/entities/message.entity'
+import type {
+  TMessage,
+  TMessageWithMedia,
+  TMessageForGlobalSearch,
+} from '@/utils/entities/message.entity'
 import { EMessageStatus, EMessageTypes, ESortTypes } from '@/direct-message/direct-message.enum'
 import dayjs from 'dayjs'
 import type {
@@ -96,10 +100,13 @@ export class DirectMessageService {
     return message
   }
 
-  async updateMsg(msgId: number, updates: TMessageUpdates): Promise<TMessage> {
+  async updateMsg(msgId: number, updates: TMessageUpdates): Promise<TMessageWithMedia> {
     const message = await this.PrismaService.message.update({
       where: { id: msgId },
       data: updates,
+      include: {
+        Media: true,
+      },
     })
     this.syncDataToESService.syncDataToES({
       type: ESyncDataToESWorkerType.UPDATE_MESSAGE,
@@ -199,12 +206,17 @@ export class DirectMessageService {
     })
   }
 
-  async findMessagesByIds(ids: number[], limit: number): Promise<TMessageWithRecipients[]> {
+  async findMessagesForGlobalSearch(
+    ids: number[],
+    limit: number
+  ): Promise<TMessageForGlobalSearch[]> {
     return await this.PrismaService.message.findMany({
       where: {
         id: { in: ids },
+        isDeleted: { not: true },
       },
       include: {
+        Media: true,
         Recipient: {
           include: {
             Profile: true,

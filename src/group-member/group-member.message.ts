@@ -7,6 +7,7 @@ export enum EGroupMemberMessages {
   ADMIN_CANNOT_LEAVE_GROUP_CHAT = 'Admin cannot leave group chat',
   USER_HAS_NO_PERMISSION_SEND_MESSAGE = 'User has no permission to send message',
   USER_HAS_NO_PERMISSION_PIN_MESSAGE = 'User has no permission to pin message',
-  USER_NOT_IN_GROUP_CHAT = 'USER_NOT_IN_GROUP_CHAT',
+  USER_NOT_IN_GROUP_CHAT = 'User is not in group chat',
   MEMBER_INFO_NOT_FOUND = 'Member information not found',
+  USER_ALREADY_A_MEMBER_OF_GROUP = 'User is already a member of group',
 }

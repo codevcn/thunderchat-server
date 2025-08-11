@@ -7,9 +7,10 @@ import { AuthModule } from '@/auth/auth.module'
 import { UserModule } from '@/user/user.module'
 import { UploadService } from '@/upload/upload.service'
 import { UploadModule } from '@/upload/upload.module'
+import { SyncDataToESModule } from '@/configs/elasticsearch/sync-data-to-ES/sync-data-to-ES.module'
 
 @Module({
-  imports: [SocketModule, AuthModule, UserModule, UploadModule],
+  imports: [SocketModule, AuthModule, UserModule, UploadModule, SyncDataToESModule],
   controllers: [DeleteMessageController],
   providers: [DeleteMessageService, PrismaService, UploadService],
 })

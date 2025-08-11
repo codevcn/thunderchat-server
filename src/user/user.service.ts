@@ -169,7 +169,7 @@ export class UserService {
     return searchResult
   }
 
-  async findUsersByIdsNotSelfUser(
+  async findUsersForGlobalSearch(
     ids: number[],
     selfUserId: number,
     limit: number

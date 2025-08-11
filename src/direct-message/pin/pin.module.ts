@@ -6,9 +6,17 @@ import { UserModule } from '../../user/user.module'
 import { SocketModule } from '@/gateway/socket/socket.module'
 import { GroupChatModule } from '@/group-chat/group-chat.module'
 import { GroupMemberModule } from '@/group-member/group-member.module'
+import { SyncDataToESModule } from '@/configs/elasticsearch/sync-data-to-ES/sync-data-to-ES.module'
 
 @Module({
-  imports: [PrismaModule, UserModule, SocketModule, GroupChatModule, GroupMemberModule],
+  imports: [
+    PrismaModule,
+    UserModule,
+    SocketModule,
+    GroupChatModule,
+    GroupMemberModule,
+    SyncDataToESModule,
+  ],
   providers: [PinService],
   controllers: [PinController],
   exports: [PinService],

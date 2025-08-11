@@ -1,6 +1,6 @@
 import { Injectable, Inject, forwardRef, BadRequestException } from '@nestjs/common'
 import { PrismaService } from '../../configs/db/prisma.service'
-import { EProviderTokens } from '@/utils/enums'
+import { EProviderTokens, ESyncDataToESWorkerType } from '@/utils/enums'
 import { SocketService } from '@/gateway/socket/socket.service'
 import { EClientSocketEvents } from '@/gateway/gateway.event'
 import { EMessageMediaTypes, EMessageStatus, EMessageTypes } from '../direct-message.enum'
@@ -11,6 +11,7 @@ import { GroupMemberService } from '@/group-member/group-member.service'
 import { GroupChatService } from '@/group-chat/group-chat.service'
 import { EGroupChatPermissions, EGroupChatRoles } from '@/group-chat/group-chat.enum'
 import { EGroupMemberMessages } from '@/group-member/group-member.message'
+import { SyncDataToESService } from '@/configs/elasticsearch/sync-data-to-ES/sync-data-to-ES.service'
 
 // Helper mô tả nội dung tin nhắn
 function getMessageDescription(message: TMessageWithMedia): string {
@@ -39,7 +40,8 @@ export class PinService {
     @Inject(EProviderTokens.PRISMA_CLIENT) private prismaService: PrismaService,
     @Inject(forwardRef(() => SocketService)) private socketService: SocketService,
     private groupChatService: GroupChatService,
-    private groupMemberService: GroupMemberService
+    private groupMemberService: GroupMemberService,
+    private syncDataToESService: SyncDataToESService
   ) {}
 
   /**
@@ -140,7 +142,13 @@ export class PinService {
         include: {
           Author: { include: { Profile: true } },
           ReplyTo: { include: { Author: { include: { Profile: true } } } },
+          Media: true,
         },
+      })
+
+      this.syncDataToESService.syncDataToES({
+        type: ESyncDataToESWorkerType.CREATE_MESSAGE,
+        data: pinNoticeMessage,
       })
 
       // Emit socket event gửi message mới cho cả 2 user
@@ -209,7 +217,13 @@ export class PinService {
         include: {
           Author: { include: { Profile: true } },
           ReplyTo: { include: { Author: { include: { Profile: true } } } },
+          Media: true,
         },
+      })
+
+      this.syncDataToESService.syncDataToES({
+        type: ESyncDataToESWorkerType.CREATE_MESSAGE,
+        data: pinNoticeMessage,
       })
 
       // Emit socket event gửi message mới cho cả 2 user
@@ -421,6 +435,11 @@ export class PinService {
         },
       })
 
+      this.syncDataToESService.syncDataToES({
+        type: ESyncDataToESWorkerType.CREATE_MESSAGE,
+        data: pinNoticeMessage,
+      })
+
       // Emit socket event gửi message mới cho cả thành viên trong group
       this.socketService.sendNewMessageToGroupChat(groupChatId, pinNoticeMessage)
 
@@ -484,6 +503,11 @@ export class PinService {
           Media: true,
           Sticker: true,
         },
+      })
+
+      this.syncDataToESService.syncDataToES({
+        type: ESyncDataToESWorkerType.CREATE_MESSAGE,
+        data: pinNoticeMessage,
       })
 
       // Emit socket event gửi message mới cho cả 2 user

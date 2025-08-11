@@ -11,6 +11,7 @@ export type TGlobalSearchData = {
     avatarUrl?: string
     conversationName: string
     messageContent: string
+    mediaContent?: string
     highlights: string[]
     chatType: EChatType
     chatId: number

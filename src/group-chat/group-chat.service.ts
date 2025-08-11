@@ -18,7 +18,7 @@ import type {
 import { GroupChatPermissionsDTO, UpdateGroupChatDTO } from './group-chat.dto'
 import { EGroupChatMessages } from './group-chat.message'
 import { EGroupChatPermissions, EGroupChatRoles } from './group-chat.enum'
-import type { TGroupChat } from '@/utils/entities/group-chat.entity'
+import type { TGroupChat, TGroupChatWithCreator } from '@/utils/entities/group-chat.entity'
 import { TUserWithProfile } from '@/utils/entities/user.entity'
 import { EventEmitter2 } from '@nestjs/event-emitter'
 import { GroupMemberService } from '@/group-member/group-member.service'
@@ -26,6 +26,9 @@ import { EGroupMemberMessages } from '@/group-member/group-member.message'
 
 @Injectable()
 export class GroupChatService {
+  private readonly MIN_GROUP_CHAT_NAME_LENGTH: number = 2
+  private readonly MIN_GROUP_CHAT_MEMBERS_COUNT: number = 2
+
   constructor(
     private readonly s3UploadService: S3UploadService,
     @Inject(EProviderTokens.PRISMA_CLIENT) private prismaService: PrismaService,
@@ -61,6 +64,12 @@ export class GroupChatService {
   ): Promise<TGroupChat> {
     const { id: creatorId } = creator
     const allMemberIds = [creatorId, ...memberIds]
+    if (groupName.length < this.MIN_GROUP_CHAT_NAME_LENGTH) {
+      throw new BadRequestException(EGroupChatMessages.GROUP_NAME_TOO_SHORT)
+    }
+    if (allMemberIds.length < this.MIN_GROUP_CHAT_MEMBERS_COUNT) {
+      throw new BadRequestException(EGroupChatMessages.GROUP_MEMBERS_TOO_FEW)
+    }
     const groupChat = await this.prismaService.groupChat.create({
       data: {
         name: groupName,
@@ -213,5 +222,19 @@ export class GroupChatService {
     return {
       permissions: groupChatPermission,
     }
+  }
+
+  async fetchGroupChatByInviteCode(inviteCode: string): Promise<TGroupChatWithCreator | null> {
+    const groupChat = await this.prismaService.groupChat.findUnique({
+      where: { inviteCode },
+      include: {
+        Creator: {
+          include: {
+            Profile: true,
+          },
+        },
+      },
+    })
+    return groupChat
   }
 }

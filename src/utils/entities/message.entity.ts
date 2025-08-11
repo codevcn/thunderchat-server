@@ -14,7 +14,7 @@ export type TMessageWithRecipient = TMessage & {
   Recipient: TUserWithProfile | null
 }
 
-export type TMessageWithRecipients = TMessage & {
+export type TMessageForGlobalSearch = TMessageWithMedia & {
   Recipient: TUserWithProfile | null
   GroupChat: TGroupChatWithMembers | null
 }

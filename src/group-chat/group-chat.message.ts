@@ -9,4 +9,7 @@ export enum EGroupChatMessages {
   USER_ALREADY_IN_GROUP_CHAT = 'User already in the group chat',
   GROUP_CHAT_PERMISSION_NOT_FOUND = 'Group chat permission not found',
   USER_HAS_NO_PERMISSION_UPDATE_GROUP_CHAT = 'User has no permission to update group chat',
+  USER_ALREADY_HAS_REQUESTED_TO_JOIN_GROUP = 'User already has requested to join group before',
+  GROUP_NAME_TOO_SHORT = 'Group name must be at least 2 characters',
+  GROUP_MEMBERS_TOO_FEW = 'Group must have at least 2 members',
 }
