@@ -10,12 +10,10 @@ import {
   Inject,
   Injectable,
   InternalServerErrorException,
-  NotFoundException,
 } from '@nestjs/common'
 import { EGroupMemberMessages } from './group-member.message'
 import { EventEmitter2 } from '@nestjs/event-emitter'
 import { TUserWithProfile } from '@/utils/entities/user.entity'
-import { EGroupMemberPermissions } from './group-member.enum'
 
 @Injectable()
 export class GroupMemberService {
@@ -158,16 +156,5 @@ export class GroupMemberService {
     await this.prismaService.groupChatMember.delete({
       where: { groupChatId_userId: { groupChatId, userId } },
     })
-  }
-
-  async checkMemberPermission(
-    groupChatId: number,
-    permission: EGroupMemberPermissions
-  ): Promise<boolean> {
-    const groupChatPermission = await this.prismaService.groupMemberPermission.findUnique({
-      where: { groupChatId },
-    })
-    if (!groupChatPermission) return true
-    return groupChatPermission[permission]
   }
 }

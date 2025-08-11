@@ -227,18 +227,17 @@ model StickerCategory {
     @@map("sticker_categories")
 }
 
-model GroupMemberPermission {
-    id           Int     @id @default(autoincrement())
-    groupChatId  Int     @unique @map("group_chat_id")
-    sendMessage  Boolean @default(true) @map("send_message")
-    pinMessage   Boolean @default(true) @map("pin_message")
-    addMember    Boolean @default(true) @map("add_member")
-    removeMember Boolean @default(true) @map("remove_member")
-    updateInfo   Boolean @default(false) @map("update_info")
+model GroupChatPermission {
+    id              Int     @id @default(autoincrement())
+    groupChatId     Int     @unique @map("group_chat_id")
+    sendMessage     Boolean @default(true) @map("send_message")
+    pinMessage      Boolean @default(true) @map("pin_message")
+    shareInviteCode Boolean @default(true) @map("share_invite_code")
+    updateInfo      Boolean @default(false) @map("update_info")
 
     GroupChat GroupChat @relation(fields: [groupChatId], references: [id])
 
-    @@map("group_member_permissions")
+    @@map("group_chat_permissions")
 }
 
 model GroupChat {
@@ -250,14 +249,14 @@ model GroupChat {
     lastSentMessageId Int?     @unique @map("last_sent_message_id")
     inviteCode        String?  @unique @map("invite_code")
 
-    Messages              Message[]              @relation("MessagesOnGroupChat")
-    Creator               User                   @relation("GroupChatCreator", fields: [creatorId], references: [id])
-    Members               GroupChatMember[]      @relation("GroupChatMembers")
-    LastSentMessage       Message?               @relation("LastSentMessageOnGroupChat", fields: [lastSentMessageId], references: [id])
-    PinnedMessages        PinnedMessage[]        @relation("PinnedMessagesOnGroupChat")
-    PinnedChats           PinnedChat[]           @relation("PinnedChatsOnGroupChat")
-    BlockedUsers          BlockedUser[]          @relation("BlockedGroupChat")
-    GroupMemberPermission GroupMemberPermission?
+    Messages            Message[]            @relation("MessagesOnGroupChat")
+    Creator             User                 @relation("GroupChatCreator", fields: [creatorId], references: [id])
+    Members             GroupChatMember[]    @relation("GroupChatMembers")
+    LastSentMessage     Message?             @relation("LastSentMessageOnGroupChat", fields: [lastSentMessageId], references: [id])
+    PinnedMessages      PinnedMessage[]      @relation("PinnedMessagesOnGroupChat")
+    PinnedChats         PinnedChat[]         @relation("PinnedChatsOnGroupChat")
+    BlockedUsers        BlockedUser[]        @relation("BlockedGroupChat")
+    GroupChatPermission GroupChatPermission?
 
     @@map("group_chats")
 }

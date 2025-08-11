@@ -7,4 +7,6 @@ export enum EGroupChatMessages {
   INVALID_INVITE_LINK = 'Invalid invite link',
   GROUP_CHAT_NOT_FOUND = 'Group chat not found',
   USER_ALREADY_IN_GROUP_CHAT = 'User already in the group chat',
+  GROUP_CHAT_PERMISSION_NOT_FOUND = 'Group chat permission not found',
+  USER_HAS_NO_PERMISSION_UPDATE_GROUP_CHAT = 'User has no permission to update group chat',
 }

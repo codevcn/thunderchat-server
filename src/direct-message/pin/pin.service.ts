@@ -7,6 +7,10 @@ import { EMessageMediaTypes, EMessageStatus, EMessageTypes } from '../direct-mes
 import type { TMessageWithMedia } from '@/utils/entities/message.entity'
 import { EPinMessages } from './pin.message'
 import { createGroupChatRoomName } from '@/utils/helpers'
+import { GroupMemberService } from '@/group-member/group-member.service'
+import { GroupChatService } from '@/group-chat/group-chat.service'
+import { EGroupChatPermissions, EGroupChatRoles } from '@/group-chat/group-chat.enum'
+import { EGroupMemberMessages } from '@/group-member/group-member.message'
 
 // Helper mô tả nội dung tin nhắn
 function getMessageDescription(message: TMessageWithMedia): string {
@@ -33,7 +37,9 @@ function getMessageDescription(message: TMessageWithMedia): string {
 export class PinService {
   constructor(
     @Inject(EProviderTokens.PRISMA_CLIENT) private prismaService: PrismaService,
-    @Inject(forwardRef(() => SocketService)) private socketService: SocketService
+    @Inject(forwardRef(() => SocketService)) private socketService: SocketService,
+    private groupChatService: GroupChatService,
+    private groupMemberService: GroupMemberService
   ) {}
 
   /**
@@ -123,7 +129,7 @@ export class PinService {
       // Tạo message thông báo
       const pinNoticeMessage = await this.prismaService.message.create({
         data: {
-          content: `${fullName} đã ghim tin nhắn: ${originalMessageDescription}`,
+          content: `${fullName} has pinned the message: ${originalMessageDescription}`,
           authorId: userId,
           recipientId,
           directChatId,
@@ -193,7 +199,7 @@ export class PinService {
       // Tạo message thông báo
       const pinNoticeMessage = await this.prismaService.message.create({
         data: {
-          content: `${fullName} đã bỏ ghim tin nhắn: ${originalMessageDescription}`,
+          content: `${fullName} has unpinned the message: ${originalMessageDescription}`,
           authorId: userId,
           recipientId,
           directChatId,
@@ -318,6 +324,19 @@ export class PinService {
     userId: number,
     isPinned: boolean
   ) {
+    const member = await this.groupMemberService.findMemberInGroupChat(groupChatId, userId)
+    if (!member) {
+      throw new BadRequestException(EGroupMemberMessages.USER_NOT_IN_GROUP_CHAT)
+    }
+    if (member.role !== EGroupChatRoles.ADMIN) {
+      const hasPermission = await this.groupChatService.checkGroupChatPermission(
+        groupChatId,
+        EGroupChatPermissions.PIN_MESSAGE
+      )
+      if (!hasPermission) {
+        throw new BadRequestException(EGroupMemberMessages.USER_HAS_NO_PERMISSION_PIN_MESSAGE)
+      }
+    }
     if (isPinned) {
       // Kiểm tra xem tin nhắn đã được ghim chưa (cho bất kỳ ai trong cuộc trò chuyện)
       const existingPin = await this.prismaService.pinnedMessage.findFirst({
@@ -381,7 +400,7 @@ export class PinService {
       // Tạo message thông báo
       const pinNoticeMessage = await this.prismaService.message.create({
         data: {
-          content: `${fullName} đã ghim tin nhắn: ${originalMessageDescription}`,
+          content: `${fullName} has pinned the message: ${originalMessageDescription}`,
           authorId: userId,
           groupChatId,
           type: EMessageTypes.PIN_NOTICE,
@@ -447,7 +466,7 @@ export class PinService {
       // Tạo message thông báo
       const pinNoticeMessage = await this.prismaService.message.create({
         data: {
-          content: `${fullName} đã bỏ ghim tin nhắn: ${originalMessageDescription}`,
+          content: `${fullName} has unpinned the message: ${originalMessageDescription}`,
           authorId: userId,
           groupChatId,
           type: EMessageTypes.PIN_NOTICE,

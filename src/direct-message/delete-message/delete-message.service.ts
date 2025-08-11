@@ -8,6 +8,7 @@ import { EMessageTypes } from '@/direct-message/direct-message.enum'
 import { UploadService } from '@/upload/upload.service'
 import { Prisma } from '@prisma/client'
 import { DevLogger } from '@/dev/dev-logger'
+import type { TMessage, TMessageFullInfo } from '@/utils/entities/message.entity'
 
 @Injectable()
 export class DeleteMessageService {
@@ -39,6 +40,26 @@ export class DeleteMessageService {
         const updated = await tx.message.update({
           where: { id: msgId },
           data: updateData,
+          include: {
+            Author: {
+              include: {
+                Profile: true,
+              },
+            },
+            Media: true,
+            Sticker: true,
+            ReplyTo: {
+              include: {
+                Author: {
+                  include: {
+                    Profile: true,
+                  },
+                },
+                Media: true,
+                Sticker: true,
+              },
+            },
+          },
         })
 
         // // Xóa record trong message_media nếu là media message
@@ -49,7 +70,7 @@ export class DeleteMessageService {
 
         return {
           success: true,
-          message: 'Thu hồi tin nhắn thành công',
+          message: 'Message recalled successfully',
           data: updated,
           errorCode: null,
           errors: null,
@@ -57,10 +78,9 @@ export class DeleteMessageService {
       })
       .catch((error) => {
         // Xử lý lỗi transaction
-        console.error('Transaction error:', error)
         return {
           success: false,
-          message: error.message || 'Thu hồi tin nhắn thất bại',
+          message: error.message || 'Recall message failed',
           data: null,
           errorCode: 'TRANSACTION_ERROR',
           errors: error,
@@ -83,7 +103,7 @@ export class DeleteMessageService {
     if (!msg) {
       return {
         success: false,
-        message: 'Tin nhắn không tồn tại',
+        message: 'Message not found',
         data: null,
         errorCode: 'NOT_FOUND',
         errors: null,
@@ -93,7 +113,7 @@ export class DeleteMessageService {
     if (msg.authorId !== userId) {
       return {
         success: false,
-        message: 'Bạn không có quyền xoá tin nhắn này',
+        message: 'You do not have permission to delete this message',
         data: null,
         errorCode: 'FORBIDDEN',
         errors: null,
@@ -102,7 +122,7 @@ export class DeleteMessageService {
 
     return {
       success: true,
-      message: 'Validation thành công',
+      message: 'Validation successful',
       data: msg,
       errorCode: null,
       errors: null,
@@ -163,21 +183,25 @@ export class DeleteMessageService {
     return updateData
   }
 
-  /**
-   * Xóa record trong message_media nếu là media message
-   */
-  private async deleteMessageMediaRecord(tx: any, msg: any): Promise<void> {
-    if (msg.type === EMessageTypes.MEDIA && msg.mediaId) {
-      await tx.messageMedia.delete({
-        where: { id: msg.mediaId },
-      })
-    }
-  }
+  // /**
+  //  * Xóa record trong message_media nếu là media message
+  //  */
+  // private async deleteMessageMediaRecord(tx: any, msg: any): Promise<void> {
+  //   if (msg.type === EMessageTypes.MEDIA && msg.mediaId) {
+  //     await tx.messageMedia.delete({
+  //       where: { id: msg.mediaId },
+  //     })
+  //   }
+  // }
 
   /**
    * Tìm và emit tin nhắn reply để cập nhật reply preview
    */
-  private async handleReplyMessages(tx: any, msgId: number, updated: any): Promise<void> {
+  private async handleReplyMessages(
+    tx: any,
+    msgId: number,
+    updated: TMessageFullInfo
+  ): Promise<void> {
     // Tìm tất cả tin nhắn reply đến tin nhắn này
     const replyMessages = await tx.message.findMany({
       where: { replyToId: msgId },
@@ -203,33 +227,46 @@ export class DeleteMessageService {
       },
     })
 
-    // Lấy thông tin direct chat để emit cho cả 2 user
-    const directChat = await this.prisma.directChat.findUnique({
-      where: { id: (updated.directChatId || updated.groupChatId)! },
-    })
+    const directChatId = updated.directChatId
+    if (directChatId) {
+      // Lấy thông tin direct chat để emit cho cả 2 user
+      const directChat = await this.prisma.directChat.findUnique({
+        where: { id: directChatId },
+      })
+      if (directChat) {
+        // Emit tin nhắn đã thu hồi
+        const creatorSockets = this.socketService.getConnectedClient(directChat.creatorId)
+        const recipientSockets = this.socketService.getConnectedClient(directChat.recipientId)
 
-    if (directChat) {
-      // Emit tin nhắn đã thu hồi
-      const creatorSockets = this.socketService.getConnectedClient(directChat.creatorId)
-      const recipientSockets = this.socketService.getConnectedClient(directChat.recipientId)
-
-      if (creatorSockets && recipientSockets) {
-        for (const creatorSocket of creatorSockets) {
-          creatorSocket?.emit(EClientSocketEvents.send_message_direct, updated)
-        }
-        for (const recipientSocket of recipientSockets) {
-          recipientSocket?.emit(EClientSocketEvents.send_message_direct, updated)
-        }
-      }
-
-      // Emit tất cả tin nhắn reply để cập nhật reply preview
-      if (creatorSockets && recipientSockets) {
-        for (const replyMsg of replyMessages) {
+        if (creatorSockets && recipientSockets) {
           for (const creatorSocket of creatorSockets) {
-            creatorSocket?.emit(EClientSocketEvents.send_message_direct, replyMsg)
+            creatorSocket?.emit(EClientSocketEvents.send_message_direct, updated)
           }
           for (const recipientSocket of recipientSockets) {
-            recipientSocket?.emit(EClientSocketEvents.send_message_direct, replyMsg)
+            recipientSocket?.emit(EClientSocketEvents.send_message_direct, updated)
+          }
+          // Emit tất cả tin nhắn reply để cập nhật reply preview
+          for (const replyMsg of replyMessages) {
+            for (const creatorSocket of creatorSockets) {
+              creatorSocket?.emit(EClientSocketEvents.send_message_direct, replyMsg)
+            }
+            for (const recipientSocket of recipientSockets) {
+              recipientSocket?.emit(EClientSocketEvents.send_message_direct, replyMsg)
+            }
+          }
+        } else {
+        }
+      }
+    } else {
+      const groupChatId = updated.groupChatId
+      if (groupChatId) {
+        const groupChat = await this.prisma.groupChat.findUnique({
+          where: { id: groupChatId },
+        })
+        if (groupChat) {
+          this.socketService.sendNewMessageToGroupChat(groupChatId, updated)
+          for (const replyMsg of replyMessages) {
+            this.socketService.sendNewMessageToGroupChat(groupChatId, replyMsg)
           }
         }
       }

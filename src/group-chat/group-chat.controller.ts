@@ -24,6 +24,7 @@ import {
   JoinGroupByInviteLinkDTO,
   UpdateGroupChatDTO,
   UpdateGroupChatPermissionDTO,
+  FetchGroupChatPermissionsDTO,
 } from './group-chat.dto'
 import { ERoutes } from '@/utils/enums'
 import { join } from 'path'
@@ -85,8 +86,6 @@ export class GroupChatController implements IGroupChatsController {
   }
 
   @Put('update-group-chat')
-  @UseGuards(GroupChatRoleGuard)
-  @GroupChatRoles(EGroupChatRoles.ADMIN)
   async updateGroupChat(@Body() body: UpdateGroupChatDTO, @User() user: TUserWithProfile) {
     const { groupChatId, avatarUrl, groupName } = body
     await this.groupChatService.updateGroupChat(groupChatId, user.id, {
@@ -117,14 +116,20 @@ export class GroupChatController implements IGroupChatsController {
     return await this.inviteLinkService.joinGroupChatByInviteLink(token, user.id)
   }
 
-  @Put('update-group-chat-permission')
+  @Put('update-permissions')
   @UseGuards(GroupChatRoleGuard)
   @GroupChatRoles(EGroupChatRoles.ADMIN)
   async updateGroupChatPermission(@Body() body: UpdateGroupChatPermissionDTO) {
     const { groupChatId, permissions } = body
-    await this.groupChatService.updateGroupChatPermission(groupChatId, permissions)
+    await this.groupChatService.updateGroupChatPermissions(groupChatId, permissions)
     return {
       success: true,
     }
+  }
+
+  @Get('fetch-permissions')
+  async fetchGroupChatPermissions(@Query() query: FetchGroupChatPermissionsDTO) {
+    const { groupChatId } = query
+    return await this.groupChatService.fetchGroupChatPermissions(groupChatId)
   }
 }

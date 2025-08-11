@@ -1,6 +1,5 @@
-import { EGroupMemberPermissions } from '@/group-member/group-member.enum'
 import { Type } from 'class-transformer'
-import { IsArray, IsEnum, IsNumber, IsOptional, IsString } from 'class-validator'
+import { IsArray, IsBoolean, IsNumber, IsOptional, IsString, ValidateNested } from 'class-validator'
 
 export class DeleteGroupChatAvatarDTO {
   @IsString()
@@ -71,12 +70,32 @@ export class JoinGroupByInviteLinkDTO {
   token: string
 }
 
+export class GroupChatPermissionsDTO {
+  @IsBoolean()
+  sendMessage: boolean
+
+  @IsBoolean()
+  pinMessage: boolean
+
+  @IsBoolean()
+  shareInviteCode: boolean
+
+  @IsBoolean()
+  updateInfo: boolean
+}
+
 export class UpdateGroupChatPermissionDTO {
   @IsNumber()
   @Type(() => Number)
   groupChatId: number
 
-  @IsArray()
-  @IsEnum(EGroupMemberPermissions, { each: true })
-  permissions: EGroupMemberPermissions[]
+  @ValidateNested()
+  @Type(() => GroupChatPermissionsDTO)
+  permissions: GroupChatPermissionsDTO
+}
+
+export class FetchGroupChatPermissionsDTO {
+  @IsNumber()
+  @Type(() => Number)
+  groupChatId: number
 }

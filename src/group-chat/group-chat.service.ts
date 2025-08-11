@@ -1,27 +1,36 @@
 import { PrismaService } from '@/configs/db/prisma.service'
 import { S3UploadService } from '@/upload/s3-upload.service'
 import { EInternalEvents, EProviderTokens } from '@/utils/enums'
-import { Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common'
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common'
 import type { Prisma } from '@prisma/client'
 import type {
   TFetchGroupChatData,
+  TFetchGroupChatPermissionsRes,
   TFetchGroupChatsData,
   TUploadGroupChatAvatar,
 } from './group-chat.type'
-import { UpdateGroupChatDTO } from './group-chat.dto'
+import { GroupChatPermissionsDTO, UpdateGroupChatDTO } from './group-chat.dto'
 import { EGroupChatMessages } from './group-chat.message'
-import { EGroupChatRoles } from './group-chat.enum'
+import { EGroupChatPermissions, EGroupChatRoles } from './group-chat.enum'
 import type { TGroupChat } from '@/utils/entities/group-chat.entity'
 import { TUserWithProfile } from '@/utils/entities/user.entity'
 import { EventEmitter2 } from '@nestjs/event-emitter'
-import { EGroupMemberPermissions } from '@/group-member/group-member.enum'
+import { GroupMemberService } from '@/group-member/group-member.service'
+import { EGroupMemberMessages } from '@/group-member/group-member.message'
 
 @Injectable()
 export class GroupChatService {
   constructor(
     private readonly s3UploadService: S3UploadService,
     @Inject(EProviderTokens.PRISMA_CLIENT) private prismaService: PrismaService,
-    private readonly eventEmitter: EventEmitter2
+    private readonly eventEmitter: EventEmitter2,
+    private readonly groupMemberService: GroupMemberService
   ) {}
 
   async findGroupChatById(groupId: number): Promise<TGroupChat | null> {
@@ -64,12 +73,11 @@ export class GroupChatService {
             joinedBy: creatorId,
           })),
         },
-        GroupMemberPermission: {
+        GroupChatPermission: {
           create: {
             sendMessage: true,
             pinMessage: true,
-            addMember: true,
-            removeMember: true,
+            shareInviteCode: true,
             updateInfo: true,
           },
         },
@@ -147,28 +155,63 @@ export class GroupChatService {
     userId: number,
     updates: Partial<UpdateGroupChatDTO>
   ): Promise<TGroupChat> {
+    const member = await this.groupMemberService.getGroupChatMember(groupChatId, userId)
+    if (!member) {
+      throw new NotFoundException(EGroupMemberMessages.MEMBER_INFO_NOT_FOUND)
+    }
+    if (member.role !== EGroupChatRoles.ADMIN) {
+      const permission = await this.checkGroupChatPermission(
+        groupChatId,
+        EGroupChatPermissions.UPDATE_INFO
+      )
+      if (!permission) {
+        throw new BadRequestException(EGroupChatMessages.USER_HAS_NO_PERMISSION_UPDATE_GROUP_CHAT)
+      }
+    }
     const { avatarUrl, groupName } = updates
     const groupChat = await this.prismaService.groupChat.update({
-      where: { id: groupChatId, creatorId: userId },
+      where: { id: groupChatId },
       data: { avatarUrl, name: groupName },
     })
     return groupChat
   }
 
-  async updateGroupChatPermission(
+  async updateGroupChatPermissions(
     groupChatId: number,
-    permissions: EGroupMemberPermissions[]
+    permissions: GroupChatPermissionsDTO
   ): Promise<void> {
-    const permissionData: Prisma.GroupMemberPermissionUpdateInput = permissions.reduce(
-      (acc, permission) => {
-        acc[permission] = true
-        return acc
-      },
-      {} as Prisma.GroupMemberPermissionUpdateInput
-    )
-    await this.prismaService.groupMemberPermission.update({
+    await this.prismaService.groupChatPermission.update({
       where: { groupChatId },
-      data: permissionData,
+      data: permissions,
     })
+  }
+
+  async checkGroupChatPermission(
+    groupChatId: number,
+    permission: EGroupChatPermissions
+  ): Promise<boolean> {
+    const groupChatPermission = await this.prismaService.groupChatPermission.findUnique({
+      where: { groupChatId },
+    })
+    if (!groupChatPermission) return true
+    return groupChatPermission[permission]
+  }
+
+  async fetchGroupChatPermissions(groupChatId: number): Promise<TFetchGroupChatPermissionsRes> {
+    const groupChatPermission = await this.prismaService.groupChatPermission.findUnique({
+      where: { groupChatId },
+      select: {
+        sendMessage: true,
+        pinMessage: true,
+        shareInviteCode: true,
+        updateInfo: true,
+      },
+    })
+    if (!groupChatPermission) {
+      throw new NotFoundException(EGroupChatMessages.GROUP_CHAT_PERMISSION_NOT_FOUND)
+    }
+    return {
+      permissions: groupChatPermission,
+    }
   }
 }

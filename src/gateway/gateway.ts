@@ -71,8 +71,8 @@ import { UserSettingsService } from '@/user-settings/user-settings.service'
 import { BlockUserService } from '@/user/block-user.service'
 import { EUserSettingsMessages } from '@/user-settings/user-settings.message'
 import { EUserMessages } from '@/user/user.message'
-import { EGroupMemberPermissions } from '@/group-member/group-member.enum'
 import { EGroupMemberMessages } from '@/group-member/group-member.message'
+import { EGroupChatPermissions, EGroupChatRoles } from '@/group-chat/group-chat.enum'
 
 @WebSocketGateway({
   cors: {
@@ -491,18 +491,20 @@ export class AppGateway
     messageType: EMessageTypeAllTypes,
     groupChatId: number
   ): Promise<TCheckCanSendMessageInGroupChat> {
-    const hasPermission = await this.groupMemberService.checkMemberPermission(
-      groupChatId,
-      messageType === EMessageTypeAllTypes.PIN_NOTICE
-        ? EGroupMemberPermissions.PIN_MESSAGE
-        : EGroupMemberPermissions.SEND_MESSAGE
-    )
-    if (!hasPermission) {
-      throw new BadGatewayException(EGroupMemberMessages.USER_HAS_NO_PERMISSION_SEND_MESSAGE)
-    }
     const member = await this.groupMemberService.findMemberInGroupChat(groupChatId, clientId)
     if (!member) {
       throw new BadGatewayException(EGatewayMessages.USER_NOT_IN_GROUP_CHAT)
+    }
+    if (member.role !== EGroupChatRoles.ADMIN) {
+      const hasPermission = await this.groupChatService.checkGroupChatPermission(
+        groupChatId,
+        messageType === EMessageTypeAllTypes.PIN_NOTICE
+          ? EGroupChatPermissions.PIN_MESSAGE
+          : EGroupChatPermissions.SEND_MESSAGE
+      )
+      if (!hasPermission) {
+        throw new BadGatewayException(EGroupMemberMessages.USER_HAS_NO_PERMISSION_SEND_MESSAGE)
+      }
     }
     return { member }
   }
