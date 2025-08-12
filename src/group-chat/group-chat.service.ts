@@ -24,6 +24,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter'
 import { GroupMemberService } from '@/group-member/group-member.service'
 import { EGroupMemberMessages } from '@/group-member/group-member.message'
 import { typeToRawObject } from '@/utils/helpers'
+import type { Express } from 'express'
 
 @Injectable()
 export class GroupChatService {

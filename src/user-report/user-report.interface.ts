@@ -1,4 +1,5 @@
 import { CreateViolationReportDTO } from './user-report.dto'
+import type { Express } from 'express'
 
 export interface IUserReportService {
   createViolationReport(

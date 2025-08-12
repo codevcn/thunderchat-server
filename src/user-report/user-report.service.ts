@@ -8,6 +8,7 @@ import { DevLogger } from '@/dev/dev-logger'
 import { EUserReportMessages } from './user-report.message'
 import { IUserReportService } from './user-report.interface'
 import { EReportedMessageTypes } from './user-report.enum'
+import type { Express } from 'express'
 
 @Injectable()
 export class UserReportService implements IUserReportService {

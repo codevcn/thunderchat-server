@@ -3,6 +3,7 @@ import { DeleteObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client
 import { Injectable } from '@nestjs/common'
 import { createReadStream } from 'fs'
 import { FileService } from './file.service'
+import type { Express } from 'express'
 
 @Injectable()
 export class S3UploadService {

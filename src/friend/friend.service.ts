@@ -5,7 +5,7 @@ import type { TSignatureObject } from '@/utils/types'
 import { Inject, Injectable } from '@nestjs/common'
 import { GetFriendsDTO } from './friend.dto'
 import type { TGetFriendsData } from './friend.type'
-import { countMutualFriends } from '@prisma/client/sql'
+// import { countMutualFriends } from '@prisma/client/sql'
 
 @Injectable()
 export class FriendService {
@@ -22,16 +22,16 @@ export class FriendService {
     })
   }
 
-  /**
-   * Count how many mutual friends the user have with a friend
-   * @param userId who is "the user" want to check number of mutual friends
-   * @param friendId who is "the opponent" for "the user" to check
-   * @returns number of mutual friends between "the user" and "the opponent"
-   */
-  async countMutualFriend(userId: number, friendId: number): Promise<number> {
-    const res = await this.PrismaService.$queryRawTyped(countMutualFriends(userId, friendId))
-    return Number(res[0].mutualFriends)
-  }
+  // /**
+  //  * Count how many mutual friends the user have with a friend
+  //  * @param userId who is "the user" want to check number of mutual friends
+  //  * @param friendId who is "the opponent" for "the user" to check
+  //  * @returns number of mutual friends between "the user" and "the opponent"
+  //  */
+  // async countMutualFriend(userId: number, friendId: number): Promise<number> {
+  //   const res = await this.PrismaService.$queryRawTyped(countMutualFriends(userId, friendId))
+  //   return Number(res[0].mutualFriends)
+  // }
 
   async isFriend(userId: number, friendId: number): Promise<boolean> {
     return !!(await this.findByIds(userId, friendId))

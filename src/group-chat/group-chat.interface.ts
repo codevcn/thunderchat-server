@@ -28,6 +28,7 @@ import type {
   TGroupJoinRequest,
   TGroupChatWithCreator,
 } from '@/utils/entities/group-chat.entity'
+import type { Express } from 'express'
 
 export interface IGroupChatsController {
   uploadGroupChatAvatar(file: Express.Multer.File): Promise<TUploadGroupChatAvatar>

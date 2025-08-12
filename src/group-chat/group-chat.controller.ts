@@ -40,6 +40,7 @@ import { EGroupChatRoles } from './group-chat.enum'
 import { GroupChatRoleGuard } from '@/auth/role/group-chat/group-chat-role.guard'
 import { InviteCodeService } from './invite-code.service'
 import { JoinRequestsService } from './join-requests.service'
+import type { Express } from 'express'
 
 @Controller(ERoutes.GROUP_CHAT)
 @UseGuards(AuthGuard)

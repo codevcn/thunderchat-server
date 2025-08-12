@@ -16,6 +16,7 @@ import { EUserReportMessages } from './user-report.message'
 import { UserReportExceptionFilter } from './user-report.exception-filter'
 import { DevLogger } from '@/dev/dev-logger'
 import { TUserWithProfile } from '@/utils/entities/user.entity'
+import type { Express } from 'express'
 
 @Controller('user-report')
 @UseFilters(UserReportExceptionFilter)
