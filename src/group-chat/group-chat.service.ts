@@ -23,6 +23,7 @@ import { TUserWithProfile } from '@/utils/entities/user.entity'
 import { EventEmitter2 } from '@nestjs/event-emitter'
 import { GroupMemberService } from '@/group-member/group-member.service'
 import { EGroupMemberMessages } from '@/group-member/group-member.message'
+import { typeToRawObject } from '@/utils/helpers'
 
 @Injectable()
 export class GroupChatService {
@@ -182,6 +183,14 @@ export class GroupChatService {
       where: { id: groupChatId },
       data: { avatarUrl, name: groupName },
     })
+    this.eventEmitter.emit(
+      EInternalEvents.UPDATE_GROUP_CHAT_INFO,
+      groupChatId,
+      typeToRawObject<Partial<TGroupChat>>({
+        avatarUrl,
+        name: groupName,
+      })
+    )
     return groupChat
   }
 

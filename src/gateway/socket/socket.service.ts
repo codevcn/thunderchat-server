@@ -188,22 +188,21 @@ export class SocketService {
     this.server.emit(EClientSocketEvents.broadcast_user_online_status, userId, onlineStatus)
   }
 
-  broadcastAddMembersToGroupChat(
-    groupChat: TGroupChat,
-    groupMemberIds: number[],
-    executor: TUserWithProfile
-  ) {
-    this.broadcastCreateGroupChat(groupChat, groupMemberIds, executor)
+  broadcastAddMembersToGroupChat(groupChat: TGroupChat, groupMemberIds: number[]) {
+    this.server
+      .to(createGroupChatRoomName(groupChat.id))
+      .emit(EClientSocketEvents.add_group_chat_members, groupMemberIds, groupChat)
   }
 
   broadcastRemoveGroupChatMembers(groupChat: TGroupChat, groupMemberIds: number[]) {
-    for (const groupMemberId of groupMemberIds) {
-      const groupMemberSockets = this.getConnectedClient<IEmitSocketEvents>(groupMemberId)
-      if (groupMemberSockets && groupMemberSockets.length > 0) {
-        for (const socket of groupMemberSockets) {
-          socket.emit(EClientSocketEvents.remove_group_chat_members, groupMemberIds, groupChat)
-        }
-      }
-    }
+    this.server
+      .to(createGroupChatRoomName(groupChat.id))
+      .emit(EClientSocketEvents.remove_group_chat_members, groupMemberIds, groupChat)
+  }
+
+  broadcastUpdateGroupChat(groupChatId: number, groupChat: Partial<TGroupChat>) {
+    this.server
+      .to(createGroupChatRoomName(groupChatId))
+      .emit(EClientSocketEvents.update_group_chat_info, groupChatId, groupChat)
   }
 }

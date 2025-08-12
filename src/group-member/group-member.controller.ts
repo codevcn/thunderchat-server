@@ -22,12 +22,12 @@ import { User } from '@/user/user.decorator'
 export class GroupMemberController implements IGroupMemberController {
   constructor(private readonly groupMemberService: GroupMemberService) {}
 
-  @Get('fetch-group-chat-members')
+  @Post('fetch-group-chat-members')
   @UseGuards(GroupChatRoleGuard)
   @GroupChatRoles(EGroupChatRoles.ADMIN, EGroupChatRoles.MEMBER)
-  async fetchGroupChatMembers(@Query() query: FetchGroupChatMembersDTO) {
-    const { groupChatId } = query
-    return await this.groupMemberService.fetchGroupChatMembers(groupChatId)
+  async fetchGroupChatMembers(@Body() body: FetchGroupChatMembersDTO) {
+    const { groupChatId, memberIds } = body
+    return await this.groupMemberService.fetchGroupChatMembers(groupChatId, memberIds)
   }
 
   @Get('search-group-chat-members')

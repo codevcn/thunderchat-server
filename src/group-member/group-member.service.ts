@@ -41,9 +41,12 @@ export class GroupMemberService {
     })
   }
 
-  async fetchGroupChatMembers(groupChatId: number): Promise<TGroupChatMemberWithUser[]> {
+  async fetchGroupChatMembers(
+    groupChatId: number,
+    memberIds: number[]
+  ): Promise<TGroupChatMemberWithUser[]> {
     const members = await this.prismaService.groupChatMember.findMany({
-      where: { groupChatId },
+      where: { groupChatId, userId: { in: memberIds } },
       include: {
         User: {
           include: { Profile: true },
@@ -137,12 +140,7 @@ export class GroupMemberService {
       where: { groupChatId, userId: { in: memberIds } },
       include: { User: { include: { Profile: true } } },
     })
-    this.eventEmitter.emit(
-      EInternalEvents.ADD_MEMBERS_TO_GROUP_CHAT,
-      groupChat,
-      memberIds,
-      executor
-    )
+    this.eventEmitter.emit(EInternalEvents.ADD_MEMBERS_TO_GROUP_CHAT, groupChat, memberIds)
     return addedMembers
   }
 

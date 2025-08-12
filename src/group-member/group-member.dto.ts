@@ -5,6 +5,10 @@ export class FetchGroupChatMembersDTO {
   @IsNumber()
   @Type(() => Number)
   groupChatId: number
+
+  @IsArray()
+  @IsNumber({}, { each: true })
+  memberIds: number[]
 }
 
 export class RemoveGroupChatMemberDTO {

@@ -20,4 +20,6 @@ export enum EClientSocketEvents {
   check_user_online_status = 'check_user_online_status',
   join_direct_chat_room = 'join_direct_chat_room',
   remove_group_chat_members = 'remove_group_chat_members',
+  add_group_chat_members = 'add_group_chat_members',
+  update_group_chat_info = 'update_group_chat_info',
 }
