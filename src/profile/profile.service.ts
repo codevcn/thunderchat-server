@@ -1,13 +1,15 @@
 import { Injectable, Inject } from '@nestjs/common'
-import { EProviderTokens } from '@/utils/enums'
+import { EInternalEvents, EProviderTokens } from '@/utils/enums'
 import { PrismaService } from '@/configs/db/prisma.service'
 import { UpdateProfileDto } from './profile.dto'
+import { EventEmitter2 } from '@nestjs/event-emitter'
 
 @Injectable()
 export class ProfileService {
   constructor(
     @Inject(EProviderTokens.PRISMA_CLIENT)
-    private prisma: PrismaService
+    private prisma: PrismaService,
+    private eventEmitter: EventEmitter2
   ) {}
 
   async updateProfile(userId: number, dto: UpdateProfileDto) {
@@ -22,6 +24,7 @@ export class ProfileService {
     if (data.birthday === '' || !data.birthday) {
       delete data.birthday
     }
+    this.eventEmitter.emit(EInternalEvents.UPDATE_USER_INFO, userId, dto)
     return this.prisma.profile.update({
       where: { userId },
       data,

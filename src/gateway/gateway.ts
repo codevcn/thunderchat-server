@@ -73,6 +73,9 @@ import { EUserSettingsMessages } from '@/user-settings/user-settings.message'
 import { EUserMessages } from '@/user/user.message'
 import { EGroupMemberMessages } from '@/group-member/group-member.message'
 import { EGroupChatPermissions, EGroupChatRoles } from '@/group-chat/group-chat.enum'
+import { TUserId } from '@/user/user.type'
+import { UserConnectionService } from '@/connection/user-connection.service'
+import { UpdateProfileDto } from '@/profile/profile.dto'
 
 @WebSocketGateway({
   cors: {
@@ -106,7 +109,8 @@ export class AppGateway
     private groupChatService: GroupChatService,
     private groupMemberService: GroupMemberService,
     private userSettingsService: UserSettingsService,
-    private blockUserService: BlockUserService
+    private blockUserService: BlockUserService,
+    private userConnectionService: UserConnectionService
   ) {}
 
   /**
@@ -638,8 +642,17 @@ export class AppGateway
     @MessageBody() data: JoinDirectChatDTO,
     @ConnectedSocket() client: TClientSocket
   ) {
+    const { clientId } = await this.authService.validateSocketAuth(client)
     const { directChatId } = data
     client.join(createDirectChatRoomName(directChatId))
+    const directChat = await this.directChatService.findById(directChatId)
+    if (directChat) {
+      this.userConnectionService.setUserChattingConnection(
+        clientId,
+        directChat.recipientId,
+        directChatId
+      )
+    }
     return {
       success: true,
     }
@@ -667,5 +680,13 @@ export class AppGateway
   @OnEvent(EInternalEvents.UPDATE_GROUP_CHAT_INFO)
   async broadcastUpdateGroupChat(groupChatId: number, groupChat: Partial<TGroupChat>) {
     this.socketService.broadcastUpdateGroupChat(groupChatId, groupChat)
+  }
+
+  @OnEvent(EInternalEvents.UPDATE_USER_INFO)
+  async broadcastUpdateUserInfo(userId: number, updates: UpdateProfileDto) {
+    const directChatId = this.userConnectionService.getUserChattingConnection(userId)
+    if (directChatId) {
+      this.socketService.broadcastUpdateUserInfo(directChatId, userId, updates)
+    }
   }
 }

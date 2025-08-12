@@ -18,11 +18,10 @@ import type {
   TFetchGroupChatData,
   TFetchGroupChatsData,
   TUploadGroupChatAvatar,
-  TJoinGroupChatByInviteLink,
-  TCreateNewInviteLink,
   TFetchGroupChatPermissionsRes,
+  TCreateNewInviteCode,
 } from './group-chat.type'
-import type { TUser } from '@/utils/entities/user.entity'
+import type { TUser, TUserWithProfile } from '@/utils/entities/user.entity'
 import type {
   TGroupChat,
   TGroupJoinRequestWithUser,
@@ -37,7 +36,7 @@ export interface IGroupChatsController {
   fetchGroupChat(query: FetchGroupChatDTO, user: TUser): Promise<TFetchGroupChatData>
   fetchGroupChats(query: FetchGroupChatsDTO, user: TUser): Promise<TFetchGroupChatsData[]>
   updateGroupChat(body: UpdateGroupChatDTO, user: TUser): Promise<TSuccess>
-  createInviteLink(body: CreateInviteLinkDTO): Promise<TCreateNewInviteLink>
+  createInviteLink(body: CreateInviteLinkDTO): Promise<TCreateNewInviteCode>
   // joinGroupChatByInviteLink(
   //   query: JoinGroupByInviteLinkDTO,
   //   user: TUser
@@ -48,7 +47,10 @@ export interface IGroupChatsController {
   ): Promise<TFetchGroupChatPermissionsRes>
   fetchJoinRequests(query: FetchJoinRequestsDTO): Promise<TGroupJoinRequestWithUser[]>
   createJoinRequest(body: CreateJoinRequestDTO, user: TUser): Promise<TGroupJoinRequestWithUser>
-  processJoinRequest(body: ProcessJoinRequestDTO): Promise<TGroupJoinRequest>
+  processJoinRequest(
+    body: ProcessJoinRequestDTO,
+    user: TUserWithProfile
+  ): Promise<TGroupJoinRequest>
   fetchGroupChatByInviteCode(
     query: FetchGroupChatByInviteCodeDTO
   ): Promise<TGroupChatWithCreator | null>

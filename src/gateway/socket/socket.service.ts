@@ -14,6 +14,7 @@ import { TGroupChat } from '@/utils/entities/group-chat.entity'
 import { TDirectChat } from '@/utils/entities/direct-chat.entity'
 import { EChatType, EUserOnlineStatus } from '@/utils/enums'
 import { createDirectChatRoomName, createGroupChatRoomName } from '@/utils/helpers'
+import { UpdateProfileDto } from '@/profile/profile.dto'
 
 @Injectable()
 export class SocketService {
@@ -204,5 +205,11 @@ export class SocketService {
     this.server
       .to(createGroupChatRoomName(groupChatId))
       .emit(EClientSocketEvents.update_group_chat_info, groupChatId, groupChat)
+  }
+
+  broadcastUpdateUserInfo(directChatId: number, updatedUserId: TUserId, updates: UpdateProfileDto) {
+    this.server
+      .to(createDirectChatRoomName(directChatId))
+      .emit(EClientSocketEvents.update_user_info, directChatId, updatedUserId, updates)
   }
 }

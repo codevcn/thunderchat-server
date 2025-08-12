@@ -38,7 +38,7 @@ import { AuthGuard } from '@/auth/auth.guard'
 import { GroupChatRoles } from '@/auth/role/group-chat/group-chat-role.decorator'
 import { EGroupChatRoles } from './group-chat.enum'
 import { GroupChatRoleGuard } from '@/auth/role/group-chat/group-chat-role.guard'
-import { InviteLinkService } from './invite-link.service'
+import { InviteCodeService } from './invite-code.service'
 import { JoinRequestsService } from './join-requests.service'
 
 @Controller(ERoutes.GROUP_CHAT)
@@ -48,7 +48,7 @@ export class GroupChatController implements IGroupChatsController {
 
   constructor(
     private readonly groupChatService: GroupChatService,
-    private readonly inviteLinkService: InviteLinkService,
+    private readonly inviteCodeService: InviteCodeService,
     private readonly joinRequestsService: JoinRequestsService
   ) {}
 
@@ -109,7 +109,7 @@ export class GroupChatController implements IGroupChatsController {
   @GroupChatRoles(EGroupChatRoles.ADMIN)
   async createInviteLink(@Body() body: CreateInviteLinkDTO) {
     const { groupChatId } = body
-    return await this.inviteLinkService.createNewInviteLinkForGroupChat(groupChatId)
+    return await this.inviteCodeService.createNewInviteCodeForGroupChat(groupChatId)
   }
 
   // @Get('join-group-by-invite-link')
@@ -156,9 +156,9 @@ export class GroupChatController implements IGroupChatsController {
   @Put('process-join-request')
   @UseGuards(GroupChatRoleGuard)
   @GroupChatRoles(EGroupChatRoles.ADMIN)
-  async processJoinRequest(@Body() body: ProcessJoinRequestDTO) {
+  async processJoinRequest(@Body() body: ProcessJoinRequestDTO, @User() user: TUserWithProfile) {
     const { joinRequestId, status } = body
-    return await this.joinRequestsService.processJoinRequest(joinRequestId, status)
+    return await this.joinRequestsService.processJoinRequest(joinRequestId, status, user)
   }
 
   @Get('fetch-group-chat-by-invite-code')

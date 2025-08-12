@@ -29,7 +29,10 @@ export class DirectChatController implements IDirectChatsController {
 
   @Get('fetch/:conversationId')
   async fetchDirectChat(@Param() params: FetchDirectChatDTO, @User() user: TUserWithProfile) {
-    const directChat = await this.conversationService.findById(params.conversationId, user.id)
+    const directChat = await this.conversationService.findByDirectChatIdAndUserId(
+      params.conversationId,
+      user.id
+    )
     if (!directChat) {
       throw new NotFoundException(EDirectChatMessages.DIRECT_CHAT_NOT_FOUND)
     }

@@ -18,7 +18,7 @@ import { TUserWithProfile } from '@/utils/entities/user.entity'
 @Injectable()
 export class GroupMemberService {
   private readonly MAX_ADD_MEMBER_AT_ONCE: number = 10
-  private readonly MAX_ADD_MEMBER_TOTAL: number = 100
+  private readonly MAX_ADD_MEMBER_TOTAL: number = 1000
   private readonly MIN_MEMBER_IN_GROUP_CHAT: number = 2
 
   constructor(

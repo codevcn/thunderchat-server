@@ -149,3 +149,7 @@ export function createDirectChatRoomName(directChatId: number): string {
 export function createGroupChatRoomName(groupChatId: number): string {
   return `group_chat_room-${groupChatId}`
 }
+
+export const isEmptyJSON = (json: object): boolean => {
+  return Object.keys(json).length === 0
+}

@@ -5,8 +5,9 @@ import { S3UploadService } from '@/upload/s3-upload.service'
 import { UserModule } from '@/user/user.module'
 import { GroupMemberService } from '@/group-member/group-member.service'
 import { DirectMessageModule } from '@/direct-message/direct-message.module'
-import { InviteLinkService } from './invite-link.service'
+import { InviteCodeService } from './invite-code.service'
 import { JoinRequestsService } from './join-requests.service'
+import { SocketService } from '@/gateway/socket/socket.service'
 
 @Module({
   imports: [UserModule, DirectMessageModule],
@@ -15,15 +16,17 @@ import { JoinRequestsService } from './join-requests.service'
     GroupChatService,
     S3UploadService,
     GroupMemberService,
-    InviteLinkService,
+    InviteCodeService,
     JoinRequestsService,
+    SocketService,
   ],
   exports: [
     GroupChatService,
     S3UploadService,
     GroupMemberService,
-    InviteLinkService,
+    InviteCodeService,
     JoinRequestsService,
+    SocketService,
   ],
 })
 export class GroupChatModule {}

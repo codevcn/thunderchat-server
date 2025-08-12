@@ -2,33 +2,33 @@ import { PrismaService } from '@/configs/db/prisma.service'
 import { EGroupChatMessages } from '@/group-chat/group-chat.message'
 import { EGroupChatRoles } from '@/group-chat/group-chat.enum'
 import { EProviderTokens } from '@/utils/enums'
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
+import { Injectable, NotFoundException } from '@nestjs/common'
 import { Inject } from '@nestjs/common'
 import crypto from 'crypto'
 import type {
-  TCreateNewInviteLink,
-  TGenerateInviteLink,
-  TJoinGroupChatByInviteLink,
+  TCreateNewInviteCode,
+  TGenerateInviteCode,
+  TJoinGroupChatByInviteCode,
 } from './group-chat.type'
 
 @Injectable()
-export class InviteLinkService {
+export class InviteCodeService {
   constructor(@Inject(EProviderTokens.PRISMA_CLIENT) private prismaService: PrismaService) {}
 
-  private generateInviteLink(groupChatId: number): TGenerateInviteLink {
+  private generateInviteCode(groupChatId: number): TGenerateInviteCode {
     const randomHash = crypto.randomBytes(8).toString('hex')
     const token = `${randomHash}-${groupChatId}`
     return { token }
   }
 
-  async createNewInviteLinkForGroupChat(groupChatId: number): Promise<TCreateNewInviteLink> {
+  async createNewInviteCodeForGroupChat(groupChatId: number): Promise<TCreateNewInviteCode> {
     const group = await this.prismaService.groupChat.findUnique({
       where: { id: groupChatId },
       include: { Members: true },
     })
     if (!group) throw new NotFoundException(EGroupChatMessages.GROUP_CHAT_NOT_FOUND)
 
-    const { token } = this.generateInviteLink(groupChatId)
+    const { token } = this.generateInviteCode(groupChatId)
 
     await this.prismaService.groupChat.update({
       where: { id: groupChatId },
@@ -38,10 +38,10 @@ export class InviteLinkService {
     return { inviteCode: token }
   }
 
-  async joinGroupChatByInviteLink(
+  async joinGroupChatByInviteCode(
     token: string,
     userId: number
-  ): Promise<TJoinGroupChatByInviteLink> {
+  ): Promise<TJoinGroupChatByInviteCode> {
     const group = await this.prismaService.groupChat.findUnique({
       where: { inviteCode: token },
     })

@@ -62,7 +62,8 @@ export interface IEmitSocketEvents {
     newMemberIds: number[],
     groupChat: TGroupChat
   ) => void
-  [EClientSocketEvents.update_group_chat_info]: (groupChat: Partial<TGroupChat>) => void
+  [EClientSocketEvents.update_group_chat_info]: () => void // not used
+  [EClientSocketEvents.update_user_info]: () => void // not used
   [EClientSocketEvents.check_user_online_status]: () => void // not used
   [EClientSocketEvents.send_message_group]: () => void // not used
   [EClientSocketEvents.join_group_chat_room]: () => void // not used

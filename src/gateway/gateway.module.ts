@@ -9,6 +9,7 @@ import { GroupChatModule } from '@/group-chat/group-chat.module'
 import { DirectChatsModule } from '@/direct-chat/direct-chat.module'
 import { UserSettingsModule } from '@/user-settings/user-settings.module'
 import { FriendModule } from '@/friend/friend.module'
+import { UserConnectionService } from '@/connection/user-connection.service'
 
 @Module({
   imports: [
@@ -21,6 +22,6 @@ import { FriendModule } from '@/friend/friend.module'
     UserSettingsModule,
     FriendModule,
   ],
-  providers: [AppGateway, FriendService],
+  providers: [AppGateway, FriendService, UserConnectionService],
 })
 export class GatewayModule {}

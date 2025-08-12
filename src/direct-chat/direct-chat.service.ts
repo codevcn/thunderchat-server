@@ -13,7 +13,16 @@ import type { TDirectChat } from '@/utils/entities/direct-chat.entity'
 export class DirectChatService {
   constructor(@Inject(EProviderTokens.PRISMA_CLIENT) private PrismaService: PrismaService) {}
 
-  async findById(id: number, userId: number): Promise<TFindDirectChatData | null> {
+  async findById(id: number): Promise<TDirectChat | null> {
+    return await this.PrismaService.directChat.findUnique({
+      where: { id },
+    })
+  }
+
+  async findByDirectChatIdAndUserId(
+    id: number,
+    userId: number
+  ): Promise<TFindDirectChatData | null> {
     return await this.PrismaService.directChat.findUnique({
       where: { id, OR: [{ creatorId: userId }, { recipientId: userId }] },
       include: {

@@ -1,17 +1,25 @@
 import { PrismaService } from '@/configs/db/prisma.service'
-import { TGroupJoinRequest, TGroupJoinRequestWithUser } from '@/utils/entities/group-chat.entity'
-import { EProviderTokens } from '@/utils/enums'
+import type {
+  TGroupJoinRequest,
+  TGroupJoinRequestWithUser,
+} from '@/utils/entities/group-chat.entity'
+import { EChatType, EProviderTokens } from '@/utils/enums'
 import { BadRequestException, Inject, Injectable } from '@nestjs/common'
 import { EJoinRequestStatus } from './group-chat.enum'
 import { EGroupMemberMessages } from '@/group-member/group-member.message'
 import { GroupMemberService } from '@/group-member/group-member.service'
 import { EGroupChatMessages } from './group-chat.message'
+import { SocketService } from '@/gateway/socket/socket.service'
+import { IEmitSocketEvents } from '@/gateway/gateway.interface'
+import { EClientSocketEvents } from '@/gateway/gateway.event'
+import { TUserWithProfile } from '@/utils/entities/user.entity'
 
 @Injectable()
 export class JoinRequestsService {
   constructor(
     @Inject(EProviderTokens.PRISMA_CLIENT) private prismaService: PrismaService,
-    private readonly groupMemberService: GroupMemberService
+    private readonly groupMemberService: GroupMemberService,
+    private readonly socketService: SocketService
   ) {}
 
   async fetchJoinRequests(
@@ -72,7 +80,8 @@ export class JoinRequestsService {
 
   async processJoinRequest(
     joinRequestId: number,
-    status: EJoinRequestStatus
+    status: EJoinRequestStatus,
+    executor: TUserWithProfile
   ): Promise<TGroupJoinRequest> {
     const joinRequest = await this.prismaService.groupJoinRequest.update({
       where: { id: joinRequestId },
@@ -83,14 +92,32 @@ export class JoinRequestsService {
             Profile: true,
           },
         },
+        GroupChat: true,
       },
     })
     if (joinRequest.status === EJoinRequestStatus.APPROVED) {
-      await this.groupMemberService.addMembersToGroupChat(
+      const addedMembers = await this.groupMemberService.addMembersToGroupChat(
         joinRequest.groupChatId,
         [joinRequest.userId],
         joinRequest.Requester
       )
+      for (const member of addedMembers) {
+        const clientSockets = this.socketService.getConnectedClient<IEmitSocketEvents>(
+          member.userId
+        )
+        if (clientSockets && clientSockets.length > 0) {
+          for (const clientSocket of clientSockets) {
+            clientSocket.emit(
+              EClientSocketEvents.new_conversation,
+              null,
+              joinRequest.GroupChat,
+              EChatType.GROUP,
+              null,
+              executor
+            )
+          }
+        }
+      }
     }
     return joinRequest
   }

@@ -5,7 +5,7 @@ import { TGroupChat } from './group-chat.entity'
 
 export type TGroupChatMember = GroupChatMember
 
-export type TGroupChatMemberWithUser = Omit<TGroupChatMember, 'userId'> & {
+export type TGroupChatMemberWithUser = TGroupChatMember & {
   User: TUser & {
     Profile: TProfile | null
   }

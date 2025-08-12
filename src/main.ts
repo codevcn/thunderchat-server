@@ -32,7 +32,7 @@ async function bootstrap() {
 
   await clearLogFiles()
 
-  await app.listen(PORT || 8080)
+  await app.listen(PORT || 8080, '0.0.0.0')
   console.log('>>> Server is working on PORT', PORT)
 }
 

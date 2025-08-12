@@ -17,15 +17,15 @@ export type TFetchGroupChatsData = TGroupChat & {
   Creator: TUserWithProfile
 }
 
-export type TGenerateInviteLink = {
+export type TGenerateInviteCode = {
   token: string
 }
 
-export type TCreateNewInviteLink = {
+export type TCreateNewInviteCode = {
   inviteCode: string
 }
 
-export type TJoinGroupChatByInviteLink = {
+export type TJoinGroupChatByInviteCode = {
   groupChatId: number
   message?: string
 }
