@@ -172,6 +172,7 @@ export class AppGateway
     if (userId) {
       this.socketService.removeConnectedClient(userId, client.id)
       this.socketService.broadcastUserOnlineStatus(userId, EUserOnlineStatus.OFFLINE)
+      this.userConnectionService.removeChattingConnection(userId)
       this.messageTokensManager.removeAllTokens(userId)
     }
   }
@@ -642,13 +643,12 @@ export class AppGateway
     @MessageBody() data: JoinDirectChatDTO,
     @ConnectedSocket() client: TClientSocket
   ) {
-    const { clientId } = await this.authService.validateSocketAuth(client)
     const { directChatId } = data
     client.join(createDirectChatRoomName(directChatId))
     const directChat = await this.directChatService.findById(directChatId)
     if (directChat) {
       this.userConnectionService.setUserChattingConnection(
-        clientId,
+        directChat.creatorId,
         directChat.recipientId,
         directChatId
       )
@@ -684,9 +684,26 @@ export class AppGateway
 
   @OnEvent(EInternalEvents.UPDATE_USER_INFO)
   async broadcastUpdateUserInfo(userId: number, updates: UpdateProfileDto) {
-    const directChatId = this.userConnectionService.getUserChattingConnection(userId)
-    if (directChatId) {
-      this.socketService.broadcastUpdateUserInfo(directChatId, userId, updates)
+    const directChatIds = this.userConnectionService.getUserChattingConnection(userId)
+    if (directChatIds) {
+      for (const directChatId of directChatIds) {
+        this.socketService.broadcastUpdateUserInfo(directChatId, userId, updates)
+      }
     }
+  }
+
+  @OnEvent(EInternalEvents.DELETE_DIRECT_CHAT)
+  async broadcastDeleteDirectChat(directChatId: number, deleter: TUserWithProfile) {
+    this.socketService.broadcastDeleteDirectChat(directChatId, deleter)
+  }
+
+  @OnEvent(EInternalEvents.DELETE_GROUP_CHAT)
+  async broadcastDeleteGroupChat(groupChatId: number) {
+    this.socketService.broadcastDeleteGroupChat(groupChatId)
+  }
+
+  @OnEvent(EInternalEvents.MEMBER_LEAVE_GROUP_CHAT)
+  async broadcastMemberLeaveGroupChat(groupChatId: number, userId: number) {
+    this.socketService.broadcastMemberLeaveGroupChat(groupChatId, userId)
   }
 }

@@ -138,3 +138,15 @@ export class FetchGroupChatByInviteCodeDTO {
   @IsString()
   inviteCode: string
 }
+
+export class LeaveGroupChatDTO {
+  @IsNumber()
+  @Type(() => Number)
+  groupChatId: number
+}
+
+export class DeleteGroupChatDTO {
+  @IsNumber()
+  @Type(() => Number)
+  groupChatId: number
+}

@@ -212,4 +212,22 @@ export class SocketService {
       .to(createDirectChatRoomName(directChatId))
       .emit(EClientSocketEvents.update_user_info, directChatId, updatedUserId, updates)
   }
+
+  broadcastDeleteDirectChat(directChatId: number, deleter: TUserWithProfile) {
+    this.server
+      .to(createDirectChatRoomName(directChatId))
+      .emit(EClientSocketEvents.delete_direct_chat, directChatId, deleter)
+  }
+
+  broadcastDeleteGroupChat(groupChatId: number) {
+    this.server
+      .to(createGroupChatRoomName(groupChatId))
+      .emit(EClientSocketEvents.delete_group_chat, groupChatId)
+  }
+
+  broadcastMemberLeaveGroupChat(groupChatId: number, userId: number) {
+    this.server
+      .to(createGroupChatRoomName(groupChatId))
+      .emit(EClientSocketEvents.member_leave_group_chat, groupChatId, userId)
+  }
 }

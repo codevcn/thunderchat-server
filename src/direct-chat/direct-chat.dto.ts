@@ -26,6 +26,14 @@ export class FindConversationWithOtherUserDTO {
   @Type(() => Number)
   otherUserId: number
 }
+
 export class CreateDirectChatDTO {
   recipientId: number // id của user muốn tạo chat cùng
+}
+
+export class DeleteDirectChatDTO {
+  @IsNotEmpty()
+  @IsNumber()
+  @Type(() => Number)
+  directChatId: number
 }

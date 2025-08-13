@@ -247,4 +247,43 @@ export class GroupChatService {
     })
     return groupChat
   }
+
+  async deleteGroupChat(groupChatId: number): Promise<void> {
+    await this.prismaService.$transaction(async (tx) => {
+      await Promise.all([
+        tx.pinnedMessage.deleteMany({
+          where: { groupChatId },
+        }),
+        tx.pinnedChat.deleteMany({
+          where: { groupChatId },
+        }),
+        tx.groupChatMember.deleteMany({
+          where: { groupChatId },
+        }),
+        tx.groupChatPermission.delete({
+          where: { groupChatId },
+        }),
+        tx.groupJoinRequest.deleteMany({
+          where: { groupChatId },
+        }),
+        tx.messageMedia.deleteMany({
+          where: { Message: { some: { groupChatId } } },
+        }),
+      ])
+      await tx.message.deleteMany({
+        where: { groupChatId },
+      })
+      await tx.groupChat.delete({
+        where: { id: groupChatId },
+      })
+    })
+    this.eventEmitter.emit(EInternalEvents.DELETE_GROUP_CHAT, groupChatId)
+  }
+
+  async leaveGroupChat(groupChatId: number, userId: number): Promise<void> {
+    await this.prismaService.groupChatMember.delete({
+      where: { groupChatId_userId: { groupChatId, userId } },
+    })
+    this.eventEmitter.emit(EInternalEvents.MEMBER_LEAVE_GROUP_CHAT, groupChatId, userId)
+  }
 }

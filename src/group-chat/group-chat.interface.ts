@@ -10,6 +10,7 @@ import type {
   FetchGroupChatsDTO,
   FetchJoinRequestsDTO,
   JoinGroupByInviteLinkDTO,
+  LeaveGroupChatDTO,
   ProcessJoinRequestDTO,
   UpdateGroupChatDTO,
   UpdateGroupChatPermissionDTO,
@@ -55,4 +56,5 @@ export interface IGroupChatsController {
   fetchGroupChatByInviteCode(
     query: FetchGroupChatByInviteCodeDTO
   ): Promise<TGroupChatWithCreator | null>
+  leaveGroupChat(query: LeaveGroupChatDTO, user: TUserWithProfile): Promise<TSuccess>
 }

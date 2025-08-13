@@ -69,6 +69,9 @@ export interface IEmitSocketEvents {
   [EClientSocketEvents.join_group_chat_room]: () => void // not used
   [EClientSocketEvents.join_direct_chat_room]: () => void // not used
   [EClientSocketEvents.pin_message_group]: () => void // not used
+  [EClientSocketEvents.delete_direct_chat]: () => void // not used
+  [EClientSocketEvents.delete_group_chat]: () => void // not used
+  [EClientSocketEvents.member_leave_group_chat]: () => void // not used
 }
 
 export interface IGateway {

@@ -5,13 +5,18 @@ import type {
 } from './direct-chat.type'
 import { Inject, Injectable } from '@nestjs/common'
 import { PrismaService } from '@/configs/db/prisma.service'
-import { EProviderTokens } from '@/utils/enums'
+import { EInternalEvents, EProviderTokens } from '@/utils/enums'
 import { Prisma } from '@prisma/client'
 import type { TDirectChat } from '@/utils/entities/direct-chat.entity'
+import type { TUserWithProfile } from '@/utils/entities/user.entity'
+import { EventEmitter2 } from '@nestjs/event-emitter'
 
 @Injectable()
 export class DirectChatService {
-  constructor(@Inject(EProviderTokens.PRISMA_CLIENT) private PrismaService: PrismaService) {}
+  constructor(
+    @Inject(EProviderTokens.PRISMA_CLIENT) private PrismaService: PrismaService,
+    private eventEmitter: EventEmitter2
+  ) {}
 
   async findById(id: number): Promise<TDirectChat | null> {
     return await this.PrismaService.directChat.findUnique({
@@ -103,5 +108,29 @@ export class DirectChatService {
       },
     })
     return conversation
+  }
+
+  async deleteDirectChat(directChatId: number, deleter: TUserWithProfile): Promise<void> {
+    // xóa direct chat và toàn bộ tin nhắn trong direct chat (dùng transaction)
+    await this.PrismaService.$transaction(async (tx) => {
+      await Promise.all([
+        tx.pinnedMessage.deleteMany({
+          where: { directChatId },
+        }),
+        tx.pinnedChat.deleteMany({
+          where: { directChatId },
+        }),
+        tx.messageMedia.deleteMany({
+          where: { Message: { some: { directChatId } } },
+        }),
+      ])
+      await tx.message.deleteMany({
+        where: { directChatId },
+      })
+      await tx.directChat.delete({
+        where: { id: directChatId },
+      })
+    })
+    this.eventEmitter.emit(EInternalEvents.DELETE_DIRECT_CHAT, directChatId, deleter)
   }
 }

@@ -17,6 +17,7 @@ import {
   FetchDirectChatsDTO,
   CreateDirectChatDTO,
   FindConversationWithOtherUserDTO,
+  DeleteDirectChatDTO,
 } from './direct-chat.dto'
 import { User } from '@/user/user.decorator'
 import { TUserWithProfile } from '@/utils/entities/user.entity'
@@ -25,11 +26,11 @@ import { EDirectChatMessages } from './direct-chat.message'
 @Controller(ERoutes.DIRECT_CHAT)
 @UseGuards(AuthGuard)
 export class DirectChatController implements IDirectChatsController {
-  constructor(private conversationService: DirectChatService) {}
+  constructor(private directChatService: DirectChatService) {}
 
   @Get('fetch/:conversationId')
   async fetchDirectChat(@Param() params: FetchDirectChatDTO, @User() user: TUserWithProfile) {
-    const directChat = await this.conversationService.findByDirectChatIdAndUserId(
+    const directChat = await this.directChatService.findByDirectChatIdAndUserId(
       params.conversationId,
       user.id
     )
@@ -42,7 +43,7 @@ export class DirectChatController implements IDirectChatsController {
   // fetch all direct chats of user
   @Get('fetch-direct-chats')
   async fetchAllDirectChats(@Query() query: FetchDirectChatsDTO, @User() user: TUserWithProfile) {
-    const directChats = await this.conversationService.findDirectChatsByUser(
+    const directChats = await this.directChatService.findDirectChatsByUser(
       user.id,
       query.lastId,
       query.limit
@@ -55,10 +56,19 @@ export class DirectChatController implements IDirectChatsController {
     @Param() params: FindConversationWithOtherUserDTO,
     @User() user: TUserWithProfile
   ) {
-    const conversation = await this.conversationService.findConversationWithOtherUser(
+    const conversation = await this.directChatService.findConversationWithOtherUser(
       user.id,
       params.otherUserId
     )
     return conversation
+  }
+
+  @Post('delete-direct-chat')
+  async deleteDirectChat(@Body() body: DeleteDirectChatDTO, @User() user: TUserWithProfile) {
+    const { directChatId } = body
+    await this.directChatService.deleteDirectChat(directChatId, user)
+    return {
+      success: true,
+    }
   }
 }

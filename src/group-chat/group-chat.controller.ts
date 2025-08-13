@@ -29,6 +29,8 @@ import {
   FetchJoinRequestsDTO,
   ProcessJoinRequestDTO,
   FetchGroupChatByInviteCodeDTO,
+  LeaveGroupChatDTO,
+  DeleteGroupChatDTO,
 } from './group-chat.dto'
 import { ERoutes } from '@/utils/enums'
 import { join } from 'path'
@@ -166,5 +168,25 @@ export class GroupChatController implements IGroupChatsController {
   async fetchGroupChatByInviteCode(@Query() query: FetchGroupChatByInviteCodeDTO) {
     const { inviteCode } = query
     return await this.groupChatService.fetchGroupChatByInviteCode(inviteCode)
+  }
+
+  @Post('leave-group-chat')
+  async leaveGroupChat(@Body() body: LeaveGroupChatDTO, @User() user: TUserWithProfile) {
+    const { groupChatId } = body
+    await this.groupChatService.leaveGroupChat(groupChatId, user.id)
+    return {
+      success: true,
+    }
+  }
+
+  @Post('delete-group-chat')
+  @UseGuards(GroupChatRoleGuard)
+  @GroupChatRoles(EGroupChatRoles.ADMIN)
+  async deleteGroupChat(@Body() body: DeleteGroupChatDTO) {
+    const { groupChatId } = body
+    await this.groupChatService.deleteGroupChat(groupChatId)
+    return {
+      success: true,
+    }
   }
 }
