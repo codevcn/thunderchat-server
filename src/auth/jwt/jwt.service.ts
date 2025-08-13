@@ -22,6 +22,7 @@ export class JWTService {
       path: '/',
       httpOnly: true,
       secure: true,
+      sameSite: 'none',
     }
   }
 

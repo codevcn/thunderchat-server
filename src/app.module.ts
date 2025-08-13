@@ -49,6 +49,7 @@ import { GroupMemberModule } from './group-member/group-member.module'
 import { DeleteMessageModule } from './direct-message/delete-message/delete-message.module'
 import { AdminModule } from './admin/admin.module'
 import { PinConversationModule } from './pin-conversation/pin-conversation.module'
+import { HealthcheckModule } from './healthcheck/healthcheck.module'
 
 @Module({
   imports: [
@@ -75,6 +76,7 @@ import { PinConversationModule } from './pin-conversation/pin-conversation.modul
     UserSettingsModule,
     DeleteMessageModule,
     AdminModule,
+    HealthcheckModule,
   ],
 })
 export class AppModule implements NestModule {
