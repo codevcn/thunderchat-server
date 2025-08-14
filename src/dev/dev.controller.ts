@@ -83,4 +83,11 @@ export class TempController {
     await this.elasticsearchService.deleteAllDataFromES()
     return { success: true }
   }
+
+  @Get('count-all-data-from-es')
+  async countAllDataFromES() {
+    const messages = await this.elasticsearchService.countAllMessages()
+    const users = await this.elasticsearchService.countAllUsers()
+    return { success: true, messages, users }
+  }
 }

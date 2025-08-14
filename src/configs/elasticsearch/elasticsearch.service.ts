@@ -145,4 +145,18 @@ export class ElasticsearchService implements OnModuleInit {
     })
     return this.extractESHits(result)
   }
+
+  async countAllMessages(): Promise<number> {
+    const result = await ESClient.count({
+      index: EESIndexes.MESSAGES,
+    })
+    return result.count
+  }
+
+  async countAllUsers(): Promise<number> {
+    const result = await ESClient.count({
+      index: EESIndexes.USERS,
+    })
+    return result.count
+  }
 }
