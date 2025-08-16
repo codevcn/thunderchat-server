@@ -5,7 +5,7 @@ import { Express } from 'express'
 import type { TUploadResult } from './upload.type'
 import { PrismaService } from '@/configs/db/prisma.service'
 import { EProviderTokens } from '@/utils/enums'
-import { detectFileType, formatBytes } from '@/utils/helpers'
+import { detectFileType, formatBytes, decodeMulterFileName } from '@/utils/helpers'
 
 @Injectable()
 export class UploadService {
@@ -21,12 +21,21 @@ export class UploadService {
     'image/png': 'image',
     'image/gif': 'image',
     'image/webp': 'image',
+    'image/bmp': 'image',
+    'image/svg+xml': 'image',
+    'image/tiff': 'image',
+    'image/heic': 'image',
 
     // Videos
     'video/mp4': 'video',
     'video/avi': 'video',
     'video/mov': 'video',
     'video/wmv': 'video',
+    'video/mpeg': 'video',
+    'video/webm': 'video',
+    'video/3gpp': 'video',
+    'video/x-matroska': 'video',
+    'video/x-flv': 'video',
 
     // Documents
     'application/pdf': 'document',
@@ -37,12 +46,35 @@ export class UploadService {
     'application/vnd.ms-powerpoint': 'document', // .ppt
     'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'document', // .pptx
     'text/plain': 'document', // .txt
+    'text/csv': 'document', // .csv
+    'application/rtf': 'document', // .rtf
+    'application/vnd.oasis.opendocument.text': 'document',
+    'application/vnd.oasis.opendocument.spreadsheet': 'document',
+    'application/vnd.oasis.opendocument.presentation': 'document',
+    'application/zip': 'document',
+    'application/x-compressed': 'document', // Alternative MIME type for ZIP files
+    'application/x-zip-compressed': 'document', // Another alternative for ZIP
+    'application/x-rar-compressed': 'document',
+    'application/x-7z-compressed': 'document',
+    'application/gzip': 'archive', // .gz
+    'application/x-gzip': 'archive', // Alternative for .gz
+    'application/x-tar': 'archive',
+    'application/x-bzip2': 'archive', // .bz2 files
+    'application/x-bzip': 'archive', // .bz files
+
+    'text/html': 'document', // .html
+    'application/json': 'document', // .json
+    'text/markdown': 'document',
 
     // Audio
     'audio/mpeg': 'audio',
     'audio/mp3': 'audio',
     'audio/wav': 'audio',
     'audio/webm': 'audio',
+    'audio/ogg': 'audio',
+    'audio/aac': 'audio',
+    'audio/flac': 'audio',
+    'audio/mp4': 'audio',
   }
 
   constructor(
@@ -68,9 +100,11 @@ export class UploadService {
     }
 
     // Use file.originalname as fileKey if it contains folder structure
-    const fileKey = file.originalname.includes('/')
-      ? file.originalname
-      : `${Date.now()}_${file.originalname}`
+    // Normalize filename to UTF-8 to avoid garbled Vietnamese characters
+    const decodedOriginalName = decodeMulterFileName(file.originalname)
+    const fileKey = decodedOriginalName.includes('/')
+      ? decodedOriginalName
+      : `${Date.now()}_${decodedOriginalName}`
     let uploadedFileUrl: string | null = null
 
     try {
@@ -88,7 +122,7 @@ export class UploadService {
         data: {
           url: data.Location,
           type: await detectFileType(file),
-          fileName: file.originalname,
+          fileName: decodedOriginalName,
           fileSize: file.size,
           thumbnailUrl: '',
         },
@@ -375,14 +409,27 @@ export class UploadService {
       'image/png': 'png',
       'image/gif': 'gif',
       'image/webp': 'webp',
+      'image/bmp': 'bmp',
+      'image/svg+xml': 'svg',
+      'image/tiff': 'tiff',
+      'image/heic': 'heic',
       'video/mp4': 'mp4',
       'video/avi': 'avi',
       'video/mov': 'mov',
       'video/wmv': 'wmv',
+      'video/mpeg': 'mpeg',
+      'video/webm': 'webm',
+      'video/3gpp': '3gp',
+      'video/x-matroska': 'mkv',
+      'video/x-flv': 'flv',
       'audio/mpeg': 'mp3',
       'audio/mp3': 'mp3',
       'audio/wav': 'wav',
       'audio/webm': 'webm',
+      'audio/ogg': 'ogg',
+      'audio/aac': 'aac',
+      'audio/flac': 'flac',
+      'audio/mp4': 'm4a',
       'application/pdf': 'pdf',
       'application/msword': 'doc',
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx',
@@ -391,6 +438,24 @@ export class UploadService {
       'application/vnd.ms-powerpoint': 'ppt',
       'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'pptx',
       'text/plain': 'txt',
+      'text/csv': 'csv',
+      'application/rtf': 'rtf',
+      'application/vnd.oasis.opendocument.text': 'odt',
+      'application/vnd.oasis.opendocument.spreadsheet': 'ods',
+      'application/vnd.oasis.opendocument.presentation': 'odp',
+      'application/zip': 'zip',
+      'application/x-compressed': 'zip', // Alternative MIME type for ZIP files
+      'application/x-zip-compressed': 'zip', // Another alternative for ZIP
+      'application/x-rar-compressed': 'rar',
+      'application/x-7z-compressed': '7z',
+      'application/gzip': 'gz',
+      'application/x-gzip': 'gz', // Alternative for .gz
+      'application/x-tar': 'tar',
+      'application/x-bzip2': 'bz2', // .bz2 files
+      'application/x-bzip': 'bz', // .bz files
+      'text/html': 'html',
+      'application/json': 'json',
+      'text/markdown': 'md',
     }
 
     // Check if content type is in allowedMimeTypes
@@ -412,13 +477,26 @@ export class UploadService {
       png: 'image/png',
       gif: 'image/gif',
       webp: 'image/webp',
+      bmp: 'image/bmp',
+      svg: 'image/svg+xml',
+      tiff: 'image/tiff',
+      heic: 'image/heic',
       mp4: 'video/mp4',
       avi: 'video/avi',
       mov: 'video/mov',
       wmv: 'video/wmv',
+      mpeg: 'video/mpeg',
+      webm: 'video/webm',
+      '3gp': 'video/3gpp',
+      mkv: 'video/x-matroska',
+      flv: 'video/x-flv',
       mp3: 'audio/mpeg',
       wav: 'audio/wav',
-      webm: 'audio/webm',
+      webma: 'audio/webm',
+      ogg: 'audio/ogg',
+      aac: 'audio/aac',
+      flac: 'audio/flac',
+      m4a: 'audio/mp4',
       pdf: 'application/pdf',
       doc: 'application/msword',
       docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -427,6 +505,21 @@ export class UploadService {
       ppt: 'application/vnd.ms-powerpoint',
       pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
       txt: 'text/plain',
+      csv: 'text/csv',
+      rtf: 'application/rtf',
+      odt: 'application/vnd.oasis.opendocument.text',
+      ods: 'application/vnd.oasis.opendocument.spreadsheet',
+      odp: 'application/vnd.oasis.opendocument.presentation',
+      zip: 'application/zip',
+      rar: 'application/x-rar-compressed',
+      '7z': 'application/x-7z-compressed',
+      gz: 'application/gzip',
+      bz2: 'application/x-bzip2',
+      bz: 'application/x-bzip',
+      tar: 'application/x-tar',
+      html: 'text/html',
+      json: 'application/json',
+      md: 'text/markdown',
     }
 
     const contentType = extensionToContentType[extension.toLowerCase()]

@@ -73,7 +73,16 @@ export class UserReportController {
 
     // Validate file types for report images
     if (reportImages.length > 0) {
-      const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+      const allowedMimeTypes = [
+        'image/jpeg',
+        'image/png',
+        'image/gif',
+        'image/webp',
+        'image/bmp',
+        'image/svg+xml',
+        'image/tiff',
+        'image/heic',
+      ]
       for (const image of reportImages) {
         if (!allowedMimeTypes.includes(image.mimetype)) {
           return {
