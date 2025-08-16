@@ -1,15 +1,17 @@
 import { Injectable, Inject } from '@nestjs/common'
-import { EInternalEvents, EProviderTokens } from '@/utils/enums'
+import { EInternalEvents, EProviderTokens, ESyncDataToESWorkerType } from '@/utils/enums'
 import { PrismaService } from '@/configs/db/prisma.service'
 import { UpdateProfileDto } from './profile.dto'
 import { EventEmitter2 } from '@nestjs/event-emitter'
+import { SyncDataToESService } from '@/configs/elasticsearch/sync-data-to-ES/sync-data-to-ES.service'
 
 @Injectable()
 export class ProfileService {
   constructor(
     @Inject(EProviderTokens.PRISMA_CLIENT)
     private prisma: PrismaService,
-    private eventEmitter: EventEmitter2
+    private eventEmitter: EventEmitter2,
+    private syncDataToESService: SyncDataToESService
   ) {}
 
   async updateProfile(userId: number, dto: UpdateProfileDto) {
@@ -24,11 +26,20 @@ export class ProfileService {
     if (data.birthday === '' || !data.birthday) {
       delete data.birthday
     }
-    this.eventEmitter.emit(EInternalEvents.UPDATE_USER_INFO, userId, dto)
-    return this.prisma.profile.update({
+    const profile = await this.prisma.profile.update({
       where: { userId },
       data,
     })
+    const userWithProfile = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: { Profile: true },
+    })
+    this.syncDataToESService.syncDataToES({
+      type: ESyncDataToESWorkerType.UPDATE_USER,
+      data: userWithProfile || undefined,
+    })
+    this.eventEmitter.emit(EInternalEvents.UPDATE_USER_INFO, userId, dto)
+    return profile
   }
 
   async getProfile(userId: number) {
