@@ -28,6 +28,7 @@ import type { EChatType, EUserOnlineStatus } from '@/utils/enums'
 import type { TMessage } from '@/utils/entities/message.entity'
 import type { TGroupChat } from '@/utils/entities/group-chat.entity'
 import type { TUserId } from '@/user/user.type'
+import { UpdateProfileDto } from '@/profile/profile.dto'
 
 export interface IEmitSocketEvents {
   [EInitEvents.client_connected]: (message: string) => void
@@ -87,11 +88,20 @@ export interface IGateway {
   broadcastAddMembersToGroupChat: (
     groupChat: TGroupChat,
     groupMemberIds: number[],
-    adder: TUserWithProfile
+    executor: TUserWithProfile
   ) => Promise<void>
   broadcastCreateGroupChat: (
     groupChat: TGroupChat,
     groupMemberIds: number[],
     creator: TUserWithProfile
   ) => Promise<void>
+  broadcastRemoveGroupChatMembers: (
+    groupChat: TGroupChat,
+    removedMemberIds: number[]
+  ) => Promise<void>
+  broadcastMemberLeaveGroupChat: (groupChatId: number, userId: number) => Promise<void>
+  broadcastUpdateGroupChat: (groupChatId: number, groupChat: Partial<TGroupChat>) => Promise<void>
+  broadcastUpdateUserInfo: (userId: number, updates: UpdateProfileDto) => Promise<void>
+  broadcastDeleteDirectChat: (directChatId: number, deleter: TUserWithProfile) => Promise<void>
+  broadcastDeleteGroupChat: (groupChatId: number) => Promise<void>
 }

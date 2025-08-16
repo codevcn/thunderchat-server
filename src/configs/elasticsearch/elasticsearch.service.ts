@@ -98,6 +98,7 @@ export class ElasticsearchService implements OnModuleInit {
           must: [
             { match_phrase: { content: { query: keyword } } },
             { term: { valid_user_ids: userId } },
+            { term: { is_deleted: false } },
           ],
         },
       },

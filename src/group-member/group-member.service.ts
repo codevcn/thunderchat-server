@@ -140,7 +140,12 @@ export class GroupMemberService {
       where: { groupChatId, userId: { in: memberIds } },
       include: { User: { include: { Profile: true } } },
     })
-    this.eventEmitter.emit(EInternalEvents.ADD_MEMBERS_TO_GROUP_CHAT, groupChat, memberIds)
+    this.eventEmitter.emit(
+      EInternalEvents.ADD_MEMBERS_TO_GROUP_CHAT,
+      groupChat,
+      memberIds,
+      executor
+    )
     return addedMembers
   }
 
@@ -148,11 +153,16 @@ export class GroupMemberService {
     // kiểm tra nếu là admin thì không được rời khỏi group chat
     const groupChat = await this.prismaService.groupChat.findFirst({
       where: { id: groupChatId, creatorId: userId },
+      select: {
+        id: true,
+        creatorId: true,
+      },
     })
     if (groupChat && groupChat.creatorId === userId)
       throw new BadRequestException(EGroupMemberMessages.ADMIN_CANNOT_LEAVE_GROUP_CHAT)
     await this.prismaService.groupChatMember.delete({
       where: { groupChatId_userId: { groupChatId, userId } },
     })
+    this.eventEmitter.emit(EInternalEvents.MEMBER_LEAVE_GROUP_CHAT, groupChatId, userId)
   }
 }

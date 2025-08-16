@@ -5,17 +5,19 @@ import type {
 } from './direct-chat.type'
 import { Inject, Injectable } from '@nestjs/common'
 import { PrismaService } from '@/configs/db/prisma.service'
-import { EInternalEvents, EProviderTokens } from '@/utils/enums'
+import { EInternalEvents, EProviderTokens, ESyncDataToESWorkerType } from '@/utils/enums'
 import { Prisma } from '@prisma/client'
 import type { TDirectChat } from '@/utils/entities/direct-chat.entity'
 import type { TUserWithProfile } from '@/utils/entities/user.entity'
 import { EventEmitter2 } from '@nestjs/event-emitter'
+import { SyncDataToESService } from '@/configs/elasticsearch/sync-data-to-ES/sync-data-to-ES.service'
 
 @Injectable()
 export class DirectChatService {
   constructor(
     @Inject(EProviderTokens.PRISMA_CLIENT) private PrismaService: PrismaService,
-    private eventEmitter: EventEmitter2
+    private eventEmitter: EventEmitter2,
+    private syncDataToESService: SyncDataToESService
   ) {}
 
   async findById(id: number): Promise<TDirectChat | null> {
@@ -124,8 +126,18 @@ export class DirectChatService {
           where: { Message: { some: { directChatId } } },
         }),
       ])
+      const messages = await tx.message.findMany({
+        where: { directChatId },
+        select: {
+          id: true,
+        },
+      })
       await tx.message.deleteMany({
         where: { directChatId },
+      })
+      this.syncDataToESService.syncDataToES({
+        type: ESyncDataToESWorkerType.DELETE_MESSAGES_IN_BULK,
+        data: messages.map(({ id }) => id),
       })
       await tx.directChat.delete({
         where: { id: directChatId },

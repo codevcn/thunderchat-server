@@ -9,6 +9,7 @@ import {
   NotFoundException,
   Body,
   Post,
+  Delete,
 } from '@nestjs/common'
 import { ERoutes } from '@/utils/enums'
 import { IDirectChatsController } from './direct-chat.interface'
@@ -63,9 +64,9 @@ export class DirectChatController implements IDirectChatsController {
     return conversation
   }
 
-  @Post('delete-direct-chat')
-  async deleteDirectChat(@Body() body: DeleteDirectChatDTO, @User() user: TUserWithProfile) {
-    const { directChatId } = body
+  @Delete('delete-direct-chat')
+  async deleteDirectChat(@Query() query: DeleteDirectChatDTO, @User() user: TUserWithProfile) {
+    const { directChatId } = query
     await this.directChatService.deleteDirectChat(directChatId, user)
     return {
       success: true,

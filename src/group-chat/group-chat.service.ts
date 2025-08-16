@@ -1,6 +1,6 @@
 import { PrismaService } from '@/configs/db/prisma.service'
 import { S3UploadService } from '@/upload/s3-upload.service'
-import { EInternalEvents, EProviderTokens } from '@/utils/enums'
+import { EInternalEvents, EProviderTokens, ESyncDataToESWorkerType } from '@/utils/enums'
 import {
   BadRequestException,
   Inject,
@@ -25,6 +25,7 @@ import { GroupMemberService } from '@/group-member/group-member.service'
 import { EGroupMemberMessages } from '@/group-member/group-member.message'
 import { typeToRawObject } from '@/utils/helpers'
 import type { Express } from 'express'
+import { SyncDataToESService } from '@/configs/elasticsearch/sync-data-to-ES/sync-data-to-ES.service'
 
 @Injectable()
 export class GroupChatService {
@@ -35,7 +36,8 @@ export class GroupChatService {
     private readonly s3UploadService: S3UploadService,
     @Inject(EProviderTokens.PRISMA_CLIENT) private prismaService: PrismaService,
     private readonly eventEmitter: EventEmitter2,
-    private readonly groupMemberService: GroupMemberService
+    private readonly groupMemberService: GroupMemberService,
+    private readonly syncDataToESService: SyncDataToESService
   ) {}
 
   async findGroupChatById(groupId: number): Promise<TGroupChat | null> {
@@ -270,20 +272,23 @@ export class GroupChatService {
           where: { Message: { some: { groupChatId } } },
         }),
       ])
+      const messages = await tx.message.findMany({
+        where: { groupChatId },
+        select: {
+          id: true,
+        },
+      })
       await tx.message.deleteMany({
         where: { groupChatId },
+      })
+      this.syncDataToESService.syncDataToES({
+        type: ESyncDataToESWorkerType.DELETE_MESSAGES_IN_BULK,
+        data: messages.map(({ id }) => id),
       })
       await tx.groupChat.delete({
         where: { id: groupChatId },
       })
     })
     this.eventEmitter.emit(EInternalEvents.DELETE_GROUP_CHAT, groupChatId)
-  }
-
-  async leaveGroupChat(groupChatId: number, userId: number): Promise<void> {
-    await this.prismaService.groupChatMember.delete({
-      where: { groupChatId_userId: { groupChatId, userId } },
-    })
-    this.eventEmitter.emit(EInternalEvents.MEMBER_LEAVE_GROUP_CHAT, groupChatId, userId)
   }
 }

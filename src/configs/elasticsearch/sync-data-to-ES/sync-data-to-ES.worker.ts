@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client'
 import {
   ConnectionException,
+  BulkDeleteException,
   UnknownException,
   WorkerInputDataException,
   WorkerResponseException,
@@ -85,6 +86,7 @@ class SyncDataToESHandler {
               message_type: type as EMessageTypes,
               valid_user_ids: validUserIds,
               created_at: createdAt.toISOString(),
+              is_deleted: false,
             }),
           })
         },
@@ -99,9 +101,14 @@ class SyncDataToESHandler {
     try {
       await retryAsyncRequest(
         async () => {
-          await this.ESClient.delete({
+          await this.ESClient.update({
             index: EESIndexes.MESSAGES,
             id: message.id.toString(),
+            doc: typeToRawObject<Partial<TMessageESMapping>>({
+              is_deleted: true,
+              content: '',
+              original_content: '',
+            }),
           })
         },
         { maxRetries: this.MAX_RETRIES }
@@ -109,6 +116,26 @@ class SyncDataToESHandler {
     } catch (error) {
       throw new UnknownException(ESyncDataToESMessages.SYNC_MESSAGE_ERROR, error)
     }
+  }
+
+  recursiveDeleteMessagesInBulk = async (messages: TMessage['id'][]): Promise<void> => {
+    await retryAsyncRequest(
+      async () => {
+        const response = await this.ESClient.bulk({
+          operations: messages.map((id) => ({
+            delete: {
+              _index: EESIndexes.MESSAGES,
+              _id: id.toString(),
+            },
+          })),
+        })
+        const { errors } = response
+        if (errors) {
+          throw new BulkDeleteException(ESyncDataToESMessages.SYNC_MESSAGE_ERROR)
+        }
+      },
+      { maxRetries: this.MAX_RETRIES }
+    )
   }
 
   recursiveCreateUpdateUser = async (user: TUserWithProfile): Promise<void> => {
@@ -278,6 +305,9 @@ const runWorker = async (workerData: SyncDataToESWorkerMessageDTO): Promise<void
       break
     case ESyncDataToESWorkerType.ALL_USERS_AND_MESSAGES:
       await syncDataToESHandler.recursiveSyncAllUsersAndMessages(prismaClient)
+      break
+    case ESyncDataToESWorkerType.DELETE_MESSAGES_IN_BULK:
+      await syncDataToESHandler.recursiveDeleteMessagesInBulk(data as TMessage['id'][])
       break
   }
 

@@ -7,7 +7,7 @@ import type { TDeleteMessageResult } from './delete-message.type'
 import { EMessageTypes } from '@/direct-message/direct-message.enum'
 import { UploadService } from '@/upload/upload.service'
 import { Prisma } from '@prisma/client'
-import type { TMessageFullInfo } from '@/utils/entities/message.entity'
+import type { TMessageFullInfo, TMessageWithMedia } from '@/utils/entities/message.entity'
 import { SyncDataToESService } from '@/configs/elasticsearch/sync-data-to-ES/sync-data-to-ES.service'
 
 @Injectable()
@@ -151,7 +151,7 @@ export class DeleteMessageService {
           await this.uploadService.deleteFileByUrl(msg.Media.thumbnailUrl)
         }
       } catch (err) {
-        throw new Error(`Xoá file trên S3 thất bại: ${err.message}`)
+        throw new Error(`Failed to delete file on S3: ${err.message}`)
       }
     }
   }
@@ -159,7 +159,7 @@ export class DeleteMessageService {
   /**
    * Chuẩn bị data update cho message
    */
-  private prepareUpdateData(msg: any): Prisma.MessageUpdateInput {
+  private prepareUpdateData(msg: TMessageWithMedia): Prisma.MessageUpdateInput {
     let updateData: Prisma.MessageUpdateInput = {
       isDeleted: true,
       content: '',
@@ -167,12 +167,12 @@ export class DeleteMessageService {
     }
 
     // // Nếu là MEDIA thì set mediaId thành null
-    // if (msg.type === EMessageTypes.MEDIA) {
-    //   updateData = {
-    //     ...updateData,
-    //     Media: { disconnect: true },
-    //   }
-    // }
+    if (msg.type === EMessageTypes.MEDIA) {
+      updateData = {
+        ...updateData,
+        Media: { disconnect: true },
+      }
+    }
     // Nếu là STICKER thì set stickerId thành null
     if (msg.type === EMessageTypes.STICKER) {
       updateData = {

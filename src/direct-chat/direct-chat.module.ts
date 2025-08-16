@@ -4,9 +4,10 @@ import { Module } from '@nestjs/common'
 import { JWTService } from '@/auth/jwt/jwt.service'
 import { CredentialService } from '@/auth/credentials/credentials.service'
 import { UserModule } from '@/user/user.module'
+import { SyncDataToESModule } from '@/configs/elasticsearch/sync-data-to-ES/sync-data-to-ES.module'
 
 @Module({
-  imports: [UserModule],
+  imports: [UserModule, SyncDataToESModule],
   controllers: [DirectChatController],
   providers: [DirectChatService, JWTService, CredentialService],
   exports: [DirectChatService],

@@ -189,7 +189,26 @@ export class SocketService {
     this.server.emit(EClientSocketEvents.broadcast_user_online_status, userId, onlineStatus)
   }
 
-  broadcastAddMembersToGroupChat(groupChat: TGroupChat, groupMemberIds: number[]) {
+  broadcastAddMembersToGroupChat(
+    groupChat: TGroupChat,
+    groupMemberIds: number[],
+    executor: TUserWithProfile
+  ) {
+    for (const groupMemberId of groupMemberIds) {
+      const groupMemberSockets = this.getConnectedClient<IEmitSocketEvents>(groupMemberId)
+      if (groupMemberSockets) {
+        for (const socket of groupMemberSockets) {
+          socket.emit(
+            EClientSocketEvents.new_conversation,
+            null,
+            groupChat,
+            EChatType.GROUP,
+            null,
+            executor
+          )
+        }
+      }
+    }
     this.server
       .to(createGroupChatRoomName(groupChat.id))
       .emit(EClientSocketEvents.add_group_chat_members, groupMemberIds, groupChat)

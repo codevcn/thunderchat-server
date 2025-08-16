@@ -38,16 +38,17 @@ export enum EEnvironments {
 }
 
 export enum ESyncDataToESWorkerType {
-  CREATE_MESSAGE = 'createMessage',
-  UPDATE_MESSAGE = 'updateMessage',
-  DELETE_MESSAGE = 'deleteMessage',
-  CREATE_USER = 'createUser',
-  UPDATE_USER = 'updateUser',
-  DELETE_USER = 'deleteUser',
-  CREATE_PROFILE = 'createProfile',
-  UPDATE_PROFILE = 'updateProfile',
-  DELETE_PROFILE = 'deleteProfile',
-  ALL_USERS_AND_MESSAGES = 'allUsersAndMessages',
+  CREATE_MESSAGE = 'CREATE_MESSAGE',
+  UPDATE_MESSAGE = 'UPDATE_MESSAGE',
+  DELETE_MESSAGE = 'DELETE_MESSAGE',
+  CREATE_USER = 'CREATE_USER',
+  UPDATE_USER = 'UPDATE_USER',
+  DELETE_USER = 'DELETE_USER',
+  CREATE_PROFILE = 'CREATE_PROFILE',
+  UPDATE_PROFILE = 'UPDATE_PROFILE',
+  DELETE_PROFILE = 'DELETE_PROFILE',
+  ALL_USERS_AND_MESSAGES = 'ALL_USERS_AND_MESSAGES',
+  DELETE_MESSAGES_IN_BULK = 'DELETE_MESSAGES_IN_BULK',
 }
 
 export enum EWorkerEvents {

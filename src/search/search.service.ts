@@ -66,7 +66,6 @@ export class SearchService {
           avatarUrl = GroupChat!.Members[0].User.Profile!.avatar || undefined
           conversationName = GroupChat!.name
         }
-        console.log('>>> msg:', { content, Media })
         return {
           id,
           avatarUrl,

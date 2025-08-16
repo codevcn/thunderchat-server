@@ -13,6 +13,7 @@ export type TMessageESMapping = {
   original_content: string
   message_type: EMessageTypes
   valid_user_ids: number[]
+  is_deleted: boolean
   created_at: string
 }
 

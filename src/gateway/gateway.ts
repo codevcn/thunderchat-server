@@ -664,8 +664,12 @@ export class AppGateway
   }
 
   @OnEvent(EInternalEvents.ADD_MEMBERS_TO_GROUP_CHAT)
-  async broadcastAddMembersToGroupChat(groupChat: TGroupChat, newMemberIds: number[]) {
-    this.socketService.broadcastAddMembersToGroupChat(groupChat, newMemberIds)
+  async broadcastAddMembersToGroupChat(
+    groupChat: TGroupChat,
+    newMemberIds: number[],
+    executor: TUserWithProfile
+  ) {
+    this.socketService.broadcastAddMembersToGroupChat(groupChat, newMemberIds, executor)
   }
 
   @OnEvent(EInternalEvents.CREATE_GROUP_CHAT)
