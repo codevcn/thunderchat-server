@@ -8,6 +8,20 @@ import { EMessageMediaTypes } from '@/direct-message/direct-message.enum'
 import { EGlobalMessages } from './enums'
 
 /**
+ * Decode Multer's originalname (latin1) to UTF-8 so Unicode filenames display correctly
+ */
+export function decodeMulterFileName(originalName: string): string {
+  if (!originalName) return originalName
+  try {
+    // Multer historically decodes headers using latin1, causing UTF-8 names to look garbled
+    // Convert back to proper UTF-8 and normalize to NFC for consistent storage/display
+    return Buffer.from(originalName, 'latin1').toString('utf8').normalize('NFC')
+  } catch {
+    return originalName
+  }
+}
+
+/**
  * Mã hóa tên file, đầu ra có độ dài tối đa 64 ký tự
  * @param {string} originalFilename - Tên file gốc
  * @param {number} length - Độ dài của mã băm
@@ -105,18 +119,87 @@ export async function detectFileType(file: Express.Multer.File): Promise<EMessag
     return EMessageMediaTypes.AUDIO
   }
 
+  // Special handling for audio files with .webm extension
+  if (
+    file.originalname &&
+    file.originalname.toLowerCase().endsWith('.webm') &&
+    mime === 'audio/webm'
+  ) {
+    return EMessageMediaTypes.AUDIO
+  }
+
   if (mime.startsWith('image/')) return EMessageMediaTypes.IMAGE
   if (mime.startsWith('video/')) return EMessageMediaTypes.VIDEO
 
-  // Kiểm tra document (pdf, word, excel...)
+  // Kiểm tra document (pdf, word, excel, zip, rar...)
   if (
     mime === 'application/pdf' ||
     mime === 'application/msword' ||
     mime === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
     mime === 'application/vnd.ms-excel' ||
-    mime === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    mime === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
+    mime === 'application/vnd.ms-powerpoint' ||
+    mime === 'application/vnd.openxmlformats-officedocument.presentationml.presentation' ||
+    mime === 'text/plain' ||
+    mime === 'text/csv' ||
+    mime === 'application/rtf' ||
+    mime === 'application/vnd.oasis.opendocument.text' ||
+    mime === 'application/vnd.oasis.opendocument.spreadsheet' ||
+    mime === 'application/vnd.oasis.opendocument.presentation' ||
+    mime === 'application/zip' ||
+    mime === 'application/x-compressed' ||
+    mime === 'application/x-zip-compressed' ||
+    mime === 'application/x-rar-compressed' ||
+    mime === 'application/x-7z-compressed' ||
+    mime === 'text/html' ||
+    mime === 'application/json' ||
+    mime === 'text/markdown'
   ) {
     return EMessageMediaTypes.DOCUMENT
+  }
+
+  // Kiểm tra archive files
+  if (
+    mime === 'application/gzip' ||
+    mime === 'application/x-gzip' ||
+    mime === 'application/x-tar' ||
+    mime === 'application/x-bzip2' ||
+    mime === 'application/x-bzip'
+  ) {
+    return EMessageMediaTypes.DOCUMENT
+  }
+
+  // Kiểm tra audio files
+  if (
+    mime === 'audio/mpeg' ||
+    mime === 'audio/mp3' ||
+    mime === 'audio/wav' ||
+    mime === 'audio/webm' ||
+    mime === 'audio/ogg' ||
+    mime === 'audio/aac' ||
+    mime === 'audio/flac' ||
+    mime === 'audio/mp4'
+  ) {
+    return EMessageMediaTypes.AUDIO
+  }
+
+  // Kiểm tra các MIME types khác có thể bị thiếu
+  if (
+    mime === 'application/octet-stream' ||
+    mime === 'application/x-download' ||
+    mime === 'binary/octet-stream'
+  ) {
+    // Fallback: cố gắng đoán từ extension
+    if (file.originalname) {
+      const ext = file.originalname.toLowerCase().split('.').pop()
+      if (ext && ['zip', 'rar', '7z', 'tar', 'gz', 'bz2', 'bz'].includes(ext)) {
+        return EMessageMediaTypes.DOCUMENT
+      }
+      if (ext && ['mp3', 'wav', 'ogg', 'aac', 'flac', 'm4a', 'webm'].includes(ext)) {
+        return EMessageMediaTypes.AUDIO
+      }
+    }
+    return EMessageMediaTypes.DOCUMENT // Default fallback
   }
 
   throw new Error(EGlobalMessages.UNKNOWN_FILE_TYPE)
