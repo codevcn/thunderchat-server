@@ -7,6 +7,9 @@ import {
   CheckBlockedUserDTO,
   SearchUsersDTO,
   UnblockUserDTO,
+  ForgotPasswordDTO,
+  VerifyOtpDTO,
+  ResetPasswordDTO,
 } from '@/user/user.dto'
 import { UserService } from '@/user/user.service'
 import { ERoutes } from '@/utils/enums'
@@ -83,5 +86,23 @@ export class UserController implements IUserController {
   @UseGuards(AuthGuard)
   async getBlockedUsersList(@User() user: TUserWithProfile) {
     return await this.blockUserService.getBlockedUsersList(user.id)
+  }
+
+  @Post('password/forgot')
+  async forgotPassword(@Body() dto: ForgotPasswordDTO) {
+    await this.userService.requestPasswordReset(dto.email)
+    return { success: true }
+  }
+
+  @Post('password/verify-otp')
+  async verifyOtp(@Body() dto: VerifyOtpDTO) {
+    const { resetToken } = await this.userService.verifyPasswordResetOtp(dto.email, dto.otp)
+    return { resetToken }
+  }
+
+  @Post('password/reset')
+  async resetPassword(@Body() dto: ResetPasswordDTO) {
+    await this.userService.resetPasswordWithToken(dto.resetToken, dto.newPassword)
+    return { success: true }
   }
 }
