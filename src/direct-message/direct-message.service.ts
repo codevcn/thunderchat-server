@@ -217,7 +217,7 @@ export class DirectMessageService {
       },
       include: {
         Media: true,
-        Recipient: {
+        Author: {
           include: {
             Profile: true,
           },

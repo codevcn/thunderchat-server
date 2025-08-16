@@ -12,6 +12,7 @@ import type {
   JoinGroupByInviteLinkDTO,
   LeaveGroupChatDTO,
   ProcessJoinRequestDTO,
+  DeleteGroupChatDTO,
   UpdateGroupChatDTO,
   UpdateGroupChatPermissionDTO,
 } from './group-chat.dto'
@@ -39,10 +40,6 @@ export interface IGroupChatsController {
   fetchGroupChats(query: FetchGroupChatsDTO, user: TUser): Promise<TFetchGroupChatsData[]>
   updateGroupChat(body: UpdateGroupChatDTO, user: TUser): Promise<TSuccess>
   createInviteLink(body: CreateInviteLinkDTO): Promise<TCreateNewInviteCode>
-  // joinGroupChatByInviteLink(
-  //   query: JoinGroupByInviteLinkDTO,
-  //   user: TUser
-  // ): Promise<TJoinGroupChatByInviteLink>
   updateGroupChatPermission(body: UpdateGroupChatPermissionDTO): Promise<TSuccess>
   fetchGroupChatPermissions(
     query: FetchGroupChatPermissionsDTO
@@ -56,5 +53,5 @@ export interface IGroupChatsController {
   fetchGroupChatByInviteCode(
     query: FetchGroupChatByInviteCodeDTO
   ): Promise<TGroupChatWithCreator | null>
-  leaveGroupChat(query: LeaveGroupChatDTO, user: TUserWithProfile): Promise<TSuccess>
+  deleteGroupChat(query: DeleteGroupChatDTO): Promise<TSuccess>
 }

@@ -56,12 +56,13 @@ export class SearchService {
       this.userService.findUsersForGlobalSearch(userIds, selfUserId, limit),
     ])
     const finalMessages = messages.map<TGlobalSearchData['messages'][number]>(
-      ({ id, GroupChat, content, directChatId, groupChatId, createdAt, Recipient, Media }) => {
+      ({ id, GroupChat, content, directChatId, groupChatId, createdAt, Author, Media }) => {
         let avatarUrl: string | undefined,
           conversationName: string = ''
-        if (Recipient) {
-          avatarUrl = Recipient.Profile!.avatar || undefined
-          conversationName = Recipient.Profile!.fullName
+        if (Author) {
+          const authorProfile = Author.Profile
+          avatarUrl = authorProfile?.avatar || undefined
+          conversationName = authorProfile?.fullName || ''
         } else {
           avatarUrl = GroupChat!.Members[0].User.Profile!.avatar || undefined
           conversationName = GroupChat!.name
