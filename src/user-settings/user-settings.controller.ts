@@ -20,6 +20,6 @@ export class UserSettingsController {
     @Body() dto: UpdateUserSettingsDto,
     @User('id') userId: number
   ): Promise<UserSettingsResponse> {
-    return this.userSettingsService.updateOnlyReceiveFriendMessage(userId, dto)
+    return this.userSettingsService.updateUserSettings(userId, dto)
   }
 }

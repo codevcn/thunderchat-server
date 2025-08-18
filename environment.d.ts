@@ -26,6 +26,9 @@ declare global {
       AWS_SECRET_KEY: string
       AWS_REGION: string
       AWS_S3_BUCKET: string
+      VAPID_PUBLIC_KEY: string
+      VAPID_PRIVATE_KEY: string
+      VAPID_MAILTO: string
     }
   }
 }

@@ -86,8 +86,20 @@ export class TempController {
 
   @Get('count-all-data-from-es')
   async countAllDataFromES() {
-    const messages = await this.elasticsearchService.countAllMessages()
-    const users = await this.elasticsearchService.countAllUsers()
-    return { success: true, messages, users }
+    const messagesFromDB = await this.PrismaService.message.count()
+    const messagesFromES = await this.elasticsearchService.countAllMessages()
+    const usersFromDB = await this.PrismaService.user.count()
+    const usersFromES = await this.elasticsearchService.countAllUsers()
+    return {
+      success: true,
+      ES: {
+        messages: messagesFromES,
+        users: usersFromES,
+      },
+      DB: {
+        messages: messagesFromDB,
+        users: usersFromDB,
+      },
+    }
   }
 }

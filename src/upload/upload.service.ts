@@ -294,7 +294,7 @@ export class UploadService {
 
         response.on('end', async () => {
           try {
-            const fileBuffer = Buffer.concat(chunks)
+            const fileBuffer = Buffer.concat(chunks as unknown as readonly Uint8Array[])
 
             // Extract file extension from URL
             const urlParts = fileUrl.split('?')[0] // Remove query parameters

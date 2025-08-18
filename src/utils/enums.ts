@@ -12,6 +12,7 @@ export enum ERoutes {
   GROUP_MEMBER = 'group-member',
   PROFILE = 'profile',
   PIN_CONVERSATION = 'pin-conversation',
+  PUSH_NOTIFICATION = 'push-notification',
 }
 
 export enum EClientCookieNames {

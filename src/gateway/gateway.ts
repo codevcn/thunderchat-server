@@ -56,7 +56,7 @@ import { SyncDataToESService } from '@/configs/elasticsearch/sync-data-to-ES/syn
 import { DevLogger } from '@/dev/dev-logger'
 import type { TDirectChat } from '@/utils/entities/direct-chat.entity'
 import { Socket } from 'socket.io'
-import { TMessageFullInfo } from '@/utils/entities/message.entity'
+import { TMessageFullInfo, TMessageWithAuthor } from '@/utils/entities/message.entity'
 import { EChatType, EInternalEvents, EUserOnlineStatus } from '@/utils/enums'
 import { UserService } from '@/user/user.service'
 import { EGatewayMessages } from './gateway.message'
@@ -73,9 +73,10 @@ import { EUserSettingsMessages } from '@/user-settings/user-settings.message'
 import { EUserMessages } from '@/user/user.message'
 import { EGroupMemberMessages } from '@/group-member/group-member.message'
 import { EGroupChatPermissions, EGroupChatRoles } from '@/group-chat/group-chat.enum'
-import { TUserId } from '@/user/user.type'
+import type { TUserId } from '@/user/user.type'
 import { UserConnectionService } from '@/connection/user-connection.service'
 import { UpdateProfileDto } from '@/profile/profile.dto'
+import { PushNotificationService } from '@/push-notification/push-notification.service'
 
 @WebSocketGateway({
   cors: {
@@ -110,7 +111,8 @@ export class AppGateway
     private groupMemberService: GroupMemberService,
     private userSettingsService: UserSettingsService,
     private blockUserService: BlockUserService,
-    private userConnectionService: UserConnectionService
+    private userConnectionService: UserConnectionService,
+    private pushNotificationService: PushNotificationService
   ) {}
 
   /**
@@ -217,6 +219,37 @@ export class AppGateway
     return { directChat: newDirectChat, isNew: true }
   }
 
+  async handleSendPushNotification(
+    message: TMessageWithAuthor,
+    chatType: EChatType,
+    receiverIds: TUserId[],
+    groupChat?: TGroupChat
+  ): Promise<void> {
+    for (const receiverId of receiverIds) {
+      await this.pushNotificationService.sendNotificationToUser(
+        {
+          conversation: {
+            title:
+              chatType === EChatType.DIRECT
+                ? message.Author.Profile?.fullName || ''
+                : groupChat?.name || '',
+            type: chatType,
+            avatar:
+              chatType === EChatType.DIRECT
+                ? message.Author.Profile?.avatar || undefined
+                : groupChat?.avatarUrl || undefined,
+            message,
+          },
+          type: 'new_message',
+          ttlInSeconds: 60,
+          urgency: 'normal',
+          topic: 'New_Message',
+        },
+        receiverId
+      )
+    }
+  }
+
   async handleEmitNewMessage({
     client,
     receiverId,
@@ -246,8 +279,11 @@ export class AppGateway
           sender
         )
       }
+      await this.handleSendPushNotification(newMessage, EChatType.DIRECT, [receiverId])
     } else if (groupChat) {
       this.socketService.sendNewMessageToGroupChat(groupChat.id, newMessage)
+      const memberIds = await this.groupMemberService.findGroupChatMemberIds(groupChat.id)
+      await this.handleSendPushNotification(newMessage, EChatType.GROUP, memberIds, groupChat)
     }
   }
 

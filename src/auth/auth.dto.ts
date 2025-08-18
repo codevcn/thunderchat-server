@@ -33,7 +33,7 @@ export class CheckAuthDataDTO implements TUserWithProfile {
   id: number
   createdAt: Date
   email: string
-  Profile: Omit<TProfile, 'userId'> // this prop cannot be null, if null, it is a bug
+  Profile: TProfile // this prop cannot be null, if null, it is a bug
   role: EAppRoles
 
   @Exclude()

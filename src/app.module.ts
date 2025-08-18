@@ -50,6 +50,7 @@ import { DeleteMessageModule } from './direct-message/delete-message/delete-mess
 import { AdminModule } from './admin/admin.module'
 import { PinConversationModule } from './pin-conversation/pin-conversation.module'
 import { HealthcheckModule } from './healthcheck/healthcheck.module'
+import { PushNotificationModule } from './push-notification/push-notification.module'
 
 @Module({
   imports: [
@@ -75,6 +76,7 @@ import { HealthcheckModule } from './healthcheck/healthcheck.module'
     PinDirectChatModule,
     UserSettingsModule,
     DeleteMessageModule,
+    PushNotificationModule,
     AdminModule,
     HealthcheckModule,
   ],

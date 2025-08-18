@@ -10,6 +10,7 @@ import { DirectChatsModule } from '@/direct-chat/direct-chat.module'
 import { UserSettingsModule } from '@/user-settings/user-settings.module'
 import { FriendModule } from '@/friend/friend.module'
 import { UserConnectionService } from '@/connection/user-connection.service'
+import { PushNotificationModule } from '@/push-notification/push-notification.module'
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { UserConnectionService } from '@/connection/user-connection.service'
     DirectChatsModule,
     UserSettingsModule,
     FriendModule,
+    PushNotificationModule,
   ],
   providers: [AppGateway, FriendService, UserConnectionService],
 })

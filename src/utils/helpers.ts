@@ -75,6 +75,7 @@ export async function retryAsyncRequest<R>(
     try {
       return await requestExecutor()
     } catch (error) {
+      console.log('>>> error on retry Async Request:', error)
       if (retriesCount < maxRetries) {
         if (onPreRetry) onPreRetry(error, retriesCount)
         retriesCount++

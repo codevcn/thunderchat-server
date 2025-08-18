@@ -26,6 +26,14 @@ export class GroupMemberService {
     private readonly eventEmitter: EventEmitter2
   ) {}
 
+  async findGroupChatMemberIds(groupChatId: number): Promise<number[]> {
+    const members = await this.prismaService.groupChatMember.findMany({
+      where: { groupChatId },
+      select: { userId: true },
+    })
+    return members.map((member) => member.userId)
+  }
+
   async findMemberInGroupChat(
     groupChatId: number,
     userId: number

@@ -4,13 +4,13 @@ import { BaseWsExceptionFilter, WsException } from '@nestjs/websockets'
 import type { TClientSocket } from '@/gateway/gateway.type'
 import { EClientSocketEvents } from '@/gateway/gateway.event'
 import type { TWsErrorResponse } from '../types'
-import { DevLogger } from '@/dev/dev-logger'
 import { Prisma } from '@prisma/client'
 
 @Catch(WsException)
 export class BaseWsExceptionsFilter extends BaseWsExceptionFilter {
   catch(exception: WsException, host: ArgumentsHost) {
-    DevLogger.logError('ws exception:', exception)
+    console.error('>>> ws exception:', exception)
+
     const clientSocket = host.switchToWs().getClient<TClientSocket>()
     const formattedException = this.formatException(exception)
     clientSocket.emit(EClientSocketEvents.error, formattedException)
@@ -54,7 +54,7 @@ export function CatchInternalSocketError() {
         // call original function
         return await originalMethod.apply(this, args)
       } catch (error) {
-        DevLogger.logError('Caught WS error:', error)
+        console.error('>>> Caught WS error:', error)
 
         let clientMessage = handleSetErrorMessage(error)
         let httpStatus = error.status || 500

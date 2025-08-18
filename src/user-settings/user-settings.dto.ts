@@ -1,3 +1,11 @@
+import { IsBoolean, IsOptional } from 'class-validator'
+
 export class UpdateUserSettingsDto {
-  onlyReceiveFriendMessage: boolean
+  @IsBoolean()
+  @IsOptional()
+  onlyReceiveFriendMessage?: boolean
+
+  @IsBoolean()
+  @IsOptional()
+  pushNotificationEnabled?: boolean
 }

@@ -42,27 +42,28 @@ model User {
     createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
     role      AppRole  @default(USER)
 
-    Profile                   Profile?
-    DirectChatsAsSender       DirectChat[]       @relation("DirectChatsAsSender")
-    DirectChatsAsRecipient    DirectChat[]       @relation("DirectChatsAsRecipient")
-    Messages                  Message[]          @relation("DirectMessagesAsSender")
-    FriendsAsRecipient        Friend[]           @relation("FriendsAsRecipient")
-    FriendsAsSender           Friend[]           @relation("FriendsAsSender")
-    FriendRequestsSent        FriendRequest[]    @relation("FriendRequestsSent")
-    FriendRequestsReceived    FriendRequest[]    @relation("FriendRequestsReceived")
-    DirectMessagesAsRecipient Message[]          @relation("DirectMessagesAsRecipient")
-    MessageMappings           MessageMapping[]   @relation("MessageMappings")
-    GroupChatCreator          GroupChat[]        @relation("GroupChatCreator")
-    GroupChatMembers          GroupChatMember[]  @relation("GroupChatMembers")
-    PinnedMessages            PinnedMessage[]    @relation("PinnedMessagesByUser")
-    PinnedChats               PinnedChat[]       @relation("PinnedChatsByUser")
-    UserSettings              UserSettings?      @relation("UserToUserSettings")
-    ReportsMade               ViolationReport[]  @relation("ReportsMade")
-    ReportsAbout              ViolationReport[]  @relation("ReportsAbout")
-    BlockedUsers              BlockedUser[]      @relation("BlockedUsers")
-    BlockedByUsers            BlockedUser[]      @relation("BlockedByUsers")
-    GroupChatMembersJoinedBy  GroupChatMember[]  @relation("GroupChatMembersJoinedBy")
-    GroupJoinRequest          GroupJoinRequest[] @relation("UserRequests")
+    Profile                       Profile?
+    DirectChatsAsSender           DirectChat[]                   @relation("DirectChatsAsSender")
+    DirectChatsAsRecipient        DirectChat[]                   @relation("DirectChatsAsRecipient")
+    Messages                      Message[]                      @relation("DirectMessagesAsSender")
+    FriendsAsRecipient            Friend[]                       @relation("FriendsAsRecipient")
+    FriendsAsSender               Friend[]                       @relation("FriendsAsSender")
+    FriendRequestsSent            FriendRequest[]                @relation("FriendRequestsSent")
+    FriendRequestsReceived        FriendRequest[]                @relation("FriendRequestsReceived")
+    DirectMessagesAsRecipient     Message[]                      @relation("DirectMessagesAsRecipient")
+    MessageMappings               MessageMapping[]               @relation("MessageMappings")
+    GroupChatCreator              GroupChat[]                    @relation("GroupChatCreator")
+    GroupChatMembers              GroupChatMember[]              @relation("GroupChatMembers")
+    PinnedMessages                PinnedMessage[]                @relation("PinnedMessagesByUser")
+    PinnedChats                   PinnedChat[]                   @relation("PinnedChatsByUser")
+    UserSettings                  UserSettings?                  @relation("UserToUserSettings")
+    ReportsMade                   ViolationReport[]              @relation("ReportsMade")
+    ReportsAbout                  ViolationReport[]              @relation("ReportsAbout")
+    BlockedUsers                  BlockedUser[]                  @relation("BlockedUsers")
+    BlockedByUsers                BlockedUser[]                  @relation("BlockedByUsers")
+    GroupChatMembersJoinedBy      GroupChatMember[]              @relation("GroupChatMembersJoinedBy")
+    GroupJoinRequest              GroupJoinRequest[]             @relation("UserRequests")
+    PushNotificationSubscriptions PushNotificationSubscription[] @relation("PushNotificationSubscriptions")
 
     @@index([email], type: BTree)
     @@map("users")
@@ -296,7 +297,9 @@ model UserSettings {
     id                       Int     @id @default(autoincrement())
     userId                   Int     @unique @map("user_id")
     onlyReceiveFriendMessage Boolean @default(false) @map("only_receive_friend_message")
-    User                     User    @relation("UserToUserSettings", fields: [userId], references: [id])
+    pushNotificationEnabled  Boolean @default(false) @map("push_notification_enabled")
+
+    User User @relation("UserToUserSettings", fields: [userId], references: [id])
 
     @@map("user_settings")
 }
@@ -354,6 +357,21 @@ model ReportedMessage {
     ViolationReport ViolationReport @relation("ReportedMessages", fields: [reportId], references: [id])
 
     @@map("reported_messages")
+}
+
+model PushNotificationSubscription {
+    id             Int       @id @default(autoincrement())
+    userId         Int       @map("user_id")
+    endpoint       String    @unique
+    p256dh         String
+    auth           String
+    expirationTime DateTime? @map("expiration_time")
+    createdAt      DateTime  @default(now()) @map("created_at")
+
+    User User @relation("PushNotificationSubscriptions", fields: [userId], references: [id])
+
+    @@index([userId], type: BTree)
+    @@map("push_notification_subscriptions")
 }
 
 enum ReportedMessageType {

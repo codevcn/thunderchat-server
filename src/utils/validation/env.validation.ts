@@ -47,6 +47,15 @@ class EnvironmentVariables {
 
   @IsString()
   DECRYPT_USER_KEY_MASTER_KEY: string
+
+  @IsString()
+  VAPID_PUBLIC_KEY: string
+
+  @IsString()
+  VAPID_PRIVATE_KEY: string
+
+  @IsString()
+  VAPID_MAILTO: string
 }
 
 export function envValidation(config: Record<string, unknown>) {
