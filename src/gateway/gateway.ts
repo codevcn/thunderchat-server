@@ -6,10 +6,9 @@ import {
 } from '@nestjs/websockets'
 import type { OnGatewayConnection, OnGatewayInit, OnGatewayDisconnect } from '@nestjs/websockets'
 import { Server } from 'socket.io'
-import { EClientSocketEvents, EInitEvents } from './gateway.event'
+import { EClientSocketEvents } from './gateway.event'
 import { EMessageTypeAllTypes, ESocketNamespaces } from './gateway.enum'
 import {
-  HttpStatus,
   UseFilters,
   UsePipes,
   UseInterceptors,
@@ -18,7 +17,6 @@ import {
 } from '@nestjs/common'
 import { FriendService } from '@/friend/friend.service'
 import { BaseWsException } from '../utils/exceptions/base-ws.exception'
-import { EFriendMessages } from '@/friend/friend.message'
 import {
   CatchInternalSocketError,
   BaseWsExceptionsFilter,
@@ -54,7 +52,6 @@ import { ConversationTypingManager } from './helpers/conversation-typing.helper'
 import { SyncDataToESService } from '@/configs/elasticsearch/sync-data-to-ES/sync-data-to-ES.service'
 // import { GatewayInterceptor } from './gateway.interceptor'
 import { DevLogger } from '@/dev/dev-logger'
-import type { TDirectChat } from '@/utils/entities/direct-chat.entity'
 import { Socket } from 'socket.io'
 import { TMessageFullInfo, TMessageWithAuthor } from '@/utils/entities/message.entity'
 import { EChatType, EInternalEvents, EUserOnlineStatus } from '@/utils/enums'
@@ -144,13 +141,14 @@ export class AppGateway
       socketId: client.id,
       auth: client.handshake.auth,
     })
+    console.log('>>> client connected:', client.handshake.auth)
     try {
       const { clientId, messageOffset, directChatId, groupId } =
         await this.authService.validateSocketAuth(client)
       // await this.syncDataToESService.initESMessageEncryptor(clientId)
       this.socketService.addConnectedClient(clientId, client)
       this.socketService.broadcastUserOnlineStatus(clientId, EUserOnlineStatus.ONLINE)
-      client.emit(EInitEvents.client_connected, 'Connected Sucessfully!')
+      client.emit(EClientSocketEvents.server_hello, 'You connected sucessfully!')
       if (messageOffset) {
         await this.recoverMissingMessages(client, messageOffset, directChatId, groupId)
       }
@@ -225,8 +223,14 @@ export class AppGateway
     receiverIds: TUserId[],
     groupChat?: TGroupChat
   ): Promise<void> {
+    console.log('>>> handle send push notification:', {
+      message,
+      chatType,
+      receiverIds,
+      groupChat,
+    })
     for (const receiverId of receiverIds) {
-      await this.pushNotificationService.sendNotificationToUser(
+      this.pushNotificationService.sendNotificationToUser(
         {
           conversation: {
             title:
@@ -279,11 +283,16 @@ export class AppGateway
           sender
         )
       }
-      await this.handleSendPushNotification(newMessage, EChatType.DIRECT, [receiverId])
+      this.handleSendPushNotification(newMessage, EChatType.DIRECT, [receiverId])
     } else if (groupChat) {
       this.socketService.sendNewMessageToGroupChat(groupChat.id, newMessage)
       const memberIds = await this.groupMemberService.findGroupChatMemberIds(groupChat.id)
-      await this.handleSendPushNotification(newMessage, EChatType.GROUP, memberIds, groupChat)
+      this.handleSendPushNotification(
+        newMessage,
+        EChatType.GROUP,
+        memberIds.filter((id) => id !== sender.id),
+        groupChat
+      )
     }
   }
 
@@ -474,6 +483,20 @@ export class AppGateway
     return {
       success: true,
       newMessage,
+    }
+  }
+
+  @SubscribeMessage(EClientSocketEvents.client_hello)
+  @CatchInternalSocketError()
+  async handleClientHello(
+    @MessageBody() payload: string,
+    @ConnectedSocket() client: TClientSocket
+  ) {
+    console.log('>>> client hello:', payload)
+    const { clientId } = await this.authService.validateSocketAuth(client)
+    console.log('>>> client id:', clientId)
+    return {
+      success: true,
     }
   }
 

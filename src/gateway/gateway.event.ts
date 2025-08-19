@@ -1,8 +1,6 @@
-export enum EInitEvents {
-  client_connected = 'client_connected',
-}
-
 export enum EClientSocketEvents {
+  client_hello = 'client_hello',
+  server_hello = 'server_hello',
   send_message_direct = 'send_message:direct',
   send_message_group = 'send_message:group',
   join_group_chat_room = 'join_group_chat_room',

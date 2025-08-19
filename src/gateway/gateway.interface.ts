@@ -1,5 +1,5 @@
 import type { TUserWithProfile } from '@/utils/entities/user.entity'
-import type { EClientSocketEvents, EInitEvents } from './gateway.event'
+import type { EClientSocketEvents } from './gateway.event'
 import type {
   TGetDirectMessagesMessage,
   TMsgStatusPayload,
@@ -31,7 +31,7 @@ import type { TUserId } from '@/user/user.type'
 import { UpdateProfileDto } from '@/profile/profile.dto'
 
 export interface IEmitSocketEvents {
-  [EInitEvents.client_connected]: (message: string) => void
+  [EClientSocketEvents.server_hello]: (payload: string) => void
   [EClientSocketEvents.send_message_direct]: (payload: TGetDirectMessagesMessage) => void
   [EClientSocketEvents.send_friend_request]: (
     payload: TUserWithProfile,
@@ -73,6 +73,7 @@ export interface IEmitSocketEvents {
   [EClientSocketEvents.delete_direct_chat]: () => void // not used
   [EClientSocketEvents.delete_group_chat]: () => void // not used
   [EClientSocketEvents.member_leave_group_chat]: () => void // not used
+  [EClientSocketEvents.client_hello]: () => void // not used
 }
 
 export interface IGateway {

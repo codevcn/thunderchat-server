@@ -14,11 +14,13 @@ import type {
 } from '@/utils/entities/push-notification-subscription.entity'
 import type { TUserId } from '@/user/user.type'
 import { EProviderTokens } from '@/utils/enums'
+import { UserSettingsService } from '@/user-settings/user-settings.service'
 
 @Injectable()
 export class PushNotificationService {
   constructor(
-    @Inject(EProviderTokens.PRISMA_CLIENT) private readonly prismaService: PrismaService
+    @Inject(EProviderTokens.PRISMA_CLIENT) private readonly prismaService: PrismaService,
+    private userSettingsService: UserSettingsService
   ) {
     webPush.setVapidDetails(
       process.env.VAPID_MAILTO,
@@ -30,12 +32,6 @@ export class PushNotificationService {
   async findSubscriptionsByUserId(userId: TUserId): Promise<TPushNotificationSubscription[]> {
     return await this.prismaService.pushNotificationSubscription.findMany({
       where: { userId },
-    })
-  }
-
-  async deleteSubscription(endpoint: TPushSubscriptionEndpoint): Promise<void> {
-    await this.prismaService.pushNotificationSubscription.delete({
-      where: { endpoint },
     })
   }
 
@@ -87,10 +83,26 @@ export class PushNotificationService {
     })
   }
 
+  async checkIfUserEnablePushNotification(userId: TUserId): Promise<boolean> {
+    const userSettings = await this.userSettingsService.findByUserId(userId)
+    return userSettings?.pushNotificationEnabled || false
+  }
+
+  checkIfSubscriptionNotFound(error: WebPushError): boolean {
+    return error instanceof WebPushError && (error.statusCode === 404 || error.statusCode === 410)
+  }
+
   async sendNotificationToUser(
     payload: TPushNotificationData,
     userId: TUserId
   ): Promise<TWebPushSendNotificationResult> {
+    const isEnabled = await this.checkIfUserEnablePushNotification(userId)
+    if (!isEnabled) {
+      return {
+        success: [],
+        failure: [],
+      }
+    }
     const subscriptions = await this.findSubscriptionsByUserId(userId)
     const successEndpoints: TPushSubscriptionEndpoint[] = []
     const failureEndpoints: TPushSubscriptionEndpoint[] = []
@@ -116,11 +128,8 @@ export class PushNotificationService {
           })
           .catch(async (error) => {
             failureEndpoints.push(subscription.endpoint)
-            if (
-              error instanceof WebPushError &&
-              (error.statusCode === 404 || error.statusCode === 410)
-            ) {
-              this.deleteSubscription(subscription.endpoint).catch((err) => {
+            if (this.checkIfSubscriptionNotFound(error)) {
+              this.removeSubscription(subscription.endpoint, userId).catch((err) => {
                 DevLogger.logError('Error deleting subscription:', err)
               })
             } else {
