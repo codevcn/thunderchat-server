@@ -6,6 +6,7 @@ import {
   IsNumber,
   IsOptional,
   MinLength,
+  IsString,
 } from 'class-validator'
 import { ELengths } from '@/utils/enums'
 import { EValidationMessages } from '@/utils/messages'
@@ -76,4 +77,29 @@ export class UnblockUserDTO {
   @IsNumber()
   @Type(() => Number)
   blockedUserId: number
+}
+
+export class ForgotPasswordDTO {
+  @IsNotEmpty()
+  @IsEmail()
+  email: string
+}
+
+export class VerifyOtpDTO {
+  @IsNotEmpty()
+  @IsEmail()
+  email: string
+
+  @IsNotEmpty()
+  @IsString()
+  otp: string
+}
+
+export class ResetPasswordDTO {
+  @IsNotEmpty()
+  resetToken: string
+
+  @IsNotEmpty()
+  @MinLength(8, { message: 'Mật khẩu mới phải từ 8 ký tự trở lên' })
+  newPassword: string
 }

@@ -31,12 +31,6 @@ class EnvironmentVariables {
   JWT_TOKEN_MAX_AGE_IN_HOUR: string
 
   @IsString()
-  REDIS_CLOUD_DB_PASSWORD: string
-
-  @IsString()
-  REDIS_HOST: string
-
-  @IsString()
   CLIENT_DOMAIN_DEV: string
 
   @IsString()
@@ -56,6 +50,22 @@ class EnvironmentVariables {
 
   @IsString()
   VAPID_MAILTO: string
+  SMTP_HOST: string
+
+  @IsString()
+  SMTP_PORT: string
+
+  @IsString()
+  SMTP_SECURE: string
+
+  @IsString()
+  SMTP_USER: string
+
+  @IsString()
+  SMTP_PASS: string
+
+  @IsString()
+  MAIL_FROM: string
 }
 
 export function envValidation(config: Record<string, unknown>) {

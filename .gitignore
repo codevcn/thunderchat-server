@@ -42,3 +42,8 @@ lerna-debug.log*
 .env.test.local
 .env.production.local
 .env.development
+
+
+# App generated / temp
+/prisma/migrations/
+/src/upload/temp-images/
