@@ -188,6 +188,7 @@ export class AppGateway
       const messages = await this.messageService.getNewerDirectMessages(
         messageOffset,
         directChatId,
+        groupChatId,
         limit ?? 20
       )
       if (messages && messages.length > 0) {

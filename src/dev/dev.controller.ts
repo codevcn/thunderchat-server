@@ -27,6 +27,7 @@ export class TempController {
     const res = await this.DirectMessageService.getOlderDirectMessagesHandler(
       msgOffset,
       directChatId,
+      undefined,
       limit,
       false,
       sortType

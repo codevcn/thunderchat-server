@@ -117,15 +117,17 @@ export class DirectMessageService {
 
   async getNewerDirectMessages(
     messageOffset: TMessageOffset,
-    chatId: number,
+    directChatId: number | undefined,
+    groupChatId: number | undefined,
     limit: number
   ): Promise<TGetDirectMessagesMessage[]> {
     const messages = await this.PrismaService.message.findMany({
       where: {
-        OR: [{ directChatId: chatId }, { groupChatId: chatId }],
         id: {
           gt: messageOffset,
         },
+        directChatId,
+        groupChatId,
       },
       orderBy: {
         id: 'asc',
@@ -151,16 +153,25 @@ export class DirectMessageService {
 
   async getOlderDirectMessages(
     messageOffset: TMessageOffset | undefined,
-    chatId: number,
+    directChatId: number | undefined,
+    groupChatId: number | undefined,
     limit: number,
     equalOffset: boolean
   ): Promise<TGetDirectMessagesMessage[]> {
+    console.log('>>> getOlderDirectMessages:', {
+      messageOffset,
+      directChatId,
+      groupChatId,
+      limit,
+      equalOffset,
+    })
     return await this.PrismaService.message.findMany({
       where: {
         id: {
           [equalOffset ? 'lte' : 'lt']: messageOffset,
         },
-        OR: [{ directChatId: chatId }, { groupChatId: chatId }],
+        directChatId,
+        groupChatId,
       },
       orderBy: {
         id: 'desc',
@@ -172,14 +183,16 @@ export class DirectMessageService {
 
   async getOlderDirectMessagesHandler(
     messageOffset: TMessageOffset | undefined,
-    chatId: number,
+    directChatId: number | undefined,
+    groupChatId: number | undefined,
     limit: number,
     isFirstTime: boolean = false,
     sortType: ESortTypes = ESortTypes.TIME_ASC
   ): Promise<TGetDirectMessagesData> {
     const messages = await this.getOlderDirectMessages(
       messageOffset,
-      chatId,
+      directChatId,
+      groupChatId,
       limit + 1,
       isFirstTime
     )

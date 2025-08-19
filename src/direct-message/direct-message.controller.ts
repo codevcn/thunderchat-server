@@ -21,6 +21,7 @@ export class DirectMessageController implements IDirectMessageController {
     return await this.directMessageService.getOlderDirectMessagesHandler(
       msgOffset,
       directChatId,
+      undefined,
       limit,
       isFirstTime,
       sortType
@@ -55,6 +56,7 @@ export class DirectMessageController implements IDirectMessageController {
     return this.directMessageService.getNewerDirectMessages(
       Number(msgOffset),
       Number(directChatId),
+      undefined,
       Number(limit)
     )
   }
@@ -81,6 +83,7 @@ export class DirectMessageController implements IDirectMessageController {
     const { groupChatId, msgOffset, limit, sortType, isFirstTime } = params
     const result = await this.directMessageService.getOlderDirectMessagesHandler(
       msgOffset,
+      undefined,
       groupChatId,
       limit,
       isFirstTime,
@@ -119,6 +122,7 @@ export class DirectMessageController implements IDirectMessageController {
   ) {
     return this.directMessageService.getNewerDirectMessages(
       Number(msgOffset),
+      undefined,
       Number(groupChatId),
       Number(limit)
     )
