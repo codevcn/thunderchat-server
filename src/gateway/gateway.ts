@@ -224,12 +224,6 @@ export class AppGateway
     receiverIds: TUserId[],
     groupChat?: TGroupChat
   ): Promise<void> {
-    console.log('>>> handle send push notification:', {
-      message,
-      chatType,
-      receiverIds,
-      groupChat,
-    })
     for (const receiverId of receiverIds) {
       this.pushNotificationService.sendNotificationToUser(
         {

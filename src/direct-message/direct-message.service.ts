@@ -158,13 +158,6 @@ export class DirectMessageService {
     limit: number,
     equalOffset: boolean
   ): Promise<TGetDirectMessagesMessage[]> {
-    console.log('>>> getOlderDirectMessages:', {
-      messageOffset,
-      directChatId,
-      groupChatId,
-      limit,
-      equalOffset,
-    })
     return await this.PrismaService.message.findMany({
       where: {
         id: {

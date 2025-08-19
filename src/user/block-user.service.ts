@@ -76,24 +76,22 @@ export class BlockUserService {
   }
 
   async checkBlockedUser(
-    userId: number,
-    otherUserId: number
+    blockerId: number,
+    blockedId: number
   ): Promise<TBlockedUserFullInfo | null> {
-    return await this.findBlockedUserWithFullInfo(userId, otherUserId)
+    return await this.findBlockedUserWithFullInfo(blockerId, blockedId)
   }
 
-  async unblockUser(userId: number, otherUserId: number): Promise<void> {
-    const blockedUser = await this.findBlockedUser(userId, otherUserId)
+  async unblockUser(blockerId: number, otherUserId: number): Promise<void> {
+    const blockedUser = await this.findBlockedUser(blockerId, otherUserId)
     if (!blockedUser) throw new BadRequestException(EUserMessages.USER_NOT_FOUND)
-    if (blockedUser.blockerUserId !== userId)
+    if (blockedUser.blockerUserId !== blockerId)
       throw new BadRequestException(EUserMessages.YOU_ARE_NOT_BLOCKER)
 
     await this.prismaService.blockedUser.deleteMany({
       where: {
-        OR: [
-          { blockerUserId: userId, blockedUserId: otherUserId },
-          { blockerUserId: otherUserId, blockedUserId: userId },
-        ],
+        blockerUserId: blockerId,
+        blockedUserId: otherUserId,
       },
     })
   }
