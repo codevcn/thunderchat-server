@@ -10,7 +10,9 @@ const apiPrefix: string = 'api'
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule)
-  const { CLIENT_HOST_DEV, PORT } = process.env
+  const { PORT, NODE_ENV } = process.env
+  const CLIENT_HOST =
+    NODE_ENV === 'production' ? process.env.CLIENT_HOST : process.env.CLIENT_HOST_DEV
 
   // set api prefix
   app.setGlobalPrefix(apiPrefix)
@@ -20,7 +22,7 @@ async function bootstrap() {
 
   // cors
   app.enableCors({
-    origin: [CLIENT_HOST_DEV],
+    origin: [CLIENT_HOST],
     credentials: true,
   })
 
