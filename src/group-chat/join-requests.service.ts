@@ -9,9 +9,8 @@ import { EJoinRequestStatus } from './group-chat.enum'
 import { EGroupMemberMessages } from '@/group-member/group-member.message'
 import { GroupMemberService } from '@/group-member/group-member.service'
 import { EGroupChatMessages } from './group-chat.message'
-import { SocketService } from '@/gateway/socket/socket.service'
-import { IEmitSocketEvents } from '@/gateway/gateway.interface'
-import { EClientSocketEvents } from '@/gateway/gateway.event'
+import { UserConnectionService } from '@/connection/user-connection.service'
+import { EClientSocketEvents, type IEmitSocketEvents } from '@/utils/events/socket.event'
 import { TUserWithProfile } from '@/utils/entities/user.entity'
 
 @Injectable()
@@ -19,7 +18,7 @@ export class JoinRequestsService {
   constructor(
     @Inject(EProviderTokens.PRISMA_CLIENT) private prismaService: PrismaService,
     private readonly groupMemberService: GroupMemberService,
-    private readonly socketService: SocketService
+    private readonly userConnectionService: UserConnectionService
   ) {}
 
   async fetchJoinRequests(
@@ -102,7 +101,7 @@ export class JoinRequestsService {
         joinRequest.Requester
       )
       for (const member of addedMembers) {
-        const clientSockets = this.socketService.getConnectedClient<IEmitSocketEvents>(
+        const clientSockets = this.userConnectionService.getConnectedClient<IEmitSocketEvents>(
           member.userId
         )
         if (clientSockets && clientSockets.length > 0) {

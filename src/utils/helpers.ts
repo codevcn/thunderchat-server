@@ -4,7 +4,7 @@ import { Worker } from 'worker_threads'
 import type { TRetryRequestOptions } from './types'
 import validator from 'validator'
 import { Express } from 'express'
-import { EMessageMediaTypes } from '@/direct-message/direct-message.enum'
+import { EMessageMediaTypes } from '@/message/message.enum'
 import { EGlobalMessages } from './enums'
 
 /**

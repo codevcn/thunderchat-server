@@ -4,13 +4,13 @@ import { GroupChatService } from './group-chat.service'
 import { S3UploadService } from '@/upload/s3-upload.service'
 import { UserModule } from '@/user/user.module'
 import { GroupMemberService } from '@/group-member/group-member.service'
-import { DirectMessageModule } from '@/direct-message/direct-message.module'
+import { MessageModule } from '@/message/message.module'
 import { InviteCodeService } from './invite-code.service'
 import { JoinRequestsService } from './join-requests.service'
-import { SocketService } from '@/gateway/socket/socket.service'
+import { UserConnectionService } from '@/connection/user-connection.service'
 
 @Module({
-  imports: [UserModule, DirectMessageModule],
+  imports: [UserModule, MessageModule],
   controllers: [GroupChatController],
   providers: [
     GroupChatService,
@@ -18,7 +18,7 @@ import { SocketService } from '@/gateway/socket/socket.service'
     GroupMemberService,
     InviteCodeService,
     JoinRequestsService,
-    SocketService,
+    UserConnectionService,
   ],
   exports: [
     GroupChatService,
@@ -26,7 +26,7 @@ import { SocketService } from '@/gateway/socket/socket.service'
     GroupMemberService,
     InviteCodeService,
     JoinRequestsService,
-    SocketService,
+    UserConnectionService,
   ],
 })
 export class GroupChatModule {}

@@ -1,4 +1,4 @@
-import type { EMessageTypes } from '@/direct-message/direct-message.enum'
+import type { EMessageTypes } from '@/message/message.enum'
 import type { SearchHit } from '@elastic/elasticsearch/lib/api/types'
 
 export type TUserESMapping = {

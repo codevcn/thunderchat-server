@@ -4,7 +4,7 @@ import { EProviderTokens } from '@/utils/enums'
 import { BadRequestException, Inject, Injectable } from '@nestjs/common'
 import { EFriendRequestMessages } from './friend-request.message'
 import { UserService } from '@/user/user.service'
-import { SocketService } from '@/gateway/socket/socket.service'
+import { UserConnectionService } from '@/connection/user-connection.service'
 import { EFriendRequestStatus } from './friend-request.enum'
 import { FriendRequestActionDTO, GetFriendRequestsDTO } from './friend-request.dto'
 import { TGetFriendRequestsData } from './friend-request.type'
@@ -18,7 +18,7 @@ export class FriendRequestService {
   constructor(
     @Inject(EProviderTokens.PRISMA_CLIENT) private PrismaService: PrismaService,
     private userService: UserService,
-    private socketService: SocketService,
+    private userConnectionService: UserConnectionService,
     private blockUserService: BlockUserService
   ) {}
 
@@ -150,7 +150,7 @@ export class FriendRequestService {
     if (!sender) {
       throw new BadRequestException(EFriendRequestMessages.SENDER_NOT_FOUND)
     }
-    this.socketService.sendFriendRequest(sender, recipientId, friendRequest)
+    this.userConnectionService.sendFriendRequest(sender, recipientId, friendRequest)
     return friendRequest
   }
 
@@ -186,7 +186,7 @@ export class FriendRequestService {
         })
         break
     }
-    this.socketService.friendRequestAction(senderId, requestId, action)
+    this.userConnectionService.friendRequestAction(senderId, requestId, action)
   }
 
   async getFriendRequests(

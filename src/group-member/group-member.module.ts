@@ -2,10 +2,10 @@ import { Module } from '@nestjs/common'
 import { GroupMemberController } from './group-member.controller'
 import { GroupMemberService } from './group-member.service'
 import { UserModule } from '@/user/user.module'
-import { DirectMessageModule } from '@/direct-message/direct-message.module'
+import { MessageModule } from '@/message/message.module'
 
 @Module({
-  imports: [UserModule, DirectMessageModule],
+  imports: [UserModule, MessageModule],
   providers: [GroupMemberService],
   controllers: [GroupMemberController],
   exports: [GroupMemberService],

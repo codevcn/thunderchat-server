@@ -6,12 +6,12 @@ import { CredentialService } from './credentials/credentials.service'
 import { UserModule } from '@/user/user.module'
 import { AuthGuard } from './auth.guard'
 import { AdminRoleModule } from './role/admin/admin.module'
-import { SocketService } from '@/gateway/socket/socket.service'
+import { UserConnectionService } from '@/connection/user-connection.service'
 
 @Module({
   imports: [UserModule, AdminRoleModule],
   controllers: [AuthController],
-  providers: [AuthService, JWTService, CredentialService, AuthGuard, SocketService],
-  exports: [AuthService, JWTService, CredentialService, SocketService],
+  providers: [AuthService, JWTService, CredentialService, AuthGuard, UserConnectionService],
+  exports: [AuthService, JWTService, CredentialService, UserConnectionService],
 })
 export class AuthModule {}

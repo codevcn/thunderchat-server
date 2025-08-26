@@ -1,0 +1,15 @@
+export enum EVoiceCallMessage {
+  CALLEE_OFFLINE = 'The callee is currently offline.',
+  CALLEE_BUSY = 'The callee is on another call.',
+  REQUEST_SENT = 'Call invitation sent.',
+  CALL_TIMEOUT = 'No response to the call, canceled due to timeout.',
+  CALL_ACCEPTED = 'The call has been accepted.',
+  CALL_REJECTED = 'The call was rejected.',
+  CALL_ENDED = 'The call has ended.',
+  SDP_OFFER_RELAYED = 'SDP Offer relayed.',
+  SDP_ANSWER_RELAYED = 'SDP Answer relayed.',
+  ICE_RELAYED = 'ICE candidate relayed.',
+  INVALID_STATUS = 'Invalid call status.',
+  SESSION_NOT_FOUND = 'Call session not found.',
+  TOO_MANY_CALLS = 'Too many calls are in progress. Please try again later.',
+}

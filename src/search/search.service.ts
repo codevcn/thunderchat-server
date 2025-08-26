@@ -6,11 +6,11 @@ import type {
   TConversationSearchResult,
 } from './search.type'
 import { ElasticsearchService } from '@/configs/elasticsearch/elasticsearch.service'
-import { DirectMessageService } from '@/direct-message/direct-message.service'
+import { MessageService } from '@/message/message.service'
 import { UserService } from '@/user/user.service'
 import { replaceHTMLTagInMessageContent } from '@/utils/helpers'
 import { EChatType } from '@/utils/enums'
-import { SocketService } from '@/gateway/socket/socket.service'
+import { UserConnectionService } from '@/connection/user-connection.service'
 import { DirectChatService } from '@/direct-chat/direct-chat.service'
 import { GroupChatService } from '@/group-chat/group-chat.service'
 import { PrismaService } from '@/configs/db/prisma.service'
@@ -22,9 +22,9 @@ import { DevLogger } from '@/dev/dev-logger'
 export class SearchService {
   constructor(
     private elasticSearchService: ElasticsearchService,
-    private directMessageService: DirectMessageService,
+    private MessageService: MessageService,
     private userService: UserService,
-    private socketService: SocketService,
+    private userConnectionService: UserConnectionService,
     private directChatService: DirectChatService,
     private groupChatService: GroupChatService,
     @Inject(EProviderTokens.PRISMA_CLIENT) private prismaService: PrismaService
@@ -52,7 +52,7 @@ export class SearchService {
     const userIds = userHits.filter((user) => !!user._source).map((user) => parseInt(user._id!))
     // find messages and users by ids in database
     const [messages, users] = await Promise.all([
-      this.directMessageService.findMessagesForGlobalSearch(messageIds, limit),
+      this.MessageService.findMessagesForGlobalSearch(messageIds, limit),
       this.userService.findUsersForGlobalSearch(userIds, selfUserId, limit),
     ])
     const finalMessages = messages.map<TGlobalSearchData['messages'][number]>(
@@ -82,7 +82,7 @@ export class SearchService {
     )
     const finalUsers = users.map((user) => ({
       ...user,
-      isOnline: this.socketService.checkUserIsOnline(user.id),
+      isOnline: this.userConnectionService.checkUserIsOnline(user.id),
     }))
     const nextSearchOffset: TGlobalSearchData['nextSearchOffset'] = {
       messageSearchOffset: messageHits.at(-1)?.sort,

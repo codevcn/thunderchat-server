@@ -1,7 +1,7 @@
 import { EProviderTokens } from '@/utils/enums'
 import { Body, Controller, Get, Inject, Post, Query } from '@nestjs/common'
 import { PrismaService } from '@/configs/db/prisma.service'
-import { DirectMessageService } from '@/direct-message/direct-message.service'
+import { MessageService } from '@/message/message.service'
 import { ElasticsearchService } from '@/configs/elasticsearch/elasticsearch.service'
 import { measureTime, parseTxtFileToObject } from './helpers'
 import { DevLogger } from './dev-logger'
@@ -11,7 +11,7 @@ import { SyncDataToESService } from '@/configs/elasticsearch/sync-data-to-ES/syn
 export class TempController {
   constructor(
     @Inject(EProviderTokens.PRISMA_CLIENT) private PrismaService: PrismaService,
-    private DirectMessageService: DirectMessageService,
+    private MessageService: MessageService,
     private elasticsearchService: ElasticsearchService,
     private syncDataToESService: SyncDataToESService
   ) {}
@@ -24,7 +24,7 @@ export class TempController {
   @Post('all-msg')
   async getAllMessages(@Body() payload: any) {
     const { msgOffset, directChatId, limit, sortType } = payload
-    const res = await this.DirectMessageService.getOlderDirectMessagesHandler(
+    const res = await this.MessageService.getOlderDirectMessagesHandler(
       msgOffset,
       directChatId,
       undefined,

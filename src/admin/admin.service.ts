@@ -1,10 +1,10 @@
 import { Injectable, Inject } from '@nestjs/common'
 import { PrismaService } from '@/configs/db/prisma.service'
 import { UserService } from '@/user/user.service'
-import { SocketService } from '@/gateway/socket/socket.service'
+import { UserConnectionService } from '@/connection/user-connection.service'
 import { UploadService } from '@/upload/upload.service'
 import { EProviderTokens, EAppRoles } from '@/utils/enums'
-import { EClientSocketEvents } from '@/gateway/gateway.event'
+import { EClientSocketEvents } from '@/utils/events/socket.event'
 import {
   TAdminUsersData,
   TGetAdminUsersParams,
@@ -34,7 +34,7 @@ export class AdminService {
     @Inject(EProviderTokens.PRISMA_CLIENT)
     private prisma: PrismaService,
     private userService: UserService,
-    private socketService: SocketService,
+    private userConnectionService: UserConnectionService,
     private uploadService: UploadService
   ) {}
 
@@ -868,7 +868,7 @@ export class AdminService {
     })
 
     // Get active users (currently connected users)
-    const activeUsers = this.socketService.getConnectedClientsCountForAdmin()
+    const activeUsers = this.userConnectionService.getConnectedClientsCountForAdmin()
 
     // Get total direct messages (excluding PIN_NOTICE)
     const totalDirectMessages = await this.prisma.message.count({
@@ -1287,8 +1287,10 @@ export class AdminService {
       for (const message of deletedMessages) {
         if (message.directChatId && message.DirectChat) {
           // Emit for direct chat
-          const creatorSockets = this.socketService.getConnectedClient(message.DirectChat.creatorId)
-          const recipientSockets = this.socketService.getConnectedClient(
+          const creatorSockets = this.userConnectionService.getConnectedClient(
+            message.DirectChat.creatorId
+          )
+          const recipientSockets = this.userConnectionService.getConnectedClient(
             message.DirectChat.recipientId
           )
           if (creatorSockets && recipientSockets) {
