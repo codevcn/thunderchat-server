@@ -1,1 +1,1 @@
-yarn run start:debug
+pnpm start:debug

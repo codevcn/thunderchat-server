@@ -1,18 +1,26 @@
 import { Injectable, BadRequestException, Inject } from '@nestjs/common'
-import * as AWS from 'aws-sdk'
+import { DeleteObjectCommand, S3Client } from '@aws-sdk/client-s3'
 import { ThumbnailService } from './thumbnail.service'
 import { Express } from 'express'
 import type { TUploadResult } from './upload.type'
 import { PrismaService } from '@/configs/db/prisma.service'
 import { EProviderTokens } from '@/utils/enums'
 import { detectFileType, formatBytes, decodeMulterFileName } from '@/utils/helpers'
+import { PutObjectCommand } from '@aws-sdk/client-s3'
+import { DevLogger } from '@/dev/dev-logger'
+import * as fs from 'fs'
+import * as path from 'path'
+import * as https from 'https'
+import * as http from 'http'
 
 @Injectable()
 export class UploadService {
-  private s3 = new AWS.S3({
-    accessKeyId: process.env.AWS_ACCESS_KEY,
-    secretAccessKey: process.env.AWS_SECRET_KEY,
+  private s3 = new S3Client({
     region: process.env.AWS_REGION,
+    credentials: {
+      accessKeyId: process.env.AWS_ACCESS_KEY,
+      secretAccessKey: process.env.AWS_SECRET_KEY,
+    },
   })
   // Định nghĩa các loại file được phép upload
   private allowedMimeTypes = {
@@ -99,28 +107,32 @@ export class UploadService {
       throw new BadRequestException('File size exceeds 50MB limit')
     }
 
-    // Use file.originalname as fileKey if it contains folder structure
-    // Normalize filename to UTF-8 to avoid garbled Vietnamese characters
+    // Chuẩn hóa tên file
     const decodedOriginalName = decodeMulterFileName(file.originalname)
     const fileKey = decodedOriginalName.includes('/')
       ? decodedOriginalName
       : `${Date.now()}_${decodedOriginalName}`
+
     let uploadedFileUrl: string | null = null
 
     try {
-      const params = {
-        Bucket: process.env.AWS_S3_BUCKET,
+      // ✅ Upload file bằng AWS SDK v3
+      const putCommand = new PutObjectCommand({
+        Bucket: process.env.AWS_S3_BUCKET!,
         Key: fileKey,
         Body: file.buffer,
         ContentType: file.mimetype,
-      }
+      })
 
-      const data = await this.s3.upload(params).promise()
-      uploadedFileUrl = data.Location
+      await this.s3.send(putCommand)
 
+      // Tự build URL thay vì `data.Location` như v2
+      uploadedFileUrl = `https://${process.env.AWS_S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileKey}`
+
+      // Ghi vào DB
       const messageMedia = await this.PrismaService.messageMedia.create({
         data: {
-          url: data.Location,
+          url: uploadedFileUrl,
           type: await detectFileType(file),
           fileName: decodedOriginalName,
           fileSize: file.size,
@@ -136,31 +148,29 @@ export class UploadService {
         fileSize: formatBytes(messageMedia.fileSize),
       }
 
-      // Bước 2: Nếu là video, tạo thumbnail
+      // Nếu là video → tạo thumbnail
       if (fileType === 'video') {
         try {
-          // Kiểm tra thumbnail đã tồn tại chưa
-          const existingThumbnail = await this.thumbnailService.checkThumbnailExists(fileKey)
           let thumbnailUrl: string
+          const existingThumbnail = await this.thumbnailService.checkThumbnailExists(fileKey)
 
           if (existingThumbnail) {
             thumbnailUrl = existingThumbnail
           } else {
             thumbnailUrl = await this.thumbnailService.generateVideoThumbnail(
-              data.Location,
+              uploadedFileUrl,
               fileKey
             )
           }
 
-          // Update thumbnailUrl trong database
           await this.PrismaService.messageMedia.update({
             where: { id: messageMedia.id },
             data: { thumbnailUrl },
           })
 
           result.thumbnailUrl = thumbnailUrl
-        } catch (error) {
-          // Rollback: Xóa file video đã upload
+        } catch (error: any) {
+          // Rollback video nếu lỗi
           await this.rollbackFileUpload(fileKey)
           throw new Error(`Failed to create thumbnail: ${error.message}`)
         }
@@ -168,7 +178,7 @@ export class UploadService {
 
       return result
     } catch (error) {
-      // Nếu có lỗi và file đã được upload, rollback
+      // Nếu có lỗi và file đã upload thì rollback
       if (uploadedFileUrl) {
         await this.rollbackFileUpload(fileKey)
       }
@@ -180,11 +190,16 @@ export class UploadService {
    * Rollback: Xóa file đã upload lên S3
    */
   private async rollbackFileUpload(fileKey: string): Promise<void> {
-    const params = {
-      Bucket: process.env.AWS_S3_BUCKET,
-      Key: fileKey,
+    try {
+      const deleteCommand = new DeleteObjectCommand({
+        Bucket: process.env.AWS_S3_BUCKET,
+        Key: fileKey,
+      })
+
+      await this.s3.send(deleteCommand)
+    } catch (error: any) {
+      DevLogger.logError(`Rollback File Upload error: ${error.message}`)
     }
-    await this.s3.deleteObject(params).promise()
   }
 
   /**
@@ -192,12 +207,21 @@ export class UploadService {
    */
   public async deleteFileByUrl(fileUrl: string): Promise<void> {
     const objectKey = fileUrl.split('.amazonaws.com/')[1]
-    if (!objectKey) throw new Error('Không tìm thấy object key trong url')
-    const params = {
-      Bucket: process.env.AWS_S3_BUCKET,
-      Key: objectKey,
+    if (!objectKey) {
+      throw new Error('Không tìm thấy object key trong url')
     }
-    await this.s3.deleteObject(params).promise()
+
+    try {
+      const deleteCommand = new DeleteObjectCommand({
+        Bucket: process.env.AWS_S3_BUCKET,
+        Key: objectKey,
+      })
+
+      await this.s3.send(deleteCommand)
+    } catch (error: any) {
+      DevLogger.logError(`Delete File error: ${error.message}`)
+      throw error
+    }
   }
 
   /**
@@ -227,8 +251,6 @@ export class UploadService {
     messageId: number,
     contentType: string
   ): Promise<{ url: string }> {
-    const fs = require('fs')
-    const path = require('path')
     const fileBuffer = fs.readFileSync(filePath)
 
     // Extract file extension from file path
@@ -239,21 +261,23 @@ export class UploadService {
     // Get proper content type based on file extension
     const properContentType = this.getContentTypeFromExtension(fileExtension) || contentType
 
-    const params = {
-      Bucket: process.env.AWS_S3_BUCKET,
+    const putCommand = new PutObjectCommand({
+      Bucket: process.env.AWS_S3_BUCKET!,
       Key: fileKey,
       Body: fileBuffer,
       ContentType: properContentType,
-    }
+    })
 
-    const data = await this.s3.upload(params).promise()
-    console.log('✅ Uploaded report message media:', data.Location)
+    await this.s3.send(putCommand)
 
-    return { url: data.Location }
+    // Trả về URL public (nếu bucket public) hoặc URL dạng S3
+    const fileUrl = `https://${process.env.AWS_S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileKey}`
+
+    return { url: fileUrl }
   }
 
   /**
-   * Download file from URL and upload to S3 as report message media
+   * Download file from URL and upload to S3 as report message media (AWS SDK v3)
    */
   async uploadReportMessageFromUrl(
     fileUrl: string,
@@ -261,10 +285,8 @@ export class UploadService {
     contentType: string,
     retryCount: number = 0
   ): Promise<{ url: string }> {
-    const https = require('https')
-    const http = require('http')
     const maxRetries = 3
-    const timeout = 30000 // 30 seconds timeout
+    const timeout = 30000 // 30s
 
     return new Promise((resolve, reject) => {
       const protocol = fileUrl.startsWith('https:') ? https : http
@@ -274,13 +296,12 @@ export class UploadService {
           const error = new Error(`Failed to download file: HTTP ${response.statusCode}`)
           if (retryCount < maxRetries) {
             setTimeout(
-              () => {
+              () =>
                 this.uploadReportMessageFromUrl(fileUrl, messageId, contentType, retryCount + 1)
                   .then(resolve)
-                  .catch(reject)
-              },
+                  .catch(reject),
               2000 * (retryCount + 1)
-            ) // Exponential backoff
+            )
             return
           }
           reject(error)
@@ -288,60 +309,48 @@ export class UploadService {
         }
 
         const chunks: Buffer[] = []
-        response.on('data', (chunk: Buffer) => {
-          chunks.push(chunk)
-        })
+        response.on('data', (chunk: Buffer) => chunks.push(chunk))
 
         response.on('end', async () => {
           try {
-            const fileBuffer = Buffer.concat(chunks as unknown as readonly Uint8Array[])
+            const fileBuffer = Buffer.concat(chunks)
 
-            // Extract file extension from URL
-            const urlParts = fileUrl.split('?')[0] // Remove query parameters
+            // Lấy extension từ URL
+            const urlParts = fileUrl.split('?')[0]
             const fileName = urlParts.split('/').pop() || 'file'
             const fileExtension = fileName.includes('.')
               ? fileName.split('.').pop() || this.getExtensionFromContentType(contentType)
               : this.getExtensionFromContentType(contentType)
 
             const fileKey = `report-message/${Date.now()}_message-${messageId}.${fileExtension}`
-
-            // Get proper content type based on file extension
             const properContentType = this.getContentTypeFromExtension(fileExtension) || contentType
 
-            const params = {
-              Bucket: process.env.AWS_S3_BUCKET,
+            const command = new PutObjectCommand({
+              Bucket: process.env.AWS_S3_BUCKET!,
               Key: fileKey,
               Body: fileBuffer,
               ContentType: properContentType,
-            }
+            })
 
-            // Add retry logic for S3 upload
-            let data
             try {
-              data = await this.s3.upload(params).promise()
+              await this.s3.send(command)
             } catch (s3Error) {
               if (retryCount < maxRetries) {
                 setTimeout(
-                  async () => {
-                    try {
-                      const retryData = await this.s3.upload(params).promise()
-                      console.log(
-                        '✅ Downloaded and uploaded report message media from URL:',
-                        retryData.Location
-                      )
-                      resolve({ url: retryData.Location })
-                    } catch (retryError) {
-                      reject(retryError)
-                    }
-                  },
+                  () =>
+                    this.uploadReportMessageFromUrl(fileUrl, messageId, contentType, retryCount + 1)
+                      .then(resolve)
+                      .catch(reject),
                   2000 * (retryCount + 1)
-                ) // Exponential backoff
+                )
                 return
               }
               throw s3Error
             }
 
-            resolve({ url: data.Location })
+            const fileUrlResult = `https://${process.env.AWS_S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileKey}`
+            console.log('✅ Downloaded and uploaded report message media:', fileUrlResult)
+            resolve({ url: fileUrlResult })
           } catch (error) {
             reject(error)
           }
@@ -351,13 +360,12 @@ export class UploadService {
           const downloadError = new Error(`Failed to download file: ${error.message}`)
           if (retryCount < maxRetries) {
             setTimeout(
-              () => {
+              () =>
                 this.uploadReportMessageFromUrl(fileUrl, messageId, contentType, retryCount + 1)
                   .then(resolve)
-                  .catch(reject)
-              },
+                  .catch(reject),
               2000 * (retryCount + 1)
-            ) // Exponential backoff
+            )
             return
           }
           reject(downloadError)
@@ -368,13 +376,12 @@ export class UploadService {
         const connectError = new Error(`Failed to connect to URL: ${error.message}`)
         if (retryCount < maxRetries) {
           setTimeout(
-            () => {
+            () =>
               this.uploadReportMessageFromUrl(fileUrl, messageId, contentType, retryCount + 1)
                 .then(resolve)
-                .catch(reject)
-            },
+                .catch(reject),
             2000 * (retryCount + 1)
-          ) // Exponential backoff
+          )
           return
         }
         reject(connectError)
@@ -385,13 +392,12 @@ export class UploadService {
         const timeoutError = new Error(`Request timeout after ${timeout}ms`)
         if (retryCount < maxRetries) {
           setTimeout(
-            () => {
+            () =>
               this.uploadReportMessageFromUrl(fileUrl, messageId, contentType, retryCount + 1)
                 .then(resolve)
-                .catch(reject)
-            },
+                .catch(reject),
             2000 * (retryCount + 1)
-          ) // Exponential backoff
+          )
           return
         }
         reject(timeoutError)

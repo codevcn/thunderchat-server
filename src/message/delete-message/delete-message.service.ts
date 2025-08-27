@@ -1,7 +1,7 @@
 import { Injectable, Inject } from '@nestjs/common'
 import { PrismaService } from '@/configs/db/prisma.service'
 import { UserConnectionService } from '@/connection/user-connection.service'
-import { EClientSocketEvents } from '@/utils/events/socket.event'
+import { EEmitSocketEvents } from '@/utils/events/socket.event'
 import { EProviderTokens, ESyncDataToESWorkerType } from '@/utils/enums'
 import type { TDeleteMessageResult } from './delete-message.type'
 import { EMessageTypes } from '@/message/message.enum'
@@ -250,18 +250,18 @@ export class DeleteMessageService {
 
         if (creatorSockets && recipientSockets) {
           for (const creatorSocket of creatorSockets) {
-            creatorSocket?.emit(EClientSocketEvents.send_message_direct, updated)
+            creatorSocket?.emit(EEmitSocketEvents.send_message_direct, updated)
           }
           for (const recipientSocket of recipientSockets) {
-            recipientSocket?.emit(EClientSocketEvents.send_message_direct, updated)
+            recipientSocket?.emit(EEmitSocketEvents.send_message_direct, updated)
           }
           // Emit tất cả tin nhắn reply để cập nhật reply preview
           for (const replyMsg of replyMessages) {
             for (const creatorSocket of creatorSockets) {
-              creatorSocket?.emit(EClientSocketEvents.send_message_direct, replyMsg)
+              creatorSocket?.emit(EEmitSocketEvents.send_message_direct, replyMsg)
             }
             for (const recipientSocket of recipientSockets) {
-              recipientSocket?.emit(EClientSocketEvents.send_message_direct, replyMsg)
+              recipientSocket?.emit(EEmitSocketEvents.send_message_direct, replyMsg)
             }
           }
         } else {

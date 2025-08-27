@@ -1,18 +1,25 @@
-import { Injectable, Logger } from '@nestjs/common'
-import * as AWS from 'aws-sdk'
+import { Injectable } from '@nestjs/common'
+import {
+  S3Client,
+  PutObjectCommand,
+  DeleteObjectCommand,
+  HeadObjectCommand,
+} from '@aws-sdk/client-s3'
 import ffmpeg from 'fluent-ffmpeg'
 import ffmpegInstaller from '@ffmpeg-installer/ffmpeg'
 import * as fs from 'fs'
 import * as path from 'path'
 import * as os from 'os'
+import { DevLogger } from '@/dev/dev-logger'
 
 @Injectable()
 export class ThumbnailService {
-  private readonly logger = new Logger(ThumbnailService.name)
-  private readonly s3 = new AWS.S3({
-    accessKeyId: process.env.AWS_ACCESS_KEY,
-    secretAccessKey: process.env.AWS_SECRET_KEY,
+  private readonly s3 = new S3Client({
     region: process.env.AWS_REGION,
+    credentials: {
+      accessKeyId: process.env.AWS_ACCESS_KEY,
+      secretAccessKey: process.env.AWS_SECRET_KEY,
+    },
   })
 
   /**
@@ -25,8 +32,6 @@ export class ThumbnailService {
     let thumbnailUploaded = false
 
     try {
-      this.logger.log(`Bắt đầu tạo thumbnail cho video: ${videoKey}`)
-
       // Bước 1: Download video từ S3 về temp
       await this.downloadVideoFromS3(videoUrl, tempVideoPath)
 
@@ -40,152 +45,117 @@ export class ThumbnailService {
       // Bước 4: Cleanup temp files
       this.cleanupTempFiles([tempVideoPath, tempThumbnailPath])
 
-      this.logger.log(`Tạo thumbnail thành công: ${thumbnailUrl}`)
       return thumbnailUrl
-    } catch (error) {
-      this.logger.error(`Lỗi tạo thumbnail: ${error.message}`)
+    } catch (error: any) {
+      DevLogger.logError('generate Video Thumbnail error:', error)
 
-      // Rollback: Nếu thumbnail đã upload nhưng có lỗi sau đó, xóa thumbnail
       if (thumbnailUploaded) {
         await this.rollbackThumbnailUpload(thumbnailKey)
       }
-
-      // Cleanup temp files nếu có
       this.cleanupTempFiles([tempVideoPath, tempThumbnailPath])
-
       throw error
     }
   }
 
-  /**
-   * Download video từ S3 về local temp
-   */
   private async downloadVideoFromS3(videoUrl: string, localPath: string): Promise<void> {
     try {
       const response = await fetch(videoUrl)
       if (!response.ok) {
         throw new Error(`Failed to download video: ${response.statusText}`)
       }
-
       const buffer = await response.arrayBuffer()
       fs.writeFileSync(localPath, Buffer.from(buffer))
-      this.logger.log(`Download video thành công: ${localPath}`)
-    } catch (error) {
-      this.logger.error(`Lỗi download video: ${error.message}`)
+    } catch (error: any) {
+      DevLogger.logError('download Video error:', error)
       throw error
     }
   }
 
-  /**
-   * Tạo thumbnail bằng ffmpeg
-   */
   private async createThumbnailWithFfmpeg(videoPath: string, thumbnailPath: string): Promise<void> {
     return new Promise((resolve, reject) => {
-      // Set ffmpeg path từ installer
       ffmpeg.setFfmpegPath(ffmpegInstaller.path)
 
       ffmpeg(videoPath)
         .screenshots({
-          timestamps: ['00:00:01'], // Lấy frame ở giây thứ 1
+          timestamps: ['00:00:01'],
           filename: path.basename(thumbnailPath),
           folder: path.dirname(thumbnailPath),
-          // Chỉ set width, height tự động giữ nguyên aspect ratio
-          size: '320x?', // Width 320px, height tự động tính
+          size: '320x?',
         })
         .on('end', () => {
-          this.logger.log(`Tạo thumbnail thành công: ${thumbnailPath}`)
           resolve()
         })
         .on('error', (error) => {
-          this.logger.error(`Lỗi ffmpeg: ${error.message}`)
+          DevLogger.logError('create Thumbnail error:', error)
           reject(error)
         })
     })
   }
 
-  /**
-   * Upload thumbnail lên S3
-   */
   private async uploadThumbnailToS3(thumbnailPath: string, thumbnailKey: string): Promise<string> {
     try {
       const fileBuffer = fs.readFileSync(thumbnailPath)
 
-      const params = {
-        Bucket: process.env.AWS_S3_BUCKET,
+      const command = new PutObjectCommand({
+        Bucket: process.env.AWS_S3_BUCKET!,
         Key: `thumbnail/${thumbnailKey}`,
         Body: fileBuffer,
         ContentType: 'image/jpeg',
-      }
+      })
 
-      const result = await this.s3.upload(params).promise()
-      this.logger.log(`Upload thumbnail thành công: ${result.Location}`)
-      return result.Location
-    } catch (error) {
-      this.logger.error(`Lỗi upload thumbnail: ${error.message}`)
+      await this.s3.send(command)
+
+      const location = `https://${process.env.AWS_S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/thumbnail/${thumbnailKey}`
+      return location
+    } catch (error: any) {
+      DevLogger.logError('upload Thumbnail error:', error)
       throw error
     }
   }
 
-  /**
-   * Tạo key cho thumbnail
-   */
   private generateThumbnailKey(videoKey: string): string {
     const videoName = path.basename(videoKey, path.extname(videoKey))
     return `${videoName}_thumb.jpg`
   }
 
-  /**
-   * Cleanup temp files
-   */
   private cleanupTempFiles(filePaths: string[]): void {
     filePaths.forEach((filePath) => {
       try {
         if (fs.existsSync(filePath)) {
           fs.unlinkSync(filePath)
-          this.logger.log(`Đã xóa temp file: ${filePath}`)
         }
-      } catch (error) {
-        this.logger.warn(`Không thể xóa temp file ${filePath}: ${error.message}`)
+      } catch (error: any) {
+        DevLogger.logError('cleanup Temp Files error:', error)
       }
     })
   }
 
-  /**
-   * Rollback: Xóa thumbnail đã upload lên S3
-   */
   private async rollbackThumbnailUpload(thumbnailKey: string): Promise<void> {
     try {
-      this.logger.log(`🔄 Bắt đầu rollback thumbnail: Xóa file ${thumbnailKey}`)
-
-      const params = {
-        Bucket: process.env.AWS_S3_BUCKET,
+      const command = new DeleteObjectCommand({
+        Bucket: process.env.AWS_S3_BUCKET!,
         Key: `thumbnail/${thumbnailKey}`,
-      }
+      })
 
-      await this.s3.deleteObject(params).promise()
-      this.logger.log(`✅ Rollback thumbnail thành công: Đã xóa file ${thumbnailKey}`)
-    } catch (rollbackError) {
-      this.logger.error(`❌ Lỗi rollback thumbnail: ${rollbackError.message}`)
-      // Không throw error vì đây là cleanup, không nên làm fail toàn bộ process
+      await this.s3.send(command)
+    } catch (error) {
+      DevLogger.logError('rollback Thumbnail Upload error:', error)
     }
   }
 
-  /**
-   * Kiểm tra thumbnail đã tồn tại chưa
-   */
   async checkThumbnailExists(videoKey: string): Promise<string | null> {
     try {
       const thumbnailKey = this.generateThumbnailKey(videoKey)
 
-      const params = {
-        Bucket: process.env.AWS_S3_BUCKET,
+      const command = new HeadObjectCommand({
+        Bucket: process.env.AWS_S3_BUCKET!,
         Key: `thumbnail/${thumbnailKey}`,
-      }
+      })
 
-      await this.s3.headObject(params).promise()
+      await this.s3.send(command)
       return `https://${process.env.AWS_S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/thumbnail/${thumbnailKey}`
-    } catch (error) {
-      return null // Thumbnail chưa tồn tại
+    } catch {
+      return null
     }
   }
 }
