@@ -2,7 +2,7 @@ import { Injectable, Inject, forwardRef, BadRequestException } from '@nestjs/com
 import { PrismaService } from '../../configs/db/prisma.service'
 import { EProviderTokens, ESyncDataToESWorkerType } from '@/utils/enums'
 import { UserConnectionService } from '@/connection/user-connection.service'
-import { EClientSocketEvents } from '@/utils/events/socket.event'
+import { EEmitSocketEvents } from '@/utils/events/socket.event'
 import { EMessageMediaTypes, EMessageStatus, EMessageTypes } from '../message.enum'
 import type { TMessageWithMedia } from '@/utils/entities/message.entity'
 import { EPinMessages } from './pin.message'
@@ -155,12 +155,12 @@ export class PinService {
       // Emit socket event gửi message mới cho cả 2 user
       this.userConnectionService.emitToDirectChat(
         directChatId,
-        EClientSocketEvents.send_message_direct,
+        EEmitSocketEvents.send_message_direct,
         pinNoticeMessage
       )
 
       // PHÁT SOCKET EVENT ĐẾN TẤT CẢ CLIENT CÙNG PHÒNG
-      this.userConnectionService.emitToDirectChat(directChatId, EClientSocketEvents.pin_message, {
+      this.userConnectionService.emitToDirectChat(directChatId, EEmitSocketEvents.pin_message, {
         messageId,
         directChatId,
         isPinned: true,
@@ -230,12 +230,12 @@ export class PinService {
       // Emit socket event gửi message mới cho cả 2 user
       this.userConnectionService.emitToDirectChat(
         directChatId,
-        EClientSocketEvents.send_message_direct,
+        EEmitSocketEvents.send_message_direct,
         pinNoticeMessage
       )
 
       // PHÁT SOCKET EVENT ĐẾN TẤT CẢ CLIENT CÙNG PHÒNG
-      this.userConnectionService.emitToDirectChat(directChatId, EClientSocketEvents.pin_message, {
+      this.userConnectionService.emitToDirectChat(directChatId, EEmitSocketEvents.pin_message, {
         messageId,
         directChatId,
         isPinned: false,
@@ -448,7 +448,7 @@ export class PinService {
       this.userConnectionService
         .getServer()
         .to(createGroupChatRoomName(groupChatId))
-        .emit(EClientSocketEvents.pin_message_group, {
+        .emit(EEmitSocketEvents.pin_message_group, {
           messageId,
           groupChatId,
           isPinned: true,
@@ -518,7 +518,7 @@ export class PinService {
       this.userConnectionService
         .getServer()
         .to(createGroupChatRoomName(groupChatId))
-        .emit(EClientSocketEvents.pin_message_group, {
+        .emit(EEmitSocketEvents.pin_message_group, {
           messageId: pinNoticeMessage.id,
           groupChatId,
           isPinned: false,

@@ -10,7 +10,7 @@ import { EGroupMemberMessages } from '@/group-member/group-member.message'
 import { GroupMemberService } from '@/group-member/group-member.service'
 import { EGroupChatMessages } from './group-chat.message'
 import { UserConnectionService } from '@/connection/user-connection.service'
-import { EClientSocketEvents, type IEmitSocketEvents } from '@/utils/events/socket.event'
+import { EEmitSocketEvents } from '@/utils/events/socket.event'
 import { TUserWithProfile } from '@/utils/entities/user.entity'
 
 @Injectable()
@@ -101,13 +101,11 @@ export class JoinRequestsService {
         joinRequest.Requester
       )
       for (const member of addedMembers) {
-        const clientSockets = this.userConnectionService.getConnectedClient<IEmitSocketEvents>(
-          member.userId
-        )
+        const clientSockets = this.userConnectionService.getConnectedClient(member.userId)
         if (clientSockets && clientSockets.length > 0) {
           for (const clientSocket of clientSockets) {
             clientSocket.emit(
-              EClientSocketEvents.new_conversation,
+              EEmitSocketEvents.new_conversation,
               null,
               joinRequest.GroupChat,
               EChatType.GROUP,

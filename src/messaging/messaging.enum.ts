@@ -1,5 +1,6 @@
 export enum ESocketNamespaces {
-  app = 'app',
+  messaging = 'messaging',
+  voice_call = 'voice_call',
 }
 
 export enum EMessageTypeAllTypes {

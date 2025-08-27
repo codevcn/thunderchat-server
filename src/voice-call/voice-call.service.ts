@@ -1,7 +1,6 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common'
-import type { TVoiceCallSession } from '@/utils/entities/voice-call-session.entity'
 import type { TUserId } from '@/user/user.type'
-import { EVoiceCallMessage } from './voice-call.message'
+import { EVoiceCallMessages } from './voice-call.message'
 import { EProviderTokens } from '@/utils/enums'
 import { PrismaService } from '@/configs/db/prisma.service'
 import type { TActiveVoiceCallSession, TVoiceCallSessionActiveId } from './voice-call.type'
@@ -27,16 +26,17 @@ export class VoiceCallService {
     callerUserId: TUserId,
     calleeUserId: TUserId,
     directChatId: TDirectChat['id']
-  ): TVoiceCallSessionActiveId {
+  ): TActiveVoiceCallSession {
     const tempSessionId = uuidv4()
-    this.activeCallSessions.set(tempSessionId, {
+    const session: TActiveVoiceCallSession = {
       id: tempSessionId,
       status: EVoiceCallStatus.REQUESTING,
       callerUserId,
       calleeUserId,
       directChatId,
-    })
-    return tempSessionId
+    }
+    this.activeCallSessions.set(tempSessionId, session)
+    return session
   }
 
   // async checkCallRequestInProgress(callerUserId: TUserId, calleeUserId: TUserId): Promise<boolean> {
@@ -75,47 +75,52 @@ export class VoiceCallService {
   // }
 
   acceptCall(sessionId: TVoiceCallSessionActiveId): TActiveVoiceCallSession {
-    const session = this.callSessions.get(sessionId)
-    if (!session) {
-      throw new NotFoundException(EVoiceCallMessage.SESSION_NOT_FOUND)
-    }
-    if (
-      session.status !== EVoiceCallSessionStatus.REQUESTING &&
-      session.status !== EVoiceCallSessionStatus.RINGING
-    ) {
-      throw new BadRequestException(EVoiceCallMessage.INVALID_STATUS)
-    }
-    session.status = EVoiceCallSessionStatus.ACCEPTED
-    return session
-  }
-
-  updateCallStatus(sessionId: TVoiceCallSessionId, status: EVoiceCallSessionStatus): void {
-    const session = this.callSessions.get(sessionId)
-    if (!session) {
-      throw new NotFoundException(EVoiceCallMessage.SESSION_NOT_FOUND)
-    }
-    session.status = status
-  }
-
-  connectCall(sessionId: TVoiceCallSessionId): TVoiceCallSession {
-    const session = this.callSessions.get(sessionId)
-    if (!session) {
-      throw new NotFoundException(EVoiceCallMessage.SESSION_NOT_FOUND)
-    }
-    session.status = EVoiceCallSessionStatus.CONNECTED
-    return session
-  }
-
-  endCall(sessionId: TVoiceCallSessionActiveId): void {
     const session = this.getActiveCallSession(sessionId)
     if (!session) {
-      throw new NotFoundException(EVoiceCallMessage.SESSION_NOT_FOUND)
+      throw new NotFoundException(EVoiceCallMessages.SESSION_NOT_FOUND)
+    }
+    if (
+      session.status !== EVoiceCallStatus.REQUESTING &&
+      session.status !== EVoiceCallStatus.RINGING
+    ) {
+      throw new BadRequestException(EVoiceCallMessages.INVALID_STATUS)
+    }
+    session.status = EVoiceCallStatus.ACCEPTED
+    return session
+  }
+
+  updateCallStatus(
+    sessionId: TVoiceCallSessionActiveId,
+    status: EVoiceCallStatus
+  ): TActiveVoiceCallSession {
+    const session = this.getActiveCallSession(sessionId)
+    if (!session) {
+      throw new NotFoundException(EVoiceCallMessages.SESSION_NOT_FOUND)
+    }
+    session.status = status
+    return session
+  }
+
+  // connectCall(sessionId: TVoiceCallSessionId): TVoiceCallSession {
+  //   const session = this.callSessions.get(sessionId)
+  //   if (!session) {
+  //     throw new NotFoundException(EVoiceCallMessage.SESSION_NOT_FOUND)
+  //   }
+  //   session.status = EVoiceCallSessionStatus.CONNECTED
+  //   return session
+  // }
+
+  endCall(sessionId: TVoiceCallSessionActiveId): TActiveVoiceCallSession {
+    const session = this.getActiveCallSession(sessionId)
+    if (!session) {
+      throw new NotFoundException(EVoiceCallMessages.SESSION_NOT_FOUND)
     }
     this.activeCallSessions.delete(sessionId)
     if (this.usersCalling.get(session.callerUserId) === sessionId)
       this.usersCalling.delete(session.callerUserId)
     if (this.usersCalling.get(session.calleeUserId) === sessionId)
       this.usersCalling.delete(session.calleeUserId)
+    return session
   }
 
   isUserBusy(userId: TUserId): boolean {

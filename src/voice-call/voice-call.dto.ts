@@ -1,7 +1,7 @@
 import { IsString, IsOptional, IsNumber, IsEnum } from 'class-validator'
-import { EHangupReason } from './voice-call.enum'
+import { EHangupReason, ESDPType } from './voice-call.enum'
 import { Type } from 'class-transformer'
-import type { TVoiceCallSessionId } from '@/utils/entities/voice-call-session.entity'
+import type { TVoiceCallSessionActiveId } from './voice-call.type'
 
 export class CallRequestDTO {
   @IsNumber() @Type(() => Number) directChatId: number
@@ -9,38 +9,32 @@ export class CallRequestDTO {
 }
 
 export class CallAcceptDTO {
-  @IsNumber() @Type(() => Number) sessionId: TVoiceCallSessionId
+  @IsNumber() @Type(() => Number) sessionId: TVoiceCallSessionActiveId
 }
 
 export class CallRejectDTO {
-  @IsNumber() @Type(() => Number) sessionId: TVoiceCallSessionId
+  @IsNumber() @Type(() => Number) sessionId: TVoiceCallSessionActiveId
   @IsOptional() @IsString() reason?: string
 }
 
-export class CallCancelDTO {
-  @IsNumber() @Type(() => Number) sessionId: TVoiceCallSessionId
-}
-
-export class CallEndDTO {
-  @IsNumber() @Type(() => Number) sessionId: TVoiceCallSessionId
+export class CallHangupDTO {
+  @IsNumber() @Type(() => Number) sessionId: TVoiceCallSessionActiveId
   @IsOptional() @IsEnum(EHangupReason) reason?: EHangupReason
 }
 
-export class SdpOfferDTO {
-  @IsNumber() @Type(() => Number) sessionId: TVoiceCallSessionId
-  @IsString() sdp: string
-  @IsString() type: 'offer'
-}
-
-export class SdpAnswerDTO {
-  @IsNumber() @Type(() => Number) sessionId: TVoiceCallSessionId
-  @IsString() sdp: string
-  @IsString() type: 'answer'
+export class SDPOfferAnswerDTO {
+  @IsNumber() @Type(() => Number) sessionId: TVoiceCallSessionActiveId
+  @IsString() SDP: string
+  @IsString() type: ESDPType
 }
 
 export class IceCandidateDTO {
-  @IsNumber() @Type(() => Number) sessionId: TVoiceCallSessionId
+  @IsNumber() @Type(() => Number) sessionId: TVoiceCallSessionActiveId
   @IsString() candidate: string
   @IsOptional() @IsString() sdpMid?: string
   @IsOptional() @IsNumber() sdpMLineIndex?: number
+}
+
+export class CalleeSetSessionDTO {
+  @IsNumber() @Type(() => Number) sessionId: TVoiceCallSessionActiveId
 }

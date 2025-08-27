@@ -1,4 +1,4 @@
-export enum EVoiceCallMessage {
+export enum EVoiceCallMessages {
   CALLEE_OFFLINE = 'The callee is currently offline.',
   CALLEE_BUSY = 'The callee is on another call.',
   REQUEST_SENT = 'Call invitation sent.',

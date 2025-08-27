@@ -1,25 +1,26 @@
 import { Injectable } from '@nestjs/common'
-import { Server, Socket } from 'socket.io'
-import { EventsMap } from 'socket.io/dist/typed-events'
+import { Server } from 'socket.io'
 import type { TUserWithProfile } from '@/utils/entities/user.entity'
-import type { IEmitSocketEvents } from '@/utils/events/socket.event'
-import { EClientSocketEvents } from '@/utils/events/socket.event'
+import { EEmitSocketEvents, IEmitSocketEvents } from '@/utils/events/socket.event'
 import { EFriendRequestStatus } from '@/friend-request/friend-request.enum'
 import type { TGetFriendRequestsData } from '@/friend-request/friend-request.type'
 import type { TUserId } from '@/user/user.type'
 import type { TServerMiddleware, TSocketId } from './user-connection.type'
 import { DevLogger } from '@/dev/dev-logger'
-import { TMessageFullInfo } from '@/utils/entities/message.entity'
-import { TGroupChat } from '@/utils/entities/group-chat.entity'
-import { TDirectChat } from '@/utils/entities/direct-chat.entity'
+import type { TMessageFullInfo } from '@/utils/entities/message.entity'
+import type { TGroupChat } from '@/utils/entities/group-chat.entity'
+import type { TDirectChat } from '@/utils/entities/direct-chat.entity'
 import { EChatType, EUserOnlineStatus } from '@/utils/enums'
 import { createDirectChatRoomName, createGroupChatRoomName } from '@/utils/helpers'
 import { UpdateProfileDto } from '@/profile/profile.dto'
+import { EHangupReason, ESDPType, EVoiceCallStatus } from '@/voice-call/voice-call.enum'
+import type { TClientSocket } from '@/utils/events/event.type'
+import type { TActiveVoiceCallSession } from '@/voice-call/voice-call.type'
 
 @Injectable()
 export class UserConnectionService {
-  private server: Server
-  private readonly connectedClients = new Map<TUserId, Socket[]>()
+  private server: Server<{}, IEmitSocketEvents>
+  private readonly connectedClients = new Map<TUserId, TClientSocket[]>()
   private readonly userChattingConnections = new Map<TUserId, TDirectChat['id'][]>()
 
   setServer(server: Server): void {
@@ -34,7 +35,7 @@ export class UserConnectionService {
     this.server.use(middleware)
   }
 
-  addConnectedClient(userId: TUserId, client: Socket): void {
+  addConnectedClient(userId: TUserId, client: TClientSocket): void {
     const currentClients = this.getConnectedClient(userId)
     if (currentClients && currentClients.length > 0) {
       currentClients.push(client)
@@ -43,7 +44,7 @@ export class UserConnectionService {
     }
   }
 
-  getConnectedClient<T extends EventsMap = EventsMap>(clientId: TUserId): Socket<T>[] | null {
+  getConnectedClient(clientId: TUserId): TClientSocket[] | null {
     return this.connectedClients.get(clientId) || null
   }
 
@@ -78,19 +79,19 @@ export class UserConnectionService {
     recipientId: TUserId,
     requestData: TGetFriendRequestsData
   ): void {
-    const recipientSockets = this.getConnectedClient<IEmitSocketEvents>(recipientId)
+    const recipientSockets = this.getConnectedClient(recipientId)
     if (recipientSockets && recipientSockets.length > 0) {
       for (const socket of recipientSockets) {
-        socket.emit(EClientSocketEvents.send_friend_request, sender, requestData)
+        socket.emit(EEmitSocketEvents.send_friend_request, sender, requestData)
       }
     }
   }
 
   friendRequestAction(senderId: number, requestId: number, action: EFriendRequestStatus): void {
-    const senderSockets = this.getConnectedClient<IEmitSocketEvents>(senderId)
+    const senderSockets = this.getConnectedClient(senderId)
     if (senderSockets && senderSockets.length > 0) {
       for (const socket of senderSockets) {
-        socket.emit(EClientSocketEvents.friend_request_action, {
+        socket.emit(EEmitSocketEvents.friend_request_action, {
           requestId,
           action,
         })
@@ -110,7 +111,7 @@ export class UserConnectionService {
     return count
   }
 
-  async emitToDirectChat(directChatId: number, event: EClientSocketEvents, payload: any) {
+  async emitToDirectChat(directChatId: number, event: EEmitSocketEvents, payload: any) {
     if (this.server) {
       const room = createDirectChatRoomName(directChatId)
       this.server.to(room).emit(event, payload)
@@ -128,8 +129,8 @@ export class UserConnectionService {
     return this.getUserOnlineStatus(userId) === EUserOnlineStatus.ONLINE
   }
 
-  emitToUser(userId: TUserId, event: EClientSocketEvents, payload: any): void {
-    const userSockets = this.getConnectedClient<IEmitSocketEvents>(userId)
+  emitToUser(userId: TUserId, event: EEmitSocketEvents, payload: any): void {
+    const userSockets = this.getConnectedClient(userId)
     if (userSockets && userSockets.length > 0) {
       for (const socket of userSockets) {
         socket.emit(event, payload)
@@ -144,13 +145,13 @@ export class UserConnectionService {
     directChat: TDirectChat,
     sender: TUserWithProfile
   ) {
-    const recipientSockets = this.getConnectedClient<IEmitSocketEvents>(recipientId)
+    const recipientSockets = this.getConnectedClient(recipientId)
     if (recipientSockets && recipientSockets.length > 0) {
       for (const socket of recipientSockets) {
-        socket.emit(EClientSocketEvents.send_message_direct, newMessage)
+        socket.emit(EEmitSocketEvents.send_message_direct, newMessage)
         if (isNewDirectChat) {
           socket.emit(
-            EClientSocketEvents.new_conversation,
+            EEmitSocketEvents.new_conversation,
             directChat,
             null,
             EChatType.DIRECT,
@@ -165,7 +166,7 @@ export class UserConnectionService {
   sendNewMessageToGroupChat(groupChatId: TGroupChat['id'], newMessage: TMessageFullInfo) {
     this.server
       .to(createGroupChatRoomName(groupChatId))
-      .emit(EClientSocketEvents.send_message_group, newMessage)
+      .emit(EEmitSocketEvents.send_message_group, newMessage)
   }
 
   broadcastCreateGroupChat(
@@ -174,11 +175,11 @@ export class UserConnectionService {
     creator: TUserWithProfile
   ) {
     for (const groupMemberId of groupMemberIds) {
-      const groupMemberSockets = this.getConnectedClient<IEmitSocketEvents>(groupMemberId)
+      const groupMemberSockets = this.getConnectedClient(groupMemberId)
       if (groupMemberSockets && groupMemberSockets.length > 0) {
         for (const socket of groupMemberSockets) {
           socket.emit(
-            EClientSocketEvents.new_conversation,
+            EEmitSocketEvents.new_conversation,
             null,
             groupChat,
             EChatType.GROUP,
@@ -191,7 +192,7 @@ export class UserConnectionService {
   }
 
   broadcastUserOnlineStatus(userId: TUserId, onlineStatus: EUserOnlineStatus) {
-    this.server.emit(EClientSocketEvents.broadcast_user_online_status, userId, onlineStatus)
+    this.server.emit(EEmitSocketEvents.broadcast_user_online_status, userId, onlineStatus)
   }
 
   broadcastAddMembersToGroupChat(
@@ -200,11 +201,11 @@ export class UserConnectionService {
     executor: TUserWithProfile
   ) {
     for (const groupMemberId of groupMemberIds) {
-      const groupMemberSockets = this.getConnectedClient<IEmitSocketEvents>(groupMemberId)
+      const groupMemberSockets = this.getConnectedClient(groupMemberId)
       if (groupMemberSockets) {
         for (const socket of groupMemberSockets) {
           socket.emit(
-            EClientSocketEvents.new_conversation,
+            EEmitSocketEvents.new_conversation,
             null,
             groupChat,
             EChatType.GROUP,
@@ -216,43 +217,43 @@ export class UserConnectionService {
     }
     this.server
       .to(createGroupChatRoomName(groupChat.id))
-      .emit(EClientSocketEvents.add_group_chat_members, groupMemberIds, groupChat)
+      .emit(EEmitSocketEvents.add_group_chat_members, groupMemberIds, groupChat)
   }
 
   broadcastRemoveGroupChatMembers(groupChat: TGroupChat, groupMemberIds: number[]) {
     this.server
       .to(createGroupChatRoomName(groupChat.id))
-      .emit(EClientSocketEvents.remove_group_chat_members, groupMemberIds, groupChat)
+      .emit(EEmitSocketEvents.remove_group_chat_members, groupMemberIds, groupChat)
   }
 
   broadcastUpdateGroupChat(groupChatId: number, groupChat: Partial<TGroupChat>) {
     this.server
       .to(createGroupChatRoomName(groupChatId))
-      .emit(EClientSocketEvents.update_group_chat_info, groupChatId, groupChat)
+      .emit(EEmitSocketEvents.update_group_chat_info, groupChatId, groupChat)
   }
 
   broadcastUpdateUserInfo(directChatId: number, updatedUserId: TUserId, updates: UpdateProfileDto) {
     this.server
       .to(createDirectChatRoomName(directChatId))
-      .emit(EClientSocketEvents.update_user_info, directChatId, updatedUserId, updates)
+      .emit(EEmitSocketEvents.update_user_info, directChatId, updatedUserId, updates)
   }
 
   broadcastDeleteDirectChat(directChatId: number, deleter: TUserWithProfile) {
     this.server
       .to(createDirectChatRoomName(directChatId))
-      .emit(EClientSocketEvents.delete_direct_chat, directChatId, deleter)
+      .emit(EEmitSocketEvents.delete_direct_chat, directChatId, deleter)
   }
 
   broadcastDeleteGroupChat(groupChatId: number) {
     this.server
       .to(createGroupChatRoomName(groupChatId))
-      .emit(EClientSocketEvents.delete_group_chat, groupChatId)
+      .emit(EEmitSocketEvents.delete_group_chat, groupChatId)
   }
 
   broadcastMemberLeaveGroupChat(groupChatId: number, userId: number) {
     this.server
       .to(createGroupChatRoomName(groupChatId))
-      .emit(EClientSocketEvents.member_leave_group_chat, groupChatId, userId)
+      .emit(EEmitSocketEvents.member_leave_group_chat, groupChatId, userId)
   }
 
   setUserChattingConnection(
@@ -287,15 +288,61 @@ export class UserConnectionService {
     }
   }
 
-  announceCallRequestToCallee(
-    callerUserId: TUserId,
-    calleeUserId: TUserId,
-    directChatId: TDirectChat['id']
-  ) {
-    const calleeSockets = this.getConnectedClient<IEmitSocketEvents>(calleeUserId)
+  announceCallRequestToCallee(activeCallSession: TActiveVoiceCallSession) {
+    const calleeSockets = this.getConnectedClient(activeCallSession.calleeUserId)
     if (calleeSockets && calleeSockets.length > 0) {
       for (const socket of calleeSockets) {
-        socket.emit(EClientSocketEvents.call_request, callerUserId, directChatId)
+        socket.emit(EEmitSocketEvents.call_request, activeCallSession)
+      }
+    }
+  }
+
+  announceCallStatus(userId: TUserId, status: EVoiceCallStatus) {
+    const userSockets = this.getConnectedClient(userId)
+    if (userSockets && userSockets.length > 0) {
+      for (const socket of userSockets) {
+        socket.emit(EEmitSocketEvents.call_status, status)
+      }
+    }
+  }
+
+  announceSDPOfferAnswer(userId: TUserId, SDP: string, type: ESDPType) {
+    const userSockets = this.getConnectedClient(userId)
+    if (userSockets && userSockets.length > 0) {
+      for (const socket of userSockets) {
+        socket.emit(EEmitSocketEvents.call_offer_answer, SDP, type)
+      }
+    }
+  }
+
+  announceIceCandidate(
+    userId: TUserId,
+    candidate: string,
+    sdpMid?: string,
+    sdpMLineIndex?: number
+  ) {
+    const userSockets = this.getConnectedClient(userId)
+    if (userSockets && userSockets.length > 0) {
+      for (const socket of userSockets) {
+        socket.emit(EEmitSocketEvents.call_ice, candidate, sdpMid, sdpMLineIndex)
+      }
+    }
+  }
+
+  announceCallHangup(userId: TUserId, reason?: EHangupReason) {
+    const userSockets = this.getConnectedClient(userId)
+    if (userSockets && userSockets.length > 0) {
+      for (const socket of userSockets) {
+        socket.emit(EEmitSocketEvents.call_hangup, reason)
+      }
+    }
+  }
+
+  announceCalleeSetSession(userId: TUserId) {
+    const userSockets = this.getConnectedClient(userId)
+    if (userSockets && userSockets.length > 0) {
+      for (const socket of userSockets) {
+        socket.emit(EEmitSocketEvents.callee_set_session)
       }
     }
   }

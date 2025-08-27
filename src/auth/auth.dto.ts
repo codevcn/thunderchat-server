@@ -71,3 +71,9 @@ export class LogoutPayloadDTO {
   @IsString()
   socketId?: TSocketId
 }
+
+export class VoiceCallSocketAuthDTO {
+  @IsNumber()
+  @Type(() => Number)
+  userId: TUserId
+}

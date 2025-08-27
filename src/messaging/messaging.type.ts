@@ -1,4 +1,3 @@
-import type { Socket } from 'socket.io'
 import type { TUserId } from '@/user/user.type'
 import type { TDirectChat } from '@/utils/entities/direct-chat.entity'
 import type { TSuccess } from '@/utils/types'
@@ -8,9 +7,7 @@ import type { TUserWithProfile } from '@/utils/entities/user.entity'
 import type { TGroupChat } from '@/utils/entities/group-chat.entity'
 import type { EUserOnlineStatus } from '@/utils/enums'
 import type { TGroupChatMemberWithUserAndGroupChat } from '@/utils/entities/group-chat-member.entity'
-import type { IEmitSocketEvents } from '@/utils/events/socket.event'
-
-export type TClientSocket = Socket<{}, IEmitSocketEvents>
+import type { TClientSocket } from '@/utils/events/event.type'
 
 export type TClientAuth = {
   clientId: number

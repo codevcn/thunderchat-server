@@ -11,8 +11,8 @@ import * as cookie from 'cookie'
 import { EAuthMessages } from '@/auth/auth.message'
 import { BaseWsException } from '@/utils/exceptions/base-ws.exception'
 import { EValidationMessages } from '@/utils/messages'
-import { ClientSocketAuthDTO } from './auth.dto'
-import type { TClientSocket } from '@/messaging/messaging.type'
+import { ClientSocketAuthDTO, VoiceCallSocketAuthDTO } from './auth.dto'
+import type { TClientSocket } from '@/utils/events/event.type'
 import { plainToInstance } from 'class-transformer'
 import { validate } from 'class-validator'
 import { SystemException } from '@/utils/exceptions/system.exception'
@@ -231,6 +231,15 @@ export class AuthService {
 
   async validateSocketAuth(clientSocket: TClientSocket): Promise<ClientSocketAuthDTO> {
     const socketAuth = plainToInstance(ClientSocketAuthDTO, clientSocket.handshake.auth)
+    const errors = await validate(socketAuth)
+    if (errors && errors.length > 0) {
+      throw new BaseWsException(EValidationMessages.INVALID_INPUT)
+    }
+    return socketAuth
+  }
+
+  async validateVoiceCallSocketAuth(clientSocket: TClientSocket): Promise<VoiceCallSocketAuthDTO> {
+    const socketAuth = plainToInstance(VoiceCallSocketAuthDTO, clientSocket.handshake.auth)
     const errors = await validate(socketAuth)
     if (errors && errors.length > 0) {
       throw new BaseWsException(EValidationMessages.INVALID_INPUT)

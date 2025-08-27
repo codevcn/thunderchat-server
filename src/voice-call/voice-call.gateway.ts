@@ -1,41 +1,119 @@
-import { UseGuards } from '@nestjs/common'
+import { NotFoundException, UseFilters } from '@nestjs/common'
 import {
   WebSocketGateway,
   SubscribeMessage,
   MessageBody,
   ConnectedSocket,
+  OnGatewayConnection,
+  OnGatewayDisconnect,
+  OnGatewayInit,
 } from '@nestjs/websockets'
-import { Socket } from 'socket.io'
-import { AuthGuard } from '../auth/auth.guard'
+import { Server, Socket } from 'socket.io'
 import { VoiceCallService } from './voice-call.service'
 import {
   CallRequestDTO,
   CallAcceptDTO,
   CallRejectDTO,
-  CallCancelDTO,
-  SdpOfferDTO,
-  SdpAnswerDTO,
+  SDPOfferAnswerDTO,
   IceCandidateDTO,
-  CallEndDTO,
+  CallHangupDTO,
+  CalleeSetSessionDTO,
 } from './voice-call.dto'
-import { EVoiceCallMessage } from './voice-call.message'
+import { EVoiceCallMessages } from './voice-call.message'
 import { CatchInternalSocketError } from '@/utils/exception-filters/base-ws-exception.filter'
 import { UserConnectionService } from '@/connection/user-connection.service'
 import type { TVoiceCallSessionActiveId } from './voice-call.type'
-import { TClientSocket } from '@/messaging/messaging.type'
-import { EClientSocketEvents } from '@/utils/events/socket.event'
+import { EListenSocketEvents, EEmitSocketEvents } from '@/utils/events/socket.event'
 import type { IVoiceCallGateway } from './voice-call.interface'
 import { EVoiceCallStatus } from './voice-call.enum'
+import { AuthService } from '@/auth/auth.service'
+import { DevLogger } from '@/dev/dev-logger'
+import type { TClientSocket } from '@/utils/events/event.type'
+import { ESocketNamespaces } from '@/messaging/messaging.enum'
+import { BaseWsExceptionsFilter } from '@/utils/exception-filters/base-ws-exception.filter'
+import { UseInterceptors, UsePipes } from '@nestjs/common'
+import { gatewayValidationPipe } from '@/utils/validation/gateway.validation'
+import { VoiceCallGatewayInterceptor } from './voice-call.interceptor'
 
-@WebSocketGateway({ cors: true, namespace: '/ws' })
-@UseGuards(AuthGuard)
-export class VoiceCallGateway implements IVoiceCallGateway {
+@WebSocketGateway({
+  cors: {
+    origin:
+      process.env.NODE_ENV === 'production' ? process.env.CLIENT_HOST : process.env.CLIENT_HOST_DEV,
+    credentials: true,
+  },
+  namespace: ESocketNamespaces.voice_call,
+})
+@UseFilters(new BaseWsExceptionsFilter())
+@UsePipes(gatewayValidationPipe)
+@UseInterceptors(VoiceCallGatewayInterceptor)
+export class VoiceCallGateway
+  implements
+    OnGatewayConnection<TClientSocket>,
+    OnGatewayDisconnect<TClientSocket>,
+    OnGatewayInit<Server>,
+    IVoiceCallGateway
+{
   private readonly callTimeoutMs: number = 10000
 
   constructor(
     private readonly voiceCallService: VoiceCallService,
-    private readonly userConnectionService: UserConnectionService
+    private readonly userConnectionService: UserConnectionService,
+    private readonly authService: AuthService
   ) {}
+
+  /**
+   * This function is called (called one time) when the server is initialized.
+   * It sets the server and the server middleware.
+   * The server middleware is used to validate the socket connection.
+   * @param server - The server instance.
+   */
+  async afterInit(server: Server): Promise<void> {
+    this.userConnectionService.setServer(server)
+    this.userConnectionService.setServerMiddleware(async (socket, next) => {
+      try {
+        await this.authService.validateSocketConnection(socket)
+      } catch (error) {
+        next(error)
+        return
+      }
+      next()
+    })
+  }
+
+  /**
+   * This function is called when a client connects to the server.
+   * It validates the socket connection and adds the client to the connected clients list.
+   * @param client - The client instance.
+   */
+  async handleConnection(client: TClientSocket): Promise<void> {
+    DevLogger.logForWebsocket('connected socket:', {
+      socketId: client.id,
+      auth: client.handshake.auth,
+    })
+    try {
+      await this.authService.validateVoiceCallSocketAuth(client)
+      client.emit(EEmitSocketEvents.server_hello_voice_call, 'You connected sucessfully!')
+    } catch (error) {
+      DevLogger.logForWebsocket('error at handleConnection:', error)
+      client.disconnect(true)
+    }
+  }
+
+  /**
+   * This function is called when a client disconnects from the server.
+   * It removes the client from the connected clients list and the message tokens.
+   * @param client - The client instance.
+   */
+  async handleDisconnect(client: TClientSocket): Promise<void> {
+    DevLogger.logForWebsocket('disconnected socket:', {
+      socketId: client.id,
+      auth: client.handshake.auth,
+    })
+    const { userId } = client.handshake.auth
+    if (userId) {
+      this.voiceCallService.endCall(userId)
+    }
+  }
 
   async autoCancelCall(sessionId: TVoiceCallSessionActiveId) {
     setTimeout(() => {
@@ -46,137 +124,109 @@ export class VoiceCallGateway implements IVoiceCallGateway {
           session.status === EVoiceCallStatus.RINGING)
       ) {
         this.voiceCallService.endCall(sessionId)
-        // thông báo cho caller và callee rằng cuộc gọi đã hết hạn...
+        this.userConnectionService.announceCallStatus(
+          session.callerUserId,
+          EVoiceCallStatus.TIMEOUT
+        )
+        this.userConnectionService.announceCallStatus(
+          session.calleeUserId,
+          EVoiceCallStatus.TIMEOUT
+        )
       }
     }, this.callTimeoutMs)
   }
 
-  @SubscribeMessage(EClientSocketEvents.call_request)
+  @SubscribeMessage(EListenSocketEvents.call_request)
   @CatchInternalSocketError()
   async onCallRequest(
     @ConnectedSocket() client: TClientSocket,
     @MessageBody() payload: CallRequestDTO
   ) {
-    const callerUserId = client.data.userId
+    const { userId: callerUserId } = await this.authService.validateVoiceCallSocketAuth(client)
     const { calleeUserId, directChatId } = payload
     if (this.voiceCallService.isUserBusy(calleeUserId)) {
-      // thông báo cho caller rằng callee đang bận
-      return { status: EVoiceCallStatus.BUSY }
+      return { status: EVoiceCallStatus.BUSY } // thông báo cho caller rằng callee đang bận
     }
-    const sessionId = this.voiceCallService.initActiveCallSession(
+    const session = this.voiceCallService.initActiveCallSession(
       callerUserId,
       calleeUserId,
       directChatId
     )
     if (!this.userConnectionService.checkUserIsConnected(calleeUserId)) {
-      // thông báo cho caller rằng callee đang offline
-      return { status: EVoiceCallStatus.OFFLINE }
+      return { status: EVoiceCallStatus.OFFLINE } // thông báo cho caller rằng callee đang offline
     }
     // báo cho callee có cuộc gọi đến
-    this.userConnectionService.announceCallRequestToCallee(callerUserId, calleeUserId, directChatId)
+    this.userConnectionService.announceCallRequestToCallee(session)
     // tự động hủy cuộc gọi nếu không có phản hồi
-    this.autoCancelCall(sessionId)
+    this.autoCancelCall(session.id)
 
-    return { status: EVoiceCallStatus.REQUESTING }
+    return { status: EVoiceCallStatus.REQUESTING, session }
   }
 
-  @SubscribeMessage(EVoiceCallEvents.call_cancel)
-  async onCancel(@ConnectedSocket() client: Socket, @MessageBody() dto: CallCancelDTO) {
-    const s = this.voiceCallService.getUserCallingSession(dto.sessionId)
-    if (!s) return
-    const calleeSocketId = this.connSvc.getSocketIdByUserId(s.calleeUserId)
-    this.callSvc.end(s.id)
-    if (calleeSocketId)
-      client.to(calleeSocketId).emit('CALL_VOICE/STATUS', { status: CallVoiceStatus.ENDED })
-    client.emit('CALL_VOICE/STATUS', { status: CallVoiceStatus.ENDED })
-  }
-
-  @SubscribeMessage('CALL_VOICE/ACCEPT')
-  async onAccept(@ConnectedSocket() client: Socket, @MessageBody() dto: CallAcceptDto) {
-    const r = this.callSvc.accept(dto.sessionId)
-    if (r?.error) {
-      client.emit('CALL_VOICE/STATUS', {
-        status: CallVoiceStatus.FAILED,
-        message: CallVoiceMessage.INVALID_STATE,
-      })
-      return
+  @SubscribeMessage(EListenSocketEvents.callee_set_session)
+  @CatchInternalSocketError()
+  async onCalleeSetSession(@MessageBody() dto: CalleeSetSessionDTO) {
+    const session = this.voiceCallService.getActiveCallSession(dto.sessionId)
+    if (!session) {
+      throw new NotFoundException(EVoiceCallMessages.SESSION_NOT_FOUND)
     }
-    const s = r.session!
-    const callerSocketId = this.connSvc.getSocketIdByUserId(s.callerUserId)
-    client.emit('CALL_VOICE/STATUS', {
-      status: CallVoiceStatus.ACCEPTED,
-      message: CallVoiceMessage.CALL_ACCEPTED,
-    })
-    if (callerSocketId)
-      client.to(callerSocketId).emit('CALL_VOICE/STATUS', { status: CallVoiceStatus.ACCEPTED })
+    this.userConnectionService.announceCalleeSetSession(session.calleeUserId)
   }
 
-  @SubscribeMessage('CALL_VOICE/REJECT')
-  async onReject(@ConnectedSocket() client: Socket, @MessageBody() dto: CallRejectDto) {
-    const s = this.callSvc.get(dto.sessionId)
-    if (!s) return
-    const callerSocketId = this.connSvc.getSocketIdByUserId(s.callerUserId)
-    this.callSvc.end(s.id)
-    client.emit('CALL_VOICE/STATUS', {
-      status: CallVoiceStatus.REJECTED,
-      message: CallVoiceMessage.CALL_REJECTED,
-    })
-    if (callerSocketId)
-      client.to(callerSocketId).emit('CALL_VOICE/STATUS', { status: CallVoiceStatus.REJECTED })
+  @SubscribeMessage(EListenSocketEvents.call_accept)
+  async onAccept(@MessageBody() dto: CallAcceptDTO) {
+    const session = this.voiceCallService.acceptCall(dto.sessionId)
+    this.userConnectionService.announceCallStatus(session.callerUserId, EVoiceCallStatus.ACCEPTED)
   }
 
-  @SubscribeMessage('CALL_VOICE/OFFER')
-  async onOffer(@ConnectedSocket() client: Socket, @MessageBody() dto: SdpOfferDto) {
-    const s = this.callSvc.get(dto.sessionId)
-    if (!s) return
-    const calleeSocketId = this.connSvc.getSocketIdByUserId(s.calleeUserId)
-    if (calleeSocketId) client.to(calleeSocketId).emit('CALL_VOICE/OFFER', dto)
-    client.emit('CALL_VOICE/STATUS', {
-      status: CallVoiceStatus.RINGING,
-      message: CallVoiceMessage.SDP_OFFER_RELAYED,
-    })
+  @SubscribeMessage(EListenSocketEvents.call_reject)
+  async onReject(@MessageBody() dto: CallRejectDTO) {
+    const session = this.voiceCallService.endCall(dto.sessionId)
+    this.userConnectionService.announceCallStatus(session.callerUserId, EVoiceCallStatus.REJECTED)
   }
 
-  @SubscribeMessage('CALL_VOICE/ANSWER')
-  async onAnswer(@ConnectedSocket() client: Socket, @MessageBody() dto: SdpAnswerDto) {
-    const s = this.callSvc.get(dto.sessionId)
-    if (!s) return
-    const callerSocketId = this.connSvc.getSocketIdByUserId(s.callerUserId)
-    if (callerSocketId) client.to(callerSocketId).emit('CALL_VOICE/ANSWER', dto)
-    const connected = this.callSvc.connect(s.id)
-    if (!connected?.error && callerSocketId) {
-      client.to(callerSocketId).emit('CALL_VOICE/STATUS', { status: CallVoiceStatus.ESTABLISHED })
+  @SubscribeMessage(EListenSocketEvents.call_offer_answer)
+  async onOfferAnswer(
+    @ConnectedSocket() client: TClientSocket,
+    @MessageBody() payload: SDPOfferAnswerDTO
+  ) {
+    const session = this.voiceCallService.getActiveCallSession(payload.sessionId)
+    if (!session) {
+      throw new NotFoundException(EVoiceCallMessages.SESSION_NOT_FOUND)
     }
-    client.emit('CALL_VOICE/STATUS', {
-      status: CallVoiceStatus.ESTABLISHED,
-      message: CallVoiceMessage.SDP_ANSWER_RELAYED,
-    })
+    const { userId } = await this.authService.validateVoiceCallSocketAuth(client)
+    const { callerUserId, calleeUserId } = session
+    const peerId = userId === callerUserId ? calleeUserId : callerUserId
+    this.userConnectionService.announceSDPOfferAnswer(peerId, payload.SDP, payload.type)
   }
 
-  @SubscribeMessage('CALL_VOICE/ICE')
-  async onIce(@ConnectedSocket() client: Socket, @MessageBody() dto: IceCandidateDto) {
-    const s = this.callSvc.get(dto.sessionId)
-    if (!s) return
-    const peerId = client.data.userId === s.callerUserId ? s.calleeUserId : s.callerUserId
-    const peerSocketId = this.connSvc.getSocketIdByUserId(peerId)
-    if (peerSocketId) client.to(peerSocketId).emit('CALL_VOICE/ICE', dto)
+  @SubscribeMessage(EListenSocketEvents.call_ice)
+  async onIce(@ConnectedSocket() client: Socket, @MessageBody() dto: IceCandidateDTO) {
+    const session = this.voiceCallService.getActiveCallSession(dto.sessionId)
+    if (!session) {
+      throw new NotFoundException(EVoiceCallMessages.SESSION_NOT_FOUND)
+    }
+    const { userId } = await this.authService.validateVoiceCallSocketAuth(client)
+    const { callerUserId, calleeUserId } = session
+    const peerId = userId === callerUserId ? calleeUserId : callerUserId
+    this.userConnectionService.announceIceCandidate(
+      peerId,
+      dto.candidate,
+      dto.sdpMid,
+      dto.sdpMLineIndex
+    )
   }
 
-  @SubscribeMessage('CALL_VOICE/END')
-  async onEnd(@ConnectedSocket() client: Socket, @MessageBody() dto: CallEndDto) {
-    const s = this.callSvc.get(dto.sessionId)
-    if (!s) return
-    const peerId = client.data.userId === s.callerUserId ? s.calleeUserId : s.callerUserId
-    const peerSocketId = this.connSvc.getSocketIdByUserId(peerId)
-    this.callSvc.end(s.id)
-    if (peerSocketId)
-      client.to(peerSocketId).emit('CALL_VOICE/STATUS', {
-        status: CallVoiceStatus.ENDED,
-        reason: dto.reason ?? 'NORMAL',
-      })
-    client.emit('CALL_VOICE/STATUS', {
-      status: CallVoiceStatus.ENDED,
-      reason: dto.reason ?? 'NORMAL',
-    })
+  @SubscribeMessage(EListenSocketEvents.call_hangup)
+  async onHangup(@ConnectedSocket() client: TClientSocket, @MessageBody() dto: CallHangupDTO) {
+    const session = this.voiceCallService.getActiveCallSession(dto.sessionId)
+    if (!session) {
+      throw new NotFoundException(EVoiceCallMessages.SESSION_NOT_FOUND)
+    }
+    const { userId } = await this.authService.validateVoiceCallSocketAuth(client)
+    const { callerUserId, calleeUserId } = session
+    const peerId = userId === callerUserId ? calleeUserId : callerUserId
+    this.voiceCallService.endCall(session.id)
+    this.userConnectionService.announceCallHangup(peerId, dto.reason)
   }
 }

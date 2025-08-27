@@ -2,16 +2,16 @@ import { Injectable, NestInterceptor, ExecutionContext, CallHandler } from '@nes
 import { Observable } from 'rxjs'
 import { SymmetricEncryptor } from '@/utils/crypto/symmetric-encryption.crypto'
 import { SyncDataToESService } from '@/configs/elasticsearch/sync-data-to-ES/sync-data-to-ES.service'
-import { EClientSocketEvents } from '../utils/events/socket.event'
+import { EListenSocketEvents } from '../utils/events/socket.event'
 import { EMessageTypes } from '@/message/message.enum'
 import { BaseWsException } from '@/utils/exceptions/base-ws.exception'
-import type { TClientSocket } from './messaging.type'
+import type { TClientSocket } from '@/utils/events/event.type'
 import { EGatewayMessages } from './messaging.message'
 import { EMsgEncryptionAlgorithms } from '@/utils/enums'
 import { DevLogger } from '@/dev/dev-logger'
 
 @Injectable()
-export class GatewayInterceptor implements NestInterceptor {
+export class MessagingGatewayInterceptor implements NestInterceptor {
   private readonly msgEncryptor: SymmetricEncryptor
 
   constructor(private readonly syncDataToESService: SyncDataToESService) {
@@ -20,7 +20,7 @@ export class GatewayInterceptor implements NestInterceptor {
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const client = context.switchToWs().getClient<TClientSocket>()
-    const event = context.switchToWs().getPattern() as EClientSocketEvents
+    const event = context.switchToWs().getPattern() as EListenSocketEvents
     const data = context.switchToWs().getData()
 
     DevLogger.logForWebsocket('Got an EVENT:', { event, data })
@@ -31,11 +31,11 @@ export class GatewayInterceptor implements NestInterceptor {
 
   private handleEncryptMessageContent(
     client: TClientSocket,
-    event: EClientSocketEvents,
+    event: EListenSocketEvents,
     data: any
   ): void {
     // Chỉ xử lý sự kiện gửi tin nhắn 1-1
-    if (event !== EClientSocketEvents.send_message_direct) return
+    if (event !== EListenSocketEvents.send_message_direct) return
 
     // Validate message type và content
     if (!data || typeof data !== 'object') {

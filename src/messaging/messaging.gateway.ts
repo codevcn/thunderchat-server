@@ -6,7 +6,7 @@ import {
 } from '@nestjs/websockets'
 import type { OnGatewayConnection, OnGatewayInit, OnGatewayDisconnect } from '@nestjs/websockets'
 import { Server } from 'socket.io'
-import { EClientSocketEvents } from '../utils/events/socket.event'
+import { EEmitSocketEvents, EListenSocketEvents } from '../utils/events/socket.event'
 import { EMessageTypeAllTypes, ESocketNamespaces } from './messaging.enum'
 import {
   UseFilters,
@@ -24,14 +24,13 @@ import {
 import { MessageService } from '@/message/message.service'
 import type {
   TCheckCanSendMessageInGroupChat,
-  TClientSocket,
   TFindDirectChatWithOtherUser,
   THandleEmitNewMessageParams,
   THandleMessageParamsClient,
   THandleMessageParamsMessage,
 } from './messaging.type'
-import type { IGateway } from './messaging.interface'
-import { wsValidationPipe } from './messaging.validation'
+import type { TClientSocket } from '@/utils/events/event.type'
+import type { IMessagingGateway } from './messaging.interface'
 import { UserConnectionService } from '../connection/user-connection.service'
 import {
   MarkAsSeenDTO,
@@ -50,17 +49,16 @@ import { EMessageStatus, EMessageTypes } from '@/message/message.enum'
 import { DirectChatService } from '@/direct-chat/direct-chat.service'
 import { ConversationTypingManager } from './helpers/conversation-typing.helper'
 import { SyncDataToESService } from '@/configs/elasticsearch/sync-data-to-ES/sync-data-to-ES.service'
-// import { GatewayInterceptor } from './gateway.interceptor'
 import { DevLogger } from '@/dev/dev-logger'
 import { Socket } from 'socket.io'
-import { TMessageFullInfo, TMessageWithAuthor } from '@/utils/entities/message.entity'
+import type { TMessageFullInfo, TMessageWithAuthor } from '@/utils/entities/message.entity'
 import { EChatType, EInternalEvents, EUserOnlineStatus } from '@/utils/enums'
 import { UserService } from '@/user/user.service'
 import { EGatewayMessages } from './messaging.message'
-import { GatewayInterceptor } from './messaging.interceptor'
+import { MessagingGatewayInterceptor } from './messaging.interceptor'
 import { GroupChatService } from '@/group-chat/group-chat.service'
-import { TGroupChat } from '@/utils/entities/group-chat.entity'
-import { TUserWithProfile } from '@/utils/entities/user.entity'
+import type { TGroupChat } from '@/utils/entities/group-chat.entity'
+import type { TUserWithProfile } from '@/utils/entities/user.entity'
 import { OnEvent } from '@nestjs/event-emitter'
 import { GroupMemberService } from '@/group-member/group-member.service'
 import { createDirectChatRoomName, createGroupChatRoomName } from '@/utils/helpers'
@@ -73,7 +71,7 @@ import { EGroupChatPermissions, EGroupChatRoles } from '@/group-chat/group-chat.
 import type { TUserId } from '@/user/user.type'
 import { UpdateProfileDto } from '@/profile/profile.dto'
 import { PushNotificationService } from '@/configs/push-notification/push-notification.service'
-import type { IEmitSocketEvents } from '@/utils/events/socket.event'
+import { gatewayValidationPipe } from '@/utils/validation/gateway.validation'
 
 @WebSocketGateway({
   cors: {
@@ -81,17 +79,17 @@ import type { IEmitSocketEvents } from '@/utils/events/socket.event'
       process.env.NODE_ENV === 'production' ? process.env.CLIENT_HOST : process.env.CLIENT_HOST_DEV,
     credentials: true,
   },
-  namespace: ESocketNamespaces.app,
+  namespace: ESocketNamespaces.messaging,
 })
 @UseFilters(new BaseWsExceptionsFilter())
-@UsePipes(wsValidationPipe)
-@UseInterceptors(GatewayInterceptor)
+@UsePipes(gatewayValidationPipe)
+@UseInterceptors(MessagingGatewayInterceptor)
 export class MessagingGateway
   implements
     OnGatewayConnection<TClientSocket>,
     OnGatewayDisconnect<TClientSocket>,
     OnGatewayInit<Server>,
-    IGateway
+    IMessagingGateway
 {
   private readonly messageTokensManager = new MessageTokensManager()
   private readonly convTypingManager = new ConversationTypingManager()
@@ -140,14 +138,13 @@ export class MessagingGateway
       socketId: client.id,
       auth: client.handshake.auth,
     })
-    console.log('>>> client connected:', client.handshake.auth)
     try {
       const { clientId, messageOffset, directChatId, groupId } =
         await this.authService.validateSocketAuth(client)
       // await this.syncDataToESService.initESMessageEncryptor(clientId)
       this.userConnectionService.addConnectedClient(clientId, client)
       this.userConnectionService.broadcastUserOnlineStatus(clientId, EUserOnlineStatus.ONLINE)
-      client.emit(EClientSocketEvents.server_hello, 'You connected sucessfully!')
+      client.emit(EEmitSocketEvents.server_hello, 'You connected sucessfully!')
       if (messageOffset) {
         await this.recoverMissingMessages(client, messageOffset, directChatId, groupId)
       }
@@ -191,7 +188,7 @@ export class MessagingGateway
         limit ?? 20
       )
       if (messages && messages.length > 0) {
-        clientSocket.emit(EClientSocketEvents.recovered_connection, messages)
+        clientSocket.emit(EEmitSocketEvents.recovered_connection, messages)
       }
     }
   }
@@ -259,7 +256,7 @@ export class MessagingGateway
   }: THandleEmitNewMessageParams): Promise<void> {
     if (directChat && receiverId) {
       const { socket } = client
-      socket.emit(EClientSocketEvents.send_message_direct, newMessage)
+      socket.emit(EEmitSocketEvents.send_message_direct, newMessage)
       this.userConnectionService.sendNewMessageToRecipient(
         receiverId,
         newMessage,
@@ -269,7 +266,7 @@ export class MessagingGateway
       )
       if (isNewDirectChat) {
         socket.emit(
-          EClientSocketEvents.new_conversation,
+          EEmitSocketEvents.new_conversation,
           directChat,
           null,
           EChatType.DIRECT,
@@ -352,7 +349,7 @@ export class MessagingGateway
       throw new ForbiddenException(EUserMessages.YOU_HAVE_BLOCKED_THIS_USER)
   }
 
-  @SubscribeMessage(EClientSocketEvents.send_message_direct)
+  @SubscribeMessage(EListenSocketEvents.send_message_direct)
   @CatchInternalSocketError()
   async handleSendDirectMessage(
     @MessageBody() payload: SendDirectMessageDTO,
@@ -480,7 +477,7 @@ export class MessagingGateway
     }
   }
 
-  @SubscribeMessage(EClientSocketEvents.client_hello)
+  @SubscribeMessage(EListenSocketEvents.client_hello)
   @CatchInternalSocketError()
   async handleClientHello(
     @MessageBody() payload: string,
@@ -494,7 +491,7 @@ export class MessagingGateway
     }
   }
 
-  @SubscribeMessage(EClientSocketEvents.message_seen_direct)
+  @SubscribeMessage(EListenSocketEvents.message_seen_direct)
   @CatchInternalSocketError()
   async handleMarkAsSeenInDirectChat(
     @MessageBody() data: MarkAsSeenDTO,
@@ -502,11 +499,10 @@ export class MessagingGateway
   ) {
     const { messageId, receiverId } = data
     await this.messageService.updateMessageStatus(messageId, EMessageStatus.SEEN)
-    const recipientSockets =
-      this.userConnectionService.getConnectedClient<IEmitSocketEvents>(receiverId)
+    const recipientSockets = this.userConnectionService.getConnectedClient(receiverId)
     if (recipientSockets && recipientSockets.length > 0) {
       for (const socket of recipientSockets) {
-        socket.emit(EClientSocketEvents.message_seen_direct, {
+        socket.emit(EEmitSocketEvents.message_seen_direct, {
           messageId,
           status: EMessageStatus.SEEN,
         })
@@ -514,16 +510,15 @@ export class MessagingGateway
     }
   }
 
-  @SubscribeMessage(EClientSocketEvents.typing_direct)
+  @SubscribeMessage(EListenSocketEvents.typing_direct)
   @CatchInternalSocketError()
   async handleTyping(@MessageBody() data: TypingDTO, @ConnectedSocket() client: TClientSocket) {
     const { clientId } = await this.authService.validateSocketAuth(client)
     const { receiverId, isTyping, directChatId } = data
-    const recipientSockets =
-      this.userConnectionService.getConnectedClient<IEmitSocketEvents>(receiverId)
+    const recipientSockets = this.userConnectionService.getConnectedClient(receiverId)
     if (recipientSockets && recipientSockets.length > 0) {
       for (const socket of recipientSockets) {
-        socket.emit(EClientSocketEvents.typing_direct, isTyping, directChatId)
+        socket.emit(EEmitSocketEvents.typing_direct, isTyping, directChatId)
         if (isTyping) {
           this.convTypingManager.initTyping(clientId, socket, directChatId)
         } else {
@@ -533,7 +528,7 @@ export class MessagingGateway
     }
   }
 
-  @SubscribeMessage(EClientSocketEvents.join_group_chat_room)
+  @SubscribeMessage(EListenSocketEvents.join_group_chat_room)
   @CatchInternalSocketError()
   async handleJoinGroupChat(
     @MessageBody() data: JoinGroupChatDTO,
@@ -569,7 +564,7 @@ export class MessagingGateway
     return { member }
   }
 
-  @SubscribeMessage(EClientSocketEvents.send_message_group)
+  @SubscribeMessage(EListenSocketEvents.send_message_group)
   @CatchInternalSocketError()
   async handleSendGroupMessage(
     @MessageBody() payload: SendGroupMessageDTO,
@@ -682,7 +677,7 @@ export class MessagingGateway
     }
   }
 
-  @SubscribeMessage(EClientSocketEvents.check_user_online_status)
+  @SubscribeMessage(EListenSocketEvents.check_user_online_status)
   @CatchInternalSocketError()
   async handleCheckUserOnlineStatus(@MessageBody() data: CheckUserOnlineDTO) {
     const { userId } = data
@@ -692,7 +687,7 @@ export class MessagingGateway
     }
   }
 
-  @SubscribeMessage(EClientSocketEvents.join_direct_chat_room)
+  @SubscribeMessage(EListenSocketEvents.join_direct_chat_room)
   @CatchInternalSocketError()
   async handleJoinDirectChat(
     @MessageBody() data: JoinDirectChatDTO,

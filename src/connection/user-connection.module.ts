@@ -5,4 +5,4 @@ import { UserConnectionService } from './user-connection.service'
   providers: [UserConnectionService],
   exports: [UserConnectionService],
 })
-export class SocketModule {}
+export class UserConnectionModule {}

@@ -8,20 +8,15 @@ import type {
   CheckUserOnlineDTO,
   JoinDirectChatDTO,
 } from './messaging.dto'
-import type { Socket } from 'socket.io'
-import type {
-  TClientSocket,
-  THandleCheckUserOnlineRes,
-  TSendDirectMessageRes,
-} from './messaging.type'
+import type { THandleCheckUserOnlineRes, TSendDirectMessageRes } from './messaging.type'
+import type { TClientSocket } from '@/utils/events/event.type'
 import type { TGroupChat } from '@/utils/entities/group-chat.entity'
 import type { UpdateProfileDto } from '@/profile/profile.dto'
-import type { IEmitSocketEvents } from '@/utils/events/socket.event'
 
-export interface IGateway {
+export interface IMessagingGateway {
   handleSendDirectMessage: (
     payload: SendDirectMessageDTO,
-    client: Socket<IEmitSocketEvents>
+    client: TClientSocket
   ) => Promise<TSendDirectMessageRes>
   handleMarkAsSeenInDirectChat: (data: MarkAsSeenDTO, client: TClientSocket) => Promise<void>
   handleTyping: (data: TypingDTO, client: TClientSocket) => Promise<void>

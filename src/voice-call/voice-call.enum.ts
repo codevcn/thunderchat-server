@@ -18,3 +18,10 @@ export enum EHangupReason {
   PEER_LEFT = 'PEER_LEFT',
   UNKNOWN = 'UNKNOWN',
 }
+
+export enum ESDPType {
+  OFFER = 'offer',
+  ANSWER = 'answer',
+  PRANSWER = 'pranswer',
+  ROLLBACK = 'rollback',
+}

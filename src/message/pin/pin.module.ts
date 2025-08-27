@@ -3,7 +3,7 @@ import { PinService } from './pin.service'
 import { PinController } from './pin.controller'
 import { PrismaModule } from '../../configs/db/prisma.module'
 import { UserModule } from '../../user/user.module'
-import { SocketModule } from '@/connection/user-connection.module'
+import { UserConnectionModule } from '@/connection/user-connection.module'
 import { GroupChatModule } from '@/group-chat/group-chat.module'
 import { GroupMemberModule } from '@/group-member/group-member.module'
 import { SyncDataToESModule } from '@/configs/elasticsearch/sync-data-to-ES/sync-data-to-ES.module'
@@ -12,7 +12,7 @@ import { SyncDataToESModule } from '@/configs/elasticsearch/sync-data-to-ES/sync
   imports: [
     PrismaModule,
     UserModule,
-    SocketModule,
+    UserConnectionModule,
     GroupChatModule,
     GroupMemberModule,
     SyncDataToESModule,

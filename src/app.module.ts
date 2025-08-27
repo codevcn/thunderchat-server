@@ -35,7 +35,7 @@ const globalConfigModules = [
 
 // put gateway here to be able to get env right way
 import { FriendModule } from './friend/friend.module'
-import { GatewayModule } from './messaging/messaging.module'
+import { MessagingGatewayModule } from './messaging/messaging.module'
 import { RequestLoggerMiddleware } from './app.middleware'
 import { DevModule } from './dev/dev.module'
 import { StickersModule } from './message/stickers/stickers.module'
@@ -50,12 +50,14 @@ import { AdminModule } from './admin/admin.module'
 import { PinConversationModule } from './pin-conversation/pin-conversation.module'
 import { HealthcheckModule } from './healthcheck/healthcheck.module'
 import { PushNotificationModule } from './configs/push-notification/push-notification.module'
+import { VoiceCallGatewayModule } from './voice-call/voice-call.module'
 
 @Module({
   imports: [
     ...globalConfigModules,
     AuthModule,
-    GatewayModule,
+    MessagingGatewayModule,
+    VoiceCallGatewayModule,
     DirectChatsModule,
     MessageModule,
     MediaMessageModule,

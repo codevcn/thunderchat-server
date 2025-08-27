@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common'
 import { MessagingGateway } from './messaging.gateway'
 import { FriendService } from '@/friend/friend.service'
 import { UserModule } from '@/user/user.module'
-import { SocketModule } from '../connection/user-connection.module'
+import { UserConnectionModule } from '../connection/user-connection.module'
 import { MessageModule } from '@/message/message.module'
 import { SyncDataToESModule } from '@/configs/elasticsearch/sync-data-to-ES/sync-data-to-ES.module'
 import { GroupChatModule } from '@/group-chat/group-chat.module'
@@ -14,7 +14,7 @@ import { PushNotificationModule } from '@/configs/push-notification/push-notific
 @Module({
   imports: [
     UserModule,
-    SocketModule,
+    UserConnectionModule,
     MessageModule,
     SyncDataToESModule,
     GroupChatModule,
@@ -25,4 +25,4 @@ import { PushNotificationModule } from '@/configs/push-notification/push-notific
   ],
   providers: [MessagingGateway, FriendService],
 })
-export class GatewayModule {}
+export class MessagingGatewayModule {}
