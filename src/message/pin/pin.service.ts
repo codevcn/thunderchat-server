@@ -2,7 +2,7 @@ import { Injectable, Inject, forwardRef, BadRequestException } from '@nestjs/com
 import { PrismaService } from '../../configs/db/prisma.service'
 import { EProviderTokens, ESyncDataToESWorkerType } from '@/utils/enums'
 import { UserConnectionService } from '@/connection/user-connection.service'
-import { EEmitSocketEvents } from '@/utils/events/socket.event'
+import { EMessagingEmitSocketEvents } from '@/utils/events/socket.event'
 import { EMessageMediaTypes, EMessageStatus, EMessageTypes } from '../message.enum'
 import type { TMessageWithMedia } from '@/utils/entities/message.entity'
 import { EPinMessages } from './pin.message'
@@ -155,18 +155,22 @@ export class PinService {
       // Emit socket event gửi message mới cho cả 2 user
       this.userConnectionService.emitToDirectChat(
         directChatId,
-        EEmitSocketEvents.send_message_direct,
+        EMessagingEmitSocketEvents.send_message_direct,
         pinNoticeMessage
       )
 
       // PHÁT SOCKET EVENT ĐẾN TẤT CẢ CLIENT CÙNG PHÒNG
-      this.userConnectionService.emitToDirectChat(directChatId, EEmitSocketEvents.pin_message, {
-        messageId,
+      this.userConnectionService.emitToDirectChat(
         directChatId,
-        isPinned: true,
-        userId,
-        pinnedMessage,
-      })
+        EMessagingEmitSocketEvents.pin_message,
+        {
+          messageId,
+          directChatId,
+          isPinned: true,
+          userId,
+          pinnedMessage,
+        }
+      )
 
       return pinnedMessage
     } else {
@@ -230,17 +234,21 @@ export class PinService {
       // Emit socket event gửi message mới cho cả 2 user
       this.userConnectionService.emitToDirectChat(
         directChatId,
-        EEmitSocketEvents.send_message_direct,
+        EMessagingEmitSocketEvents.send_message_direct,
         pinNoticeMessage
       )
 
       // PHÁT SOCKET EVENT ĐẾN TẤT CẢ CLIENT CÙNG PHÒNG
-      this.userConnectionService.emitToDirectChat(directChatId, EEmitSocketEvents.pin_message, {
-        messageId,
+      this.userConnectionService.emitToDirectChat(
         directChatId,
-        isPinned: false,
-        userId,
-      })
+        EMessagingEmitSocketEvents.pin_message,
+        {
+          messageId,
+          directChatId,
+          isPinned: false,
+          userId,
+        }
+      )
 
       return { success: true, deletedCount: deletedPin.count }
     }
@@ -446,9 +454,9 @@ export class PinService {
 
       // PHÁT SOCKET EVENT ĐẾN TẤT CẢ CLIENT CÙNG PHÒNG
       this.userConnectionService
-        .getServer()
+        .getMessagingServer()
         .to(createGroupChatRoomName(groupChatId))
-        .emit(EEmitSocketEvents.pin_message_group, {
+        .emit(EMessagingEmitSocketEvents.pin_message_group, {
           messageId,
           groupChatId,
           isPinned: true,
@@ -516,9 +524,9 @@ export class PinService {
 
       // PHÁT SOCKET EVENT ĐẾN TẤT CẢ CLIENT CÙNG PHÒNG
       this.userConnectionService
-        .getServer()
+        .getMessagingServer()
         .to(createGroupChatRoomName(groupChatId))
-        .emit(EEmitSocketEvents.pin_message_group, {
+        .emit(EMessagingEmitSocketEvents.pin_message_group, {
           messageId: pinNoticeMessage.id,
           groupChatId,
           isPinned: false,

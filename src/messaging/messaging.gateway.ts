@@ -6,7 +6,10 @@ import {
 } from '@nestjs/websockets'
 import type { OnGatewayConnection, OnGatewayInit, OnGatewayDisconnect } from '@nestjs/websockets'
 import { Server } from 'socket.io'
-import { EEmitSocketEvents, EListenSocketEvents } from '../utils/events/socket.event'
+import {
+  EMessagingEmitSocketEvents,
+  EMessagingListenSocketEvents,
+} from '../utils/events/socket.event'
 import { EMessageTypeAllTypes, ESocketNamespaces } from './messaging.enum'
 import {
   UseFilters,
@@ -75,8 +78,10 @@ import { gatewayValidationPipe } from '@/utils/validation/gateway.validation'
 
 @WebSocketGateway({
   cors: {
-    origin:
+    origin: [
       process.env.NODE_ENV === 'production' ? process.env.CLIENT_HOST : process.env.CLIENT_HOST_DEV,
+      'http://localhost:3000',
+    ],
     credentials: true,
   },
   namespace: ESocketNamespaces.messaging,
@@ -116,8 +121,8 @@ export class MessagingGateway
    * @param server - The server instance.
    */
   async afterInit(server: Server): Promise<void> {
-    this.userConnectionService.setServer(server)
-    this.userConnectionService.setServerMiddleware(async (socket, next) => {
+    this.userConnectionService.setMessagingServer(server)
+    this.userConnectionService.setMessagingServerMiddleware(async (socket, next) => {
       try {
         await this.authService.validateSocketConnection(socket)
       } catch (error) {
@@ -144,7 +149,7 @@ export class MessagingGateway
       // await this.syncDataToESService.initESMessageEncryptor(clientId)
       this.userConnectionService.addConnectedClient(clientId, client)
       this.userConnectionService.broadcastUserOnlineStatus(clientId, EUserOnlineStatus.ONLINE)
-      client.emit(EEmitSocketEvents.server_hello, 'You connected sucessfully!')
+      client.emit(EMessagingEmitSocketEvents.server_hello, 'You connected sucessfully!')
       if (messageOffset) {
         await this.recoverMissingMessages(client, messageOffset, directChatId, groupId)
       }
@@ -188,7 +193,7 @@ export class MessagingGateway
         limit ?? 20
       )
       if (messages && messages.length > 0) {
-        clientSocket.emit(EEmitSocketEvents.recovered_connection, messages)
+        clientSocket.emit(EMessagingEmitSocketEvents.recovered_connection, messages)
       }
     }
   }
@@ -256,7 +261,7 @@ export class MessagingGateway
   }: THandleEmitNewMessageParams): Promise<void> {
     if (directChat && receiverId) {
       const { socket } = client
-      socket.emit(EEmitSocketEvents.send_message_direct, newMessage)
+      socket.emit(EMessagingEmitSocketEvents.send_message_direct, newMessage)
       this.userConnectionService.sendNewMessageToRecipient(
         receiverId,
         newMessage,
@@ -266,7 +271,7 @@ export class MessagingGateway
       )
       if (isNewDirectChat) {
         socket.emit(
-          EEmitSocketEvents.new_conversation,
+          EMessagingEmitSocketEvents.new_conversation,
           directChat,
           null,
           EChatType.DIRECT,
@@ -349,7 +354,7 @@ export class MessagingGateway
       throw new ForbiddenException(EUserMessages.YOU_HAVE_BLOCKED_THIS_USER)
   }
 
-  @SubscribeMessage(EListenSocketEvents.send_message_direct)
+  @SubscribeMessage(EMessagingListenSocketEvents.send_message_direct)
   @CatchInternalSocketError()
   async handleSendDirectMessage(
     @MessageBody() payload: SendDirectMessageDTO,
@@ -477,21 +482,21 @@ export class MessagingGateway
     }
   }
 
-  @SubscribeMessage(EListenSocketEvents.client_hello)
+  @SubscribeMessage(EMessagingListenSocketEvents.client_hello)
   @CatchInternalSocketError()
   async handleClientHello(
     @MessageBody() payload: string,
     @ConnectedSocket() client: TClientSocket
   ) {
-    console.log('>>> client hello:', payload)
+    console.log('\n>>> client hello at messaging:', payload)
     const { clientId } = await this.authService.validateSocketAuth(client)
-    console.log('>>> client id:', clientId)
+    console.log('>>> client id at messaging:', clientId, '\n')
     return {
       success: true,
     }
   }
 
-  @SubscribeMessage(EListenSocketEvents.message_seen_direct)
+  @SubscribeMessage(EMessagingListenSocketEvents.message_seen_direct)
   @CatchInternalSocketError()
   async handleMarkAsSeenInDirectChat(
     @MessageBody() data: MarkAsSeenDTO,
@@ -502,7 +507,7 @@ export class MessagingGateway
     const recipientSockets = this.userConnectionService.getConnectedClient(receiverId)
     if (recipientSockets && recipientSockets.length > 0) {
       for (const socket of recipientSockets) {
-        socket.emit(EEmitSocketEvents.message_seen_direct, {
+        socket.emit(EMessagingEmitSocketEvents.message_seen_direct, {
           messageId,
           status: EMessageStatus.SEEN,
         })
@@ -510,7 +515,7 @@ export class MessagingGateway
     }
   }
 
-  @SubscribeMessage(EListenSocketEvents.typing_direct)
+  @SubscribeMessage(EMessagingListenSocketEvents.typing_direct)
   @CatchInternalSocketError()
   async handleTyping(@MessageBody() data: TypingDTO, @ConnectedSocket() client: TClientSocket) {
     const { clientId } = await this.authService.validateSocketAuth(client)
@@ -518,7 +523,7 @@ export class MessagingGateway
     const recipientSockets = this.userConnectionService.getConnectedClient(receiverId)
     if (recipientSockets && recipientSockets.length > 0) {
       for (const socket of recipientSockets) {
-        socket.emit(EEmitSocketEvents.typing_direct, isTyping, directChatId)
+        socket.emit(EMessagingEmitSocketEvents.typing_direct, isTyping, directChatId)
         if (isTyping) {
           this.convTypingManager.initTyping(clientId, socket, directChatId)
         } else {
@@ -528,7 +533,7 @@ export class MessagingGateway
     }
   }
 
-  @SubscribeMessage(EListenSocketEvents.join_group_chat_room)
+  @SubscribeMessage(EMessagingListenSocketEvents.join_group_chat_room)
   @CatchInternalSocketError()
   async handleJoinGroupChat(
     @MessageBody() data: JoinGroupChatDTO,
@@ -564,7 +569,7 @@ export class MessagingGateway
     return { member }
   }
 
-  @SubscribeMessage(EListenSocketEvents.send_message_group)
+  @SubscribeMessage(EMessagingListenSocketEvents.send_message_group)
   @CatchInternalSocketError()
   async handleSendGroupMessage(
     @MessageBody() payload: SendGroupMessageDTO,
@@ -677,7 +682,7 @@ export class MessagingGateway
     }
   }
 
-  @SubscribeMessage(EListenSocketEvents.check_user_online_status)
+  @SubscribeMessage(EMessagingListenSocketEvents.check_user_online_status)
   @CatchInternalSocketError()
   async handleCheckUserOnlineStatus(@MessageBody() data: CheckUserOnlineDTO) {
     const { userId } = data
@@ -687,7 +692,7 @@ export class MessagingGateway
     }
   }
 
-  @SubscribeMessage(EListenSocketEvents.join_direct_chat_room)
+  @SubscribeMessage(EMessagingListenSocketEvents.join_direct_chat_room)
   @CatchInternalSocketError()
   async handleJoinDirectChat(
     @MessageBody() data: JoinDirectChatDTO,

@@ -12,7 +12,7 @@ import { EAuthMessages } from '@/auth/auth.message'
 import { BaseWsException } from '@/utils/exceptions/base-ws.exception'
 import { EValidationMessages } from '@/utils/messages'
 import { ClientSocketAuthDTO, VoiceCallSocketAuthDTO } from './auth.dto'
-import type { TClientSocket } from '@/utils/events/event.type'
+import type { TClientSocket, TVoiceCallClientSocket } from '@/utils/events/event.type'
 import { plainToInstance } from 'class-transformer'
 import { validate } from 'class-validator'
 import { SystemException } from '@/utils/exceptions/system.exception'
@@ -238,7 +238,9 @@ export class AuthService {
     return socketAuth
   }
 
-  async validateVoiceCallSocketAuth(clientSocket: TClientSocket): Promise<VoiceCallSocketAuthDTO> {
+  async validateVoiceCallSocketAuth(
+    clientSocket: TVoiceCallClientSocket
+  ): Promise<VoiceCallSocketAuthDTO> {
     const socketAuth = plainToInstance(VoiceCallSocketAuthDTO, clientSocket.handshake.auth)
     const errors = await validate(socketAuth)
     if (errors && errors.length > 0) {

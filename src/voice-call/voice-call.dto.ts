@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsNumber, IsEnum } from 'class-validator'
+import { IsString, IsOptional, IsNumber, IsEnum, IsNotEmpty } from 'class-validator'
 import { EHangupReason, ESDPType } from './voice-call.enum'
 import { Type } from 'class-transformer'
 import type { TVoiceCallSessionActiveId } from './voice-call.type'
@@ -9,32 +9,32 @@ export class CallRequestDTO {
 }
 
 export class CallAcceptDTO {
-  @IsNumber() @Type(() => Number) sessionId: TVoiceCallSessionActiveId
+  @IsNotEmpty() @IsString() sessionId: TVoiceCallSessionActiveId
 }
 
 export class CallRejectDTO {
-  @IsNumber() @Type(() => Number) sessionId: TVoiceCallSessionActiveId
+  @IsNotEmpty() @IsString() sessionId: TVoiceCallSessionActiveId
   @IsOptional() @IsString() reason?: string
 }
 
 export class CallHangupDTO {
-  @IsNumber() @Type(() => Number) sessionId: TVoiceCallSessionActiveId
+  @IsNotEmpty() @IsString() sessionId: TVoiceCallSessionActiveId
   @IsOptional() @IsEnum(EHangupReason) reason?: EHangupReason
 }
 
 export class SDPOfferAnswerDTO {
-  @IsNumber() @Type(() => Number) sessionId: TVoiceCallSessionActiveId
+  @IsNotEmpty() @IsString() sessionId: TVoiceCallSessionActiveId
   @IsString() SDP: string
   @IsString() type: ESDPType
 }
 
 export class IceCandidateDTO {
-  @IsNumber() @Type(() => Number) sessionId: TVoiceCallSessionActiveId
+  @IsNotEmpty() @IsString() sessionId: TVoiceCallSessionActiveId
   @IsString() candidate: string
   @IsOptional() @IsString() sdpMid?: string
   @IsOptional() @IsNumber() sdpMLineIndex?: number
 }
 
 export class CalleeSetSessionDTO {
-  @IsNumber() @Type(() => Number) sessionId: TVoiceCallSessionActiveId
+  @IsNotEmpty() @IsString() sessionId: TVoiceCallSessionActiveId
 }

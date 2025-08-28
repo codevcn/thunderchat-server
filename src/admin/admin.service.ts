@@ -4,7 +4,7 @@ import { UserService } from '@/user/user.service'
 import { UserConnectionService } from '@/connection/user-connection.service'
 import { UploadService } from '@/upload/upload.service'
 import { EProviderTokens, EAppRoles } from '@/utils/enums'
-import { EEmitSocketEvents } from '@/utils/events/socket.event'
+import { EMessagingEmitSocketEvents } from '@/utils/events/socket.event'
 import {
   TAdminUsersData,
   TGetAdminUsersParams,
@@ -1295,10 +1295,10 @@ export class AdminService {
           )
           if (creatorSockets && recipientSockets) {
             for (const creatorSocket of creatorSockets) {
-              creatorSocket?.emit(EEmitSocketEvents.send_message_direct, message)
+              creatorSocket?.emit(EMessagingEmitSocketEvents.send_message_direct, message)
             }
             for (const recipientSocket of recipientSockets) {
-              recipientSocket?.emit(EEmitSocketEvents.send_message_direct, message)
+              recipientSocket?.emit(EMessagingEmitSocketEvents.send_message_direct, message)
             }
           }
         } else if (message.groupChatId && message.GroupChat) {

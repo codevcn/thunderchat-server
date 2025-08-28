@@ -1,5 +1,5 @@
 import type { TConversationTypingFlags } from '../messaging.type'
-import { EEmitSocketEvents } from '@/utils/events/socket.event'
+import { EMessagingEmitSocketEvents } from '@/utils/events/socket.event'
 import type { TUserId } from '@/user/user.type'
 import type { TClientSocket } from '@/utils/events/event.type'
 
@@ -12,7 +12,7 @@ export class ConversationTypingManager {
       this.removeTyping(senderId)
     }
     this.flags[senderId] = setTimeout(() => {
-      recipientSocket.emit(EEmitSocketEvents.typing_direct, false, directChatId)
+      recipientSocket.emit(EMessagingEmitSocketEvents.typing_direct, false, directChatId)
     }, this.TYPING_TIME_OUT)
   }
 

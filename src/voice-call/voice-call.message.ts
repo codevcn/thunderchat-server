@@ -12,4 +12,5 @@ export enum EVoiceCallMessages {
   INVALID_STATUS = 'Invalid call status.',
   SESSION_NOT_FOUND = 'Call session not found.',
   TOO_MANY_CALLS = 'Too many calls are in progress. Please try again later.',
+  SOMETHING_WENT_WRONG = 'Something went wrong. Please try again later.',
 }

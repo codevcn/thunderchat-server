@@ -18,7 +18,7 @@ import { EUserMessages } from '@/user/user.message'
 import { SyncDataToESService } from '@/configs/elasticsearch/sync-data-to-ES/sync-data-to-ES.service'
 import { checkIsEmail } from '@/utils/helpers'
 import * as crypto from 'crypto'
-import * as bcrypt from 'bcrypt'
+import * as bcrypt from 'bcryptjs'
 import nodemailer from 'nodemailer'
 
 @Injectable()

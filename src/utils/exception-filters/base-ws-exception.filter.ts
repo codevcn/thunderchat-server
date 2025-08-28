@@ -1,7 +1,7 @@
 import { BaseWsException } from '@/utils/exceptions/base-ws.exception'
 import { Catch, ArgumentsHost, HttpStatus } from '@nestjs/common'
 import { BaseWsExceptionFilter, WsException } from '@nestjs/websockets'
-import { EEmitSocketEvents } from '@/utils/events/socket.event'
+import { EMessagingEmitSocketEvents } from '@/utils/events/socket.event'
 import type { TWsErrorResponse } from '../types'
 import { Prisma } from '@prisma/client'
 import type { TClientSocket } from '@/utils/events/event.type'
@@ -13,7 +13,7 @@ export class BaseWsExceptionsFilter extends BaseWsExceptionFilter {
 
     const clientSocket = host.switchToWs().getClient<TClientSocket>()
     const formattedException = this.formatException(exception)
-    clientSocket.emit(EEmitSocketEvents.error, formattedException)
+    clientSocket.emit(EMessagingEmitSocketEvents.error, formattedException)
     super.catch(exception, host)
   }
 

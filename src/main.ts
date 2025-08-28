@@ -22,7 +22,7 @@ async function bootstrap() {
 
   // cors
   app.enableCors({
-    origin: [CLIENT_HOST],
+    origin: [CLIENT_HOST, 'http://localhost:3000'],
     credentials: true,
   })
 

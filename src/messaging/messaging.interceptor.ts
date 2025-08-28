@@ -2,7 +2,7 @@ import { Injectable, NestInterceptor, ExecutionContext, CallHandler } from '@nes
 import { Observable } from 'rxjs'
 import { SymmetricEncryptor } from '@/utils/crypto/symmetric-encryption.crypto'
 import { SyncDataToESService } from '@/configs/elasticsearch/sync-data-to-ES/sync-data-to-ES.service'
-import { EListenSocketEvents } from '../utils/events/socket.event'
+import { EMessagingListenSocketEvents } from '../utils/events/socket.event'
 import { EMessageTypes } from '@/message/message.enum'
 import { BaseWsException } from '@/utils/exceptions/base-ws.exception'
 import type { TClientSocket } from '@/utils/events/event.type'
@@ -20,7 +20,7 @@ export class MessagingGatewayInterceptor implements NestInterceptor {
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const client = context.switchToWs().getClient<TClientSocket>()
-    const event = context.switchToWs().getPattern() as EListenSocketEvents
+    const event = context.switchToWs().getPattern() as EMessagingListenSocketEvents
     const data = context.switchToWs().getData()
 
     DevLogger.logForWebsocket('Got an EVENT:', { event, data })
@@ -31,11 +31,11 @@ export class MessagingGatewayInterceptor implements NestInterceptor {
 
   private handleEncryptMessageContent(
     client: TClientSocket,
-    event: EListenSocketEvents,
+    event: EMessagingListenSocketEvents,
     data: any
   ): void {
     // Chỉ xử lý sự kiện gửi tin nhắn 1-1
-    if (event !== EListenSocketEvents.send_message_direct) return
+    if (event !== EMessagingListenSocketEvents.send_message_direct) return
 
     // Validate message type và content
     if (!data || typeof data !== 'object') {

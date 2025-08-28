@@ -10,6 +10,7 @@ import { EVoiceCallStatus } from './voice-call.enum'
 
 @Injectable()
 export class VoiceCallService {
+  private readonly MAX_RETRY_COUNT_CREATE_TEMP_SESSION: number = 3
   private readonly activeCallSessions = new Map<
     TVoiceCallSessionActiveId,
     TActiveVoiceCallSession
@@ -27,7 +28,15 @@ export class VoiceCallService {
     calleeUserId: TUserId,
     directChatId: TDirectChat['id']
   ): TActiveVoiceCallSession {
-    const tempSessionId = uuidv4()
+    let tempSessionId = uuidv4()
+    let retryCount: number = 0
+    while (this.activeCallSessions.has(tempSessionId)) {
+      retryCount++
+      if (retryCount === this.MAX_RETRY_COUNT_CREATE_TEMP_SESSION) {
+        throw new BadRequestException(EVoiceCallMessages.SOMETHING_WENT_WRONG)
+      }
+      tempSessionId = uuidv4()
+    }
     const session: TActiveVoiceCallSession = {
       id: tempSessionId,
       status: EVoiceCallStatus.REQUESTING,
