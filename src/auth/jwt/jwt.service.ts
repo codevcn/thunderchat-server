@@ -9,7 +9,7 @@ import type { TJWTCookieOptions } from './jwt.type'
 
 @Injectable()
 export class JWTService {
-  private jwtCookieOptions: TJWTCookieOptions
+  private jwtCookieOptions
 
   constructor(private jwtService: JwtService) {
     console.log('>>> process env:', {
@@ -17,12 +17,11 @@ export class JWTService {
       CLIENT_DOMAIN: process.env.CLIENT_DOMAIN,
     })
     this.jwtCookieOptions = {
-      httpOnly: true, // bảo mật, JS không truy cập được
-      secure: false, // dev trên LAN không có https -> để false
-      sameSite: 'lax', // cho phép gửi cookie qua cùng domain/IP (hạn chế CSRF cơ bản)
-      path: '/', // cookie áp dụng toàn bộ site
-      // domain: "192.168.1.5", // thường không cần set domain trong LAN, để trống là ổn
       maxAge: ms(process.env.JWT_TOKEN_MAX_AGE_IN_HOUR),
+      domain: process.env.CLIENT_DOMAIN_DEV,
+      path: '/',
+      httpOnly: true,
+      secure: true,
     }
   }
 

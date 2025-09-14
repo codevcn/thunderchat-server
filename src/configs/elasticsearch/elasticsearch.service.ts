@@ -31,8 +31,8 @@ export class ElasticsearchService implements OnModuleInit {
 
   async pingToESServer(): Promise<void> {
     try {
-      const result = await ESClient.ping()
-      console.log('>>> Elasticsearch ping result:', result)
+      // const result = await ESClient.ping()
+      // console.log('>>> Elasticsearch ping result:', result)
     } catch (error) {
       console.error('>>> Elasticsearch ping failed:', error)
     }
