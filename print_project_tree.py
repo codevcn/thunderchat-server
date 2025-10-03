@@ -28,7 +28,7 @@ def print_tree(root_path, file_handle, prefix="", exclude_dirs=None):
             print_tree(path, file_handle, prefix + extension, exclude_dirs)
 
 
-# ✅ Ví dụ sử dụng
+# Ví dụ sử dụng
 if __name__ == "__main__":
     root_directory = "."  # Thư mục gốc cần duyệt
     excluded = [

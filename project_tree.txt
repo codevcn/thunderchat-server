@@ -22,7 +22,8 @@ Tree view of: D:\D-Documents\Code_VCN\React\VCN-THUNDER-CHAT-APP\server
 ├── nest-cli.json
 ├── note.txt
 ├── package.json
-├── print_tree.py
+├── pnpm-lock.yaml
+├── print_project_tree.py
 ├── prisma
 │   ├── schema.prisma
 │   └── sql
@@ -97,7 +98,10 @@ Tree view of: D:\D-Documents\Code_VCN\React\VCN-THUNDER-CHAT-APP\server
 │   │       ├── push-notification.service.ts
 │   │       └── push-notification.type.ts
 │   ├── connection
-│   │   └── user-connection.service.ts
+│   │   ├── user-connection.module.ts
+│   │   ├── user-connection.service.ts
+│   │   ├── user-connection.type.ts
+│   │   └── voice-call-connection.service.ts
 │   ├── dev
 │   │   ├── dev-logger.ts
 │   │   ├── dev.controller.ts
@@ -129,24 +133,6 @@ Tree view of: D:\D-Documents\Code_VCN\React\VCN-THUNDER-CHAT-APP\server
 │   │   ├── friend-request.module.ts
 │   │   ├── friend-request.service.ts
 │   │   └── friend-request.type.ts
-│   ├── gateway
-│   │   ├── gateway.dto.ts
-│   │   ├── gateway.enum.ts
-│   │   ├── gateway.event.ts
-│   │   ├── gateway.interceptor.ts
-│   │   ├── gateway.interface.ts
-│   │   ├── gateway.message.ts
-│   │   ├── gateway.module.ts
-│   │   ├── gateway.ts
-│   │   ├── gateway.type.ts
-│   │   ├── gateway.validation.ts
-│   │   ├── helpers
-│   │   │   ├── conversation-typing.helper.ts
-│   │   │   └── message-tokens.helper.ts
-│   │   └── socket
-│   │       ├── socket.module.ts
-│   │       ├── socket.service.ts
-│   │       └── socket.type.ts
 │   ├── group-chat
 │   │   ├── group-chat.controller.ts
 │   │   ├── group-chat.dto.ts
@@ -213,6 +199,18 @@ Tree view of: D:\D-Documents\Code_VCN\React\VCN-THUNDER-CHAT-APP\server
 │   │   ├── message-mapping.module.ts
 │   │   ├── message-mapping.service.ts
 │   │   └── message-mapping.type.ts
+│   ├── messaging
+│   │   ├── helpers
+│   │   │   ├── conversation-typing.helper.ts
+│   │   │   └── message-tokens.helper.ts
+│   │   ├── messaging.dto.ts
+│   │   ├── messaging.enum.ts
+│   │   ├── messaging.gateway.ts
+│   │   ├── messaging.interceptor.ts
+│   │   ├── messaging.interface.ts
+│   │   ├── messaging.message.ts
+│   │   ├── messaging.module.ts
+│   │   └── messaging.type.ts
 │   ├── pin-conversation
 │   │   ├── pin-conversation.controller.ts
 │   │   ├── pin-conversation.dto.ts
@@ -246,6 +244,23 @@ Tree view of: D:\D-Documents\Code_VCN\React\VCN-THUNDER-CHAT-APP\server
 │   │   └── upload.type.ts
 │   ├── user
 │   │   ├── block-user.service.ts
+│   │   ├── user-report
+│   │   │   ├── user-report.controller.ts
+│   │   │   ├── user-report.dto.ts
+│   │   │   ├── user-report.enum.ts
+│   │   │   ├── user-report.exception-filter.ts
+│   │   │   ├── user-report.interface.ts
+│   │   │   ├── user-report.message.ts
+│   │   │   ├── user-report.module.ts
+│   │   │   └── user-report.service.ts
+│   │   ├── user-settings
+│   │   │   ├── user-settings.controller.ts
+│   │   │   ├── user-settings.dto.ts
+│   │   │   ├── user-settings.interface.ts
+│   │   │   ├── user-settings.message.ts
+│   │   │   ├── user-settings.module.ts
+│   │   │   ├── user-settings.service.ts
+│   │   │   └── user-settings.type.ts
 │   │   ├── user.controller.ts
 │   │   ├── user.decorator.ts
 │   │   ├── user.dto.ts
@@ -254,54 +269,52 @@ Tree view of: D:\D-Documents\Code_VCN\React\VCN-THUNDER-CHAT-APP\server
 │   │   ├── user.module.ts
 │   │   ├── user.service.ts
 │   │   └── user.type.ts
-│   ├── user-report
-│   │   ├── user-report.controller.ts
-│   │   ├── user-report.dto.ts
-│   │   ├── user-report.enum.ts
-│   │   ├── user-report.exception-filter.ts
-│   │   ├── user-report.interface.ts
-│   │   ├── user-report.message.ts
-│   │   ├── user-report.module.ts
-│   │   └── user-report.service.ts
-│   ├── user-settings
-│   │   ├── user-settings.controller.ts
-│   │   ├── user-settings.dto.ts
-│   │   ├── user-settings.interface.ts
-│   │   ├── user-settings.message.ts
-│   │   ├── user-settings.module.ts
-│   │   ├── user-settings.service.ts
-│   │   └── user-settings.type.ts
-│   └── utils
-│       ├── crypto
-│       │   └── symmetric-encryption.crypto.ts
-│       ├── entities
-│       │   ├── direct-chat.entity.ts
-│       │   ├── friend.entity.ts
-│       │   ├── group-chat-member.entity.ts
-│       │   ├── group-chat.entity.ts
-│       │   ├── message-mappings.ts
-│       │   ├── message-media.entity.ts
-│       │   ├── message.entity.ts
-│       │   ├── pinned-chat.entity.ts
-│       │   ├── profile.entity.ts
-│       │   ├── push-notification-subscription.entity.ts
-│       │   ├── sticker.entity.ts
-│       │   └── user.entity.ts
-│       ├── enums.ts
-│       ├── exception-filters
-│       │   ├── base-http-exception.filter.ts
-│       │   └── base-ws-exception.filter.ts
-│       ├── exceptions
-│       │   ├── base-http.exception.ts
-│       │   ├── base-ws.exception.ts
-│       │   ├── custom-error.ts
-│       │   └── system.exception.ts
-│       ├── helpers.ts
-│       ├── messages.ts
-│       ├── types.ts
-│       └── validation
-│           ├── env.validation.ts
-│           └── transformers.ts
+│   ├── utils
+│   │   ├── crypto
+│   │   │   └── symmetric-encryption.crypto.ts
+│   │   ├── entities
+│   │   │   ├── direct-chat.entity.ts
+│   │   │   ├── friend.entity.ts
+│   │   │   ├── group-chat-member.entity.ts
+│   │   │   ├── group-chat.entity.ts
+│   │   │   ├── message-mappings.entity.ts
+│   │   │   ├── message-media.entity.ts
+│   │   │   ├── message.entity.ts
+│   │   │   ├── pinned-chat.entity.ts
+│   │   │   ├── pinned-message.entity.ts
+│   │   │   ├── profile.entity.ts
+│   │   │   ├── push-notification-subscription.entity.ts
+│   │   │   ├── sticker.entity.ts
+│   │   │   ├── user.entity.ts
+│   │   │   └── voice-call-session.entity.ts
+│   │   ├── enums.ts
+│   │   ├── events
+│   │   │   ├── event.type.ts
+│   │   │   └── socket.event.ts
+│   │   ├── exception-filters
+│   │   │   ├── base-http-exception.filter.ts
+│   │   │   └── base-ws-exception.filter.ts
+│   │   ├── exceptions
+│   │   │   ├── base-http.exception.ts
+│   │   │   ├── base-ws.exception.ts
+│   │   │   ├── custom-error.ts
+│   │   │   └── system.exception.ts
+│   │   ├── helpers.ts
+│   │   ├── messages.ts
+│   │   ├── types.ts
+│   │   └── validation
+│   │       ├── env.validation.ts
+│   │       ├── gateway.validation.ts
+│   │       └── transformers.ts
+│   └── voice-call
+│       ├── voice-call.dto.ts
+│       ├── voice-call.enum.ts
+│       ├── voice-call.gateway.ts
+│       ├── voice-call.interceptor.ts
+│       ├── voice-call.interface.ts
+│       ├── voice-call.message.ts
+│       ├── voice-call.module.ts
+│       ├── voice-call.service.ts
+│       └── voice-call.type.ts
 ├── tsconfig.build.json
-├── tsconfig.json
-└── yarn.lock
+└── tsconfig.json

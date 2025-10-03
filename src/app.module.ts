@@ -1,4 +1,4 @@
-import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common'
+import { MiddlewareConsumer, Module, NestModule, RequestMethod } from '@nestjs/common'
 import { AuthModule } from './auth/auth.module'
 import { ConfigModule } from '@nestjs/config'
 import { JwtModule } from '@nestjs/jwt'
@@ -51,6 +51,11 @@ import { PinConversationModule } from './pin-conversation/pin-conversation.modul
 import { HealthcheckModule } from './healthcheck/healthcheck.module'
 import { PushNotificationModule } from './configs/push-notification/push-notification.module'
 import { VoiceCallGatewayModule } from './voice-call/voice-call.module'
+import { join } from 'path'
+import { readFileSync } from 'fs'
+import { createProxyMiddleware } from 'http-proxy-middleware'
+import { DevLogger } from './dev/dev-logger'
+import { IAPIGatewayRouting } from './app.interface'
 
 @Module({
   imports: [
@@ -83,6 +88,37 @@ import { VoiceCallGatewayModule } from './voice-call/voice-call.module'
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
+    this.initLoggingMiddleware(consumer)
+    this.initRoutingProxyMiddleware(consumer)
+  }
+
+  initLoggingMiddleware(consumer: MiddlewareConsumer) {
     consumer.apply(RequestLoggerMiddleware).forRoutes('*')
+  }
+
+  initRoutingProxyMiddleware(consumer: MiddlewareConsumer) {
+    const configPath = join(__dirname, '/../routing/', 'api-gateway-routing.json')
+    const raw = readFileSync(configPath, 'utf-8')
+    const { routes } = JSON.parse(raw) as IAPIGatewayRouting
+
+    for (const { path, target, rewrite, changeOrigin } of routes) {
+      consumer
+        .apply(
+          createProxyMiddleware({
+            target,
+            changeOrigin,
+            pathRewrite: rewrite,
+            on: {
+              proxyReq: (proxyReq, req, res) => {
+                DevLogger.logInfo('Proxying request to:', target + req.url)
+              },
+              proxyRes: (proxyRes, req, res) => {
+                DevLogger.logInfo('Received response from target')
+              },
+            },
+          })
+        )
+        .forRoutes({ path, method: RequestMethod.ALL })
+    }
   }
 }
