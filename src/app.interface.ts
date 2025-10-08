@@ -8,3 +8,11 @@ export interface IAPIGatewayRoutingItem {
 export interface IAPIGatewayRouting {
   routes: IAPIGatewayRoutingItem[]
 }
+
+export interface IAuthGuardedRoute {
+  path: string
+}
+
+export interface IGuardedRoutes {
+  routes: IAuthGuardedRoute[]
+}

@@ -140,7 +140,7 @@ export class DeleteMessageService {
   /**
    * Xóa file S3 nếu là media message
    */
-  private async deleteS3Files(msg: any): Promise<void> {
+  private async deleteS3Files(msg: TMessageWithMedia): Promise<void> {
     if (msg.type === EMessageTypes.MEDIA && msg.Media) {
       try {
         // Xóa file chính trên S3

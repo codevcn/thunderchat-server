@@ -1,8 +1,11 @@
+import type { TUserWithProfile } from '@/utils/entities/user.entity'
+
 declare global {
   namespace NodeJS {
     interface ProcessEnv {
       NODE_ENV: 'development' | 'production'
       PORT: string
+      AUTH_GRPC_PORT: string
       DATABASE_URL: string
       SESSION_SECRET: string
       SESSION_NAME: string
@@ -24,11 +27,16 @@ declare global {
       AWS_BUCKET_NAME: string
       AWS_ACCESS_KEY: string
       AWS_SECRET_KEY: string
-      AWS_REGION: string
       AWS_S3_BUCKET: string
       VAPID_PUBLIC_KEY: string
       VAPID_PRIVATE_KEY: string
       VAPID_MAILTO: string
+    }
+  }
+
+  namespace Express {
+    interface Request {
+      user?: TUserWithProfile
     }
   }
 }

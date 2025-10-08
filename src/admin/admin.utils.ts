@@ -1,7 +1,7 @@
 import { UnauthorizedException } from '@nestjs/common'
 import { TUserWithProfile } from '@/utils/entities/user.entity'
 import { EAppRoles } from '@/utils/enums'
-import { EAdminMessages } from './admin.message'
+import { EAdminMessages } from './admin.message-2'
 
 /**
  * Kiểm tra user có role ADMIN không

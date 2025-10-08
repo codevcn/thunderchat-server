@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package auth;
+
+import "google/protobuf/struct.proto";
+import "google/protobuf/empty.proto";
+
+service AuthService {
+  rpc ValidateSocketConnection(ValidateSocketConnectionRequest)
+      returns (google.protobuf.Empty);
+  rpc ValidateSocketAuth(ValidateSocketAuthRequest)
+      returns (ValidateSocketAuthResponse);
+  rpc ValidateVoiceCallSocketAuth(ValidateVoiceCallSocketAuthRequest)
+      returns (ValidateVoiceCallSocketAuthResponse);
+  rpc VerifyToken(VerifyTokenRequest) returns (VerifyTokenResponse);
+}
+
+message ValidateSocketConnectionRequest {
+  google.protobuf.Struct socket = 1;
+}
+
+message ValidateSocketAuthRequest {
+  google.protobuf.Struct client_socket = 1;
+}
+
+message ValidateSocketAuthResponse {
+  google.protobuf.Struct client_socket_auth = 1;
+}
+
+message ValidateVoiceCallSocketAuthRequest {
+  google.protobuf.Struct client_socket = 1;
+}
+
+message ValidateVoiceCallSocketAuthResponse {
+  google.protobuf.Struct voice_call_socket_auth = 1;
+}
+
+message VerifyTokenRequest {
+  string token = 1;
+}
+
+message VerifyTokenResponse {
+  google.protobuf.Struct user = 1;
+}

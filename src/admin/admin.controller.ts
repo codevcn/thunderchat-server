@@ -27,8 +27,8 @@ import {
   BanReportedUserDTO,
   GetUserReportHistoryDTO,
 } from './admin.dto'
-import { AdminGuard } from '../auth/role/admin/admin.guard'
-import { AdminOnly } from '../auth/role/admin/admin.decorator'
+import { AdminGuard } from './admin.guard'
+import { AdminOnly } from './admin.decorator'
 import { BanUserDTO, GetSystemOverviewDTO, GetUserMessageStatsDTO } from './admin.dto'
 
 @Controller('admin')

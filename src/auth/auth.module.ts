@@ -5,11 +5,10 @@ import { JWTService } from '@/auth/jwt/jwt.service'
 import { CredentialService } from './credentials/credentials.service'
 import { UserModule } from '@/user/user.module'
 import { AuthGuard } from './auth.guard'
-import { AdminRoleModule } from './role/admin/admin.module'
 import { UserConnectionService } from '@/connection/user-connection.service'
 
 @Module({
-  imports: [UserModule, AdminRoleModule],
+  imports: [UserModule],
   controllers: [AuthController],
   providers: [AuthService, JWTService, CredentialService, AuthGuard, UserConnectionService],
   exports: [AuthService, JWTService, CredentialService, UserConnectionService],

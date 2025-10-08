@@ -6,6 +6,7 @@ import validator from 'validator'
 import { Express } from 'express'
 import { EMessageMediaTypes } from '@/message/message.enum'
 import { EGlobalMessages } from './enums'
+import { readFileSync } from 'fs'
 
 /**
  * Decode Multer's originalname (latin1) to UTF-8 so Unicode filenames display correctly
@@ -236,4 +237,9 @@ export function createGroupChatRoomName(groupChatId: number): string {
 
 export const isEmptyJSON = (json: object): boolean => {
   return Object.keys(json).length === 0
+}
+
+export const loadJSONFileSync = <ResultType = any>(filePath: string): ResultType | null => {
+  const data = readFileSync(filePath, 'utf-8')
+  return data ? JSON.parse(data) : null
 }

@@ -15,6 +15,15 @@ export enum ERoutes {
   PUSH_NOTIFICATION = 'push-notification',
 }
 
+export enum EGrpcPackages {
+  AUTH_PACKAGE = 'AUTH_PACKAGE',
+  AUTH = 'auth',
+}
+
+export enum EGrpcServices {
+  AUTH_SERVICE = 'AuthService',
+}
+
 export enum EClientCookieNames {
   JWT_TOKEN_AUTH = 'jwt_token_auth',
 }

@@ -42,8 +42,6 @@ import { StickersModule } from './message/stickers/stickers.module'
 import { FriendRequestModule } from './friend-request/friend-request.module'
 import { SearchModule } from './search/search.module'
 import { GroupChatModule } from './group-chat/group-chat.module'
-import { UploadModule } from './upload/upload.module'
-
 import { GroupMemberModule } from './group-member/group-member.module'
 import { DeleteMessageModule } from './message/delete-message/delete-message.module'
 import { AdminModule } from './admin/admin.module'
@@ -52,14 +50,17 @@ import { HealthcheckModule } from './healthcheck/healthcheck.module'
 import { PushNotificationModule } from './configs/push-notification/push-notification.module'
 import { VoiceCallGatewayModule } from './voice-call/voice-call.module'
 import { join } from 'path'
-import { readFileSync } from 'fs'
 import { createProxyMiddleware } from 'http-proxy-middleware'
 import { DevLogger } from './dev/dev-logger'
-import { IAPIGatewayRouting } from './app.interface'
+import type { IAPIGatewayRouting } from './app.interface'
+import { loadJSONFileSync } from './utils/helpers'
+import { GrpcClientModule } from './configs/communication/grpc/grpc-client.module'
+import { AuthMiddleware } from './auth/auth.middleware'
 
 @Module({
   imports: [
     ...globalConfigModules,
+    GrpcClientModule,
     AuthModule,
     MessagingGatewayModule,
     VoiceCallGatewayModule,
@@ -73,7 +74,6 @@ import { IAPIGatewayRouting } from './app.interface'
     StickersModule,
     SearchModule,
     GroupChatModule,
-    UploadModule,
     PinConversationModule,
     GroupMemberModule,
     DevModule,
@@ -89,6 +89,7 @@ import { IAPIGatewayRouting } from './app.interface'
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     this.initLoggingMiddleware(consumer)
+    this.authRoutes(consumer)
     this.initRoutingProxyMiddleware(consumer)
   }
 
@@ -97,11 +98,12 @@ export class AppModule implements NestModule {
   }
 
   initRoutingProxyMiddleware(consumer: MiddlewareConsumer) {
-    const configPath = join(__dirname, '/../routing/', 'api-gateway-routing.json')
-    const raw = readFileSync(configPath, 'utf-8')
-    const { routes } = JSON.parse(raw) as IAPIGatewayRouting
+    const config = loadJSONFileSync<IAPIGatewayRouting>(
+      join(__dirname, '/../routing/', 'api-gateway-routing.json')
+    )
+    if (!config) return
 
-    for (const { path, target, rewrite, changeOrigin } of routes) {
+    for (const { path, target, rewrite, changeOrigin } of config.routes) {
       consumer
         .apply(
           createProxyMiddleware({
@@ -119,6 +121,17 @@ export class AppModule implements NestModule {
           })
         )
         .forRoutes({ path, method: RequestMethod.ALL })
+    }
+  }
+
+  authRoutes(consumer: MiddlewareConsumer) {
+    const config = loadJSONFileSync<IAPIGatewayRouting>(
+      join(__dirname, 'auth', 'guarded-routes.json')
+    )
+    if (!config) return
+
+    for (const { path } of config.routes) {
+      consumer.apply(AuthMiddleware).forRoutes({ path, method: RequestMethod.ALL })
     }
   }
 }
