@@ -1,0 +1,47 @@
+{
+  "services": {
+    "auth": {
+      "routes": [{ "path": "/auth" }]
+    },
+    "user": {
+      "routes": [
+        { "path": "/user" },
+        { "path": "/user-settings" },
+        { "path": "/user-report" },
+        { "path": "/profile" }
+      ]
+    },
+    "friendship": {
+      "routes": [{ "path": "/friend" }, { "path": "/friend-request" }]
+    },
+    "notification": {
+      "routes": [{ "path": "/push-notification" }]
+    },
+    "search": {
+      "routes": [{ "path": "/search" }]
+    },
+    "chat": {
+      "routes": []
+    },
+    "media": {
+      "routes": [{ "path": "/media-message" }, { "path": "/sticker" }]
+    },
+    "call": {
+      "routes": []
+    },
+    "admin": {
+      "routes": [{ "path": "/admin" }]
+    },
+    "conversation": {
+      "routes": [
+        { "path": "/direct-chat" },
+        { "path": "/group-chat" },
+        { "path": "/group-member" },
+        { "path": "/message" },
+        { "path": "/delete-message" },
+        { "path": "/pin" },
+        { "path": "/pin-conversation" }
+      ]
+    }
+  }
+}

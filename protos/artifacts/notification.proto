@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package notification;
+
+import "google/protobuf/struct.proto";
+
+service NotificationService {
+  rpc SendNotificationToUser(SendNotificationToUserRequest)
+      returns (SendNotificationToUserResponse);
+}
+
+message SendNotificationToUserRequest {
+  int32 user_id = 1;
+  google.protobuf.Struct payload = 2;
+}
+
+message SendNotificationToUserResponse {
+  google.protobuf.Struct result = 1;
+}

@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+package media;
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/struct.proto";
+
+service UploadService {
+  rpc DeleteFileByUrl(DeleteFileByUrlRequest) returns (google.protobuf.Empty);
+  rpc UploadFile(UploadFileRequest) returns (UploadFileResponse);
+  rpc UploadGroupChatAvatar(UploadGroupChatAvatarRequest)
+      returns (UploadGroupChatAvatarResponse);
+  rpc DeleteGroupChatAvatar(DeleteGroupChatAvatarRequest)
+      returns (google.protobuf.Empty);
+}
+
+message DeleteFileByUrlRequest {
+  string url = 1;
+}
+
+message UploadFileRequest {
+  bytes content = 1;
+}
+
+message UploadFileResponse {
+  google.protobuf.Struct file_info = 1;
+}
+
+message UploadGroupChatAvatarRequest {
+  bytes file = 1;
+}
+
+message UploadGroupChatAvatarResponse {
+  string url = 1;
+}
+
+message DeleteGroupChatAvatarRequest {
+  string avatarUrl = 1;
+}

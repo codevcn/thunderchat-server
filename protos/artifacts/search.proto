@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package search;
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/struct.proto";
+
+service ElasticSearchService {
+  rpc SyncDataToES(DataToSync) returns (google.protobuf.Empty);
+}
+
+message DataToSync {
+  string type = 1;
+  oneof data_to_sync {
+    DataToSyncObject dataObject = 2;
+    DataToSyncArray dataArray = 3;
+  }
+}
+
+message DataToSyncObject {
+  google.protobuf.Struct data = 1;
+}
+
+message DataToSyncArray {
+  repeated int32 data = 1;
+}

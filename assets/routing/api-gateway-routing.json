@@ -1,0 +1,229 @@
+{
+  "services": {
+    "auth": {
+      "target": "http://auth-service:4001",
+      "healthCheck": "/health",
+      "timeout": 10000,
+      "routes": [
+        {
+          "path": "/auth",
+          "rewrite": { "^/": "/api/auth/" },
+          "changeOrigin": true
+        }
+      ]
+    },
+    "user": {
+      "target": "http://user-service:4002",
+      "healthCheck": "/health",
+      "timeout": 10000,
+      "routes": [
+        {
+          "path": "/user",
+          "rewrite": { "^/": "/api/user/" },
+          "changeOrigin": true
+        },
+        {
+          "path": "/user-settings",
+          "rewrite": { "^/": "/api/user-settings/" },
+          "changeOrigin": true
+        },
+        {
+          "path": "/user-report",
+          "rewrite": { "^/": "/api/user-report/" },
+          "changeOrigin": true
+        },
+        {
+          "path": "/profile",
+          "rewrite": { "^/": "/api/profile/" },
+          "changeOrigin": true
+        }
+      ]
+    },
+    "friendship": {
+      "target": "http://friendship-service:4003",
+      "healthCheck": "/health",
+      "timeout": 10000,
+      "routes": [
+        {
+          "path": "/friend",
+          "rewrite": { "^/": "/api/friend/" },
+          "changeOrigin": true
+        },
+        {
+          "path": "/friend-request",
+          "rewrite": { "^/": "/api/friend-request/" },
+          "changeOrigin": true
+        }
+      ]
+    },
+    "notification": {
+      "target": "http://notification-service:4004",
+      "healthCheck": "/health",
+      "timeout": 10000,
+      "routes": [
+        {
+          "path": "/push-notification",
+          "rewrite": { "^/": "/api/push-notification/" },
+          "changeOrigin": true
+        }
+      ]
+    },
+    "search": {
+      "target": "http://search-service:4005",
+      "healthCheck": "/health",
+      "timeout": 15000,
+      "routes": [
+        {
+          "path": "/search",
+          "rewrite": { "^/": "/api/search/" },
+          "changeOrigin": true
+        }
+      ]
+    },
+    "chat": {
+      "target": "http://chat-service:4006",
+      "healthCheck": "/health",
+      "timeout": 30000,
+      "routes": []
+    },
+    "media": {
+      "target": "http://media-service:4007",
+      "healthCheck": "/health",
+      "timeout": 120000,
+      "routes": [
+        {
+          "path": "/upload",
+          "rewrite": { "^/": "/api/upload/" },
+          "changeOrigin": true
+        },
+        {
+          "path": "/media-message",
+          "rewrite": { "^/": "/api/media-message/" },
+          "changeOrigin": true
+        },
+        {
+          "path": "/sticker",
+          "rewrite": { "^/": "/api/sticker/" },
+          "changeOrigin": true
+        }
+      ]
+    },
+    "call": {
+      "target": "http://call-service:4008",
+      "healthCheck": "/health",
+      "timeout": 30000,
+      "routes": []
+    },
+    "admin": {
+      "target": "http://admin-service:4009",
+      "healthCheck": "/health",
+      "timeout": 15000,
+      "routes": [
+        {
+          "path": "/admin",
+          "rewrite": { "^/": "/api/admin/" },
+          "changeOrigin": true
+        }
+      ]
+    },
+    "conversation": {
+      "target": "http://conversation-service:4010",
+      "healthCheck": "/health",
+      "timeout": 10000,
+      "routes": [
+        {
+          "path": "/direct-chat",
+          "rewrite": { "^/": "/api/direct-chat/" },
+          "changeOrigin": true
+        },
+        {
+          "path": "/group-chat",
+          "rewrite": { "^/": "/api/group-chat/" },
+          "changeOrigin": true
+        },
+        {
+          "path": "/group-member",
+          "rewrite": { "^/": "/api/group-member/" },
+          "changeOrigin": true
+        },
+        {
+          "path": "/message",
+          "rewrite": { "^/": "/api/message/" },
+          "changeOrigin": true
+        },
+        {
+          "path": "/delete-message",
+          "rewrite": { "^/": "/api/delete-message/" },
+          "changeOrigin": true
+        },
+        {
+          "path": "/pin",
+          "rewrite": { "^/": "/api/pin/" },
+          "changeOrigin": true
+        },
+        {
+          "path": "/pin-conversation",
+          "rewrite": { "^/": "/api/pin-conversation/" },
+          "changeOrigin": true
+        }
+      ]
+    }
+  },
+  "middleware": {
+    "cors": {
+      "enabled": true,
+      "origins": ["http://localhost:3000", "http://localhost:3001", "https://yourdomain.com"],
+      "credentials": true,
+      "methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+      "allowedHeaders": ["Content-Type", "Authorization", "X-Requested-With"]
+    },
+    "compression": {
+      "enabled": true,
+      "level": 6
+    },
+    "logging": {
+      "enabled": true,
+      "level": "info",
+      "excludePaths": ["/api/healthcheck"]
+    },
+    "requestId": {
+      "enabled": true,
+      "header": "X-Request-ID"
+    },
+    "circuitBreaker": {
+      "enabled": true,
+      "threshold": 5,
+      "timeout": 60000,
+      "resetTimeout": 30000
+    }
+  },
+  "loadBalancing": {
+    "strategy": "round-robin",
+    "healthCheckInterval": 30000,
+    "retries": 3
+  },
+  "security": {
+    "helmet": {
+      "enabled": true
+    },
+    "rateLimitGlobal": {
+      "enabled": true,
+      "max": 1000,
+      "windowMs": 60000
+    },
+    "ipWhitelist": {
+      "enabled": false,
+      "ips": []
+    }
+  },
+  "monitoring": {
+    "metrics": {
+      "enabled": true,
+      "path": "/metrics"
+    },
+    "tracing": {
+      "enabled": true,
+      "serviceName": "api-gateway"
+    }
+  }
+}

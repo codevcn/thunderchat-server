@@ -7,9 +7,11 @@ Tree view of: D:\D-Documents\Code_VCN\React\VCN-THUNDER-CHAT-APP\server
 ├── .prettierignore
 ├── .prettierrc.json
 ├── README.md
+├── add.cmd
 ├── check-ts.cmd
 ├── dev.cmd
 ├── environment.d.ts
+├── gen-db.cmd
 ├── gen-sql.cmd
 ├── logs
 │   ├── errors.log
@@ -32,15 +34,53 @@ Tree view of: D:\D-Documents\Code_VCN\React\VCN-THUNDER-CHAT-APP\server
 │       ├── explainStatement.sql
 │       └── getRandomGreetingSticker.sql
 ├── project_tree.txt
+├── protos
+│   ├── artifacts
+│   │   ├── admin.proto
+│   │   ├── auth.proto
+│   │   ├── call.proto
+│   │   ├── chat.proto
+│   │   ├── conversation.proto
+│   │   ├── friend.proto
+│   │   ├── media.proto
+│   │   ├── notification.proto
+│   │   ├── search.proto
+│   │   └── user.proto
+│   └── generated
+│       ├── admin.ts
+│       ├── auth.ts
+│       ├── call.ts
+│       ├── chat.ts
+│       ├── conversation.ts
+│       ├── friend.ts
+│       ├── google
+│       │   └── protobuf
+│       │       ├── any.ts
+│       │       ├── empty.ts
+│       │       ├── struct.ts
+│       │       └── timestamp.ts
+│       ├── media.ts
+│       ├── notification.ts
+│       ├── search.ts
+│       └── user.ts
+├── rem.cmd
+├── routing
+│   └── api-gateway-routing.json
 ├── src
 │   ├── admin
+│   │   ├── README.md
 │   │   ├── admin.controller.ts
+│   │   ├── admin.decorator.ts
 │   │   ├── admin.dto.ts
 │   │   ├── admin.exception-filter.ts
+│   │   ├── admin.guard.ts
+│   │   ├── admin.message-2.ts
 │   │   ├── admin.message.ts
 │   │   ├── admin.module.ts
 │   │   ├── admin.service.ts
-│   │   └── admin.type.ts
+│   │   ├── admin.type.ts
+│   │   └── admin.utils.ts
+│   ├── app.interface.ts
 │   ├── app.middleware.ts
 │   ├── app.module.ts
 │   ├── auth
@@ -49,30 +89,31 @@ Tree view of: D:\D-Documents\Code_VCN\React\VCN-THUNDER-CHAT-APP\server
 │   │   ├── auth.guard.ts
 │   │   ├── auth.interface.ts
 │   │   ├── auth.message.ts
+│   │   ├── auth.middleware.ts
 │   │   ├── auth.module.ts
 │   │   ├── auth.service.ts
 │   │   ├── auth.type.ts
 │   │   ├── credentials
 │   │   │   └── credentials.service.ts
+│   │   ├── guarded-routes.json
 │   │   ├── jwt
 │   │   │   ├── jwt.service.ts
 │   │   │   └── jwt.type.ts
 │   │   └── role
-│   │       ├── admin
-│   │       │   ├── README.md
-│   │       │   ├── admin.decorator.ts
-│   │       │   ├── admin.example.ts
-│   │       │   ├── admin.guard.ts
-│   │       │   ├── admin.message.ts
-│   │       │   ├── admin.module.ts
-│   │       │   ├── admin.utils.ts
-│   │       │   └── index.ts
 │   │       └── group-chat
 │   │           ├── group-chat-role.decorator.ts
 │   │           ├── group-chat-role.enum.ts
 │   │           ├── group-chat-role.guard.ts
 │   │           └── group-chat-role.message.ts
+│   ├── bootstrap
+│   │   └── copy-protos-folder.ts
 │   ├── configs
+│   │   ├── communication
+│   │   │   └── grpc
+│   │   │       ├── grpc-client.config.ts
+│   │   │       ├── grpc-client.module.ts
+│   │   │       └── services
+│   │   │           └── auth.service.ts
 │   │   ├── db
 │   │   │   ├── prisma.module.ts
 │   │   │   └── prisma.service.ts

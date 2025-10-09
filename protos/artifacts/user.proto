@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package user;
+
+import "google/protobuf/struct.proto";
+
+service UserService {
+  rpc FindUserWithProfileById(FindUserWithProfileByIdRequest)
+      returns (FindUserWithProfileByIdResponse);
+}
+
+service UserSettingsService {
+  rpc FindByUserId(FindByUserIdRequest) returns (FindByUserIdResponse);
+}
+
+service BlockUserService {
+  rpc CheckBlockedUser(CheckBlockedUserRequest)
+      returns (CheckBlockedUserResponse);
+}
+
+message FindUserWithProfileByIdRequest {
+  int64 user_id = 1;
+}
+
+message FindUserWithProfileByIdResponse {
+  google.protobuf.Struct user = 1;
+}
+
+message FindByUserIdRequest {
+  int64 user_id = 1;
+}
+
+message FindByUserIdResponse {
+  google.protobuf.Struct user_settings = 1;
+}
+
+message CheckBlockedUserRequest {
+  int64 blocker_id = 1;
+  int64 blocked_id = 2;
+}
+
+message CheckBlockedUserResponse {
+  google.protobuf.Struct blocked_user = 1;
+}
