@@ -168,7 +168,7 @@ export class GroupChatService {
     userId: number,
     updates: Partial<UpdateGroupChatDTO>
   ): Promise<TGroupChat> {
-    const member = await this.groupMemberService.getGroupChatMember(groupChatId, userId)
+    const member = await this.groupMemberService.findMemberInGroupChat(groupChatId, userId)
     if (!member) {
       throw new NotFoundException(EGroupMemberMessages.MEMBER_INFO_NOT_FOUND)
     }

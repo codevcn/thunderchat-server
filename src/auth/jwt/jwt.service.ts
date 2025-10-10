@@ -9,7 +9,7 @@ import type { TJWTCookieOptions } from './jwt.type'
 
 @Injectable()
 export class JWTService {
-  private jwtCookieOptions
+  private jwtCookieOptions: TJWTCookieOptions
 
   constructor(private jwtService: JwtService) {
     console.log('>>> process env:', {
@@ -18,7 +18,10 @@ export class JWTService {
     })
     this.jwtCookieOptions = {
       maxAge: ms(process.env.JWT_TOKEN_MAX_AGE_IN_HOUR),
-      domain: process.env.CLIENT_DOMAIN_DEV,
+      domain:
+        process.env.NODE_ENV === 'production'
+          ? process.env.CLIENT_DOMAIN
+          : process.env.CLIENT_DOMAIN_DEV,
       path: '/',
       httpOnly: true,
       secure: true,

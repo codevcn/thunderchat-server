@@ -1,6 +1,5 @@
 import { PrismaService } from '@/configs/db/prisma.service'
 import type {
-  TGroupChatMember,
   TGroupChatMemberWithUser,
   TGroupChatMemberWithUserAndGroupChat,
 } from '@/utils/entities/group-chat-member.entity'
@@ -103,12 +102,6 @@ export class GroupMemberService {
       where: { id: groupChatId },
     })
     this.eventEmitter.emit(EInternalEvents.REMOVE_GROUP_CHAT_MEMBERS, groupChat, [memberId])
-  }
-
-  async getGroupChatMember(groupChatId: number, userId: number): Promise<TGroupChatMember | null> {
-    return await this.prismaService.groupChatMember.findFirst({
-      where: { groupChatId, userId },
-    })
   }
 
   async checkIfMembersInGroupChat(groupChatId: number, memberIds: number[]): Promise<boolean> {

@@ -57,7 +57,7 @@ export class GroupChatRoleGuard implements CanActivate {
     const user = request['user'] as TUserWithProfile
     if (!user) throw new InternalServerErrorException()
 
-    const member = await this.groupMemberService.getGroupChatMember(groupChatIdNumber, user.id)
+    const member = await this.groupMemberService.findMemberInGroupChat(groupChatIdNumber, user.id)
     if (!member)
       throw new BaseHttpException(EGroupChatMessages.MEMBER_NOT_FOUND, HttpStatus.NOT_FOUND)
     const memberRole = member.role as EGroupChatRoles

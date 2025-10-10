@@ -4,5 +4,4 @@ export type TJWTCookieOptions = {
   httpOnly: boolean
   secure: boolean
   domain: string
-  sameSite: 'strict' | 'lax' | 'none'
 }
