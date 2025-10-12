@@ -32,6 +32,7 @@
     },
     "conversation": {
       "routes": [
+        { "path": "/direct-chat" },
         { "path": "/group-chat" },
         { "path": "/group-member" },
         { "path": "/message" },

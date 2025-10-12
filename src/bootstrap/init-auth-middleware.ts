@@ -34,17 +34,14 @@ export const initAuthMiddleware = (app: NestExpressApplication, apiPrefix: strin
     for (const { path } of routes) {
       app.use(`/${apiPrefix}${path}`, async (req: Request, res: Response, next: NextFunction) => {
         const token = req.cookies[EClientCookieNames.JWT_TOKEN_AUTH] || undefined
-        console.log('>>> token:', token)
         if (!token) {
           return next(new UnauthorizedException(EAuthMessages.TOKEN_NOT_FOUND))
         }
         try {
           const user = await authService.verifyToken(token)
-          console.log('>>> user 43:', user)
           req.user = user
           next()
         } catch (error) {
-          console.log('>>> error:', error)
           return next(new UnauthorizedException(EAuthMessages.INVALID_TOKEN))
         }
       })
