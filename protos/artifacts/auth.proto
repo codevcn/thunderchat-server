@@ -2,7 +2,6 @@ syntax = "proto3";
 
 package auth;
 
-import "google/protobuf/struct.proto";
 import "google/protobuf/empty.proto";
 
 service AuthService {
@@ -15,24 +14,37 @@ service AuthService {
   rpc VerifyToken(VerifyTokenRequest) returns (VerifyTokenResponse);
 }
 
+service JWTService {
+  rpc CreateJWT(CreateJWTRequest) returns (CreateJWTResponse);
+  rpc GetJWTcookieOtps(google.protobuf.Empty)
+      returns (GetJWTcookieOtpsResponse);
+}
+
+service CredentialsService {
+  rpc CompareHashedPassword(CompareHashedPasswordRequest)
+      returns (CompareHashedPasswordResponse);
+  rpc GetHashedPassword(GetHashedPasswordRequest)
+      returns (GetHashedPasswordResponse);
+}
+
 message ValidateSocketConnectionRequest {
-  google.protobuf.Struct socket = 1;
+  string socket_json = 1;
 }
 
 message ValidateSocketAuthRequest {
-  google.protobuf.Struct client_socket = 1;
+  string client_socket_json = 1;
 }
 
 message ValidateSocketAuthResponse {
-  google.protobuf.Struct client_socket_auth = 1;
+  string client_socket_auth_json = 1;
 }
 
 message ValidateVoiceCallSocketAuthRequest {
-  google.protobuf.Struct client_socket = 1;
+  string client_socket_json = 1;
 }
 
 message ValidateVoiceCallSocketAuthResponse {
-  google.protobuf.Struct voice_call_socket_auth = 1;
+  string voice_call_socket_auth_json = 1;
 }
 
 message VerifyTokenRequest {
@@ -40,5 +52,40 @@ message VerifyTokenRequest {
 }
 
 message VerifyTokenResponse {
-  google.protobuf.Struct user = 1;
+  string user_json = 1;
+}
+
+message CreateJWTRequest {
+  string email = 1;
+  int32 user_id = 2;
+}
+
+message CreateJWTResponse {
+  string jwt_token = 1;
+}
+
+message SendClientJWTRequest {
+  string token = 1;
+  string cookie_otps_json = 2;
+}
+
+message CompareHashedPasswordRequest {
+  string password = 1;
+  string encrypted = 2;
+}
+
+message CompareHashedPasswordResponse {
+  bool is_valid = 1;
+}
+
+message GetHashedPasswordRequest {
+  string plain_password = 1;
+}
+
+message GetHashedPasswordResponse {
+  string hashed_password = 1;
+}
+
+message GetJWTcookieOtpsResponse {
+  string cookie_otps_json = 1;
 }

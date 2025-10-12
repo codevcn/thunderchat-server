@@ -2,7 +2,6 @@ syntax = "proto3";
 
 package conversation;
 
-import "google/protobuf/struct.proto";
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/empty.proto";
 
@@ -40,14 +39,14 @@ service GroupChatService {
 }
 
 message GetNewerDirectMessagesRequest {
-  int64 message_offset = 1;
-  optional int64 direct_chat_id = 2;
-  optional int64 group_chat_id = 3;
+  int32 message_offset = 1;
+  optional int32 direct_chat_id = 2;
+  optional int32 group_chat_id = 3;
   int32 limit = 4;
 }
 
 message GetNewerDirectMessagesResponse {
-  repeated google.protobuf.Struct messages = 1;
+  repeated string messages_json = 1;
 }
 
 message FindConversationWithOtherUserRequest {
@@ -56,7 +55,7 @@ message FindConversationWithOtherUserRequest {
 }
 
 message FindConversationWithOtherUserResponse {
-  google.protobuf.Struct direct_chat = 1;
+  optional string direct_chat_json = 1;
 }
 
 message CreateNewDirectChatRequest {
@@ -65,7 +64,7 @@ message CreateNewDirectChatRequest {
 }
 
 message CreateNewDirectChatResponse {
-  google.protobuf.Struct new_direct_chat = 1;
+  string new_direct_chat_json = 1;
 }
 
 message FindGroupChatMemberIdsRequest {
@@ -90,7 +89,7 @@ message CreateNewMessageRequest {
 }
 
 message CreateNewMessageResponse {
-  google.protobuf.Struct new_message = 1;
+  string new_message_json = 1;
 }
 
 message UpdateLastSentMessageRequest {
@@ -104,7 +103,7 @@ message UpdateMessageStatusRequest {
 }
 
 message UpdateMessageStatusResponse {
-  google.protobuf.Struct message = 1;
+  string message_json = 1;
 }
 
 message FindDirectChatByIdRequest {
@@ -112,7 +111,7 @@ message FindDirectChatByIdRequest {
 }
 
 message FindDirectChatByIdResponse {
-  optional google.protobuf.Struct direct_chat = 1;
+  optional string direct_chat_json = 1;
 }
 
 message FindMemberInGroupChatRequest {
@@ -121,7 +120,7 @@ message FindMemberInGroupChatRequest {
 }
 
 message FindMemberInGroupChatResponse {
-  optional google.protobuf.Struct group_chat_member = 1;
+  optional string group_chat_member_json = 1;
 }
 
 message CheckGroupChatPermissionRequest {
@@ -139,5 +138,5 @@ message FindMessagesForGlobalSearchRequest {
 }
 
 message FindMessagesForGlobalSearchResponse {
-  repeated google.protobuf.Struct messages = 1;
+  repeated string messages_json = 1;
 }

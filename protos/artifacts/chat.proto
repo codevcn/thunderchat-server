@@ -4,7 +4,6 @@ package chat;
 
 import "google/protobuf/empty.proto";
 import "google/protobuf/any.proto";
-import "google/protobuf/struct.proto";
 
 service UserConnectionService {
   rpc GetConnectedClientsCountForAdmin(google.protobuf.Empty)
@@ -33,13 +32,13 @@ message EmitToDirectChatRequest {
 
 message SendNewMessageToGroupChatRequest {
   int32 group_chat_id = 2;
-  google.protobuf.Struct new_message = 3;
+  string new_message_json = 3;
 }
 
 message SendFriendRq {
-  google.protobuf.Struct sender = 1;
+  string sender_json = 1;
   int32 recipientId = 2;
-  google.protobuf.Struct requestData = 3;
+  string requestData_json = 3;
 }
 
 message RemoveConnectedClientRequest {

@@ -8,4 +8,5 @@ export enum EAuthMessages {
   USER_HAS_NO_PROFILE = 'User has no profile',
   ADMIN_ACCESS_REQUIRED = 'Admin access required',
   USER_BANNED = 'User is banned',
+  INVALID_TOKEN = 'Invalid token',
 }

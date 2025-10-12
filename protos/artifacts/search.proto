@@ -3,7 +3,6 @@ syntax = "proto3";
 package search;
 
 import "google/protobuf/empty.proto";
-import "google/protobuf/struct.proto";
 
 service ElasticSearchService {
   rpc SyncDataToES(DataToSync) returns (google.protobuf.Empty);
@@ -18,7 +17,7 @@ message DataToSync {
 }
 
 message DataToSyncObject {
-  google.protobuf.Struct data = 1;
+  string data_json = 1;
 }
 
 message DataToSyncArray {

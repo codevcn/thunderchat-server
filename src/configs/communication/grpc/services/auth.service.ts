@@ -1,17 +1,13 @@
-import { TUserWithProfile } from '@/utils/entities/user.entity'
-import { TCastedFieldObject } from '@/utils/types'
-import { AuthService as AuthServiceType, VerifyTokenResponse } from 'protos/generated/auth'
+import type { TUserWithProfile } from '@/utils/entities/user.entity'
+import type { AuthService as AuthServiceType } from 'protos/generated/auth'
+import { firstValueFrom } from 'rxjs'
 
 export class AuthService {
   constructor(private instance: AuthServiceType) {}
 
-  async verifyToken(token: string) {
-    return (
-      (await this.instance.VerifyToken({ token })) as TCastedFieldObject<
-        VerifyTokenResponse,
-        'user',
-        TUserWithProfile
-      >
-    ).user
+  async verifyToken(token: string): Promise<TUserWithProfile> {
+    return JSON.parse(
+      (await firstValueFrom(this.instance.VerifyToken({ token }))).userJson
+    ) as TUserWithProfile
   }
 }

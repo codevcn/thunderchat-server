@@ -5,9 +5,8 @@
 // source: media.proto
 
 /* eslint-disable */
-import { BinaryReader, BinaryWriter } from '@bufbuild/protobuf/wire'
-import { Empty } from './google/protobuf/empty'
-import { Struct } from './google/protobuf/struct'
+import { Observable } from 'rxjs'
+import type { Empty } from './google/protobuf/empty'
 
 export const protobufPackage = 'media'
 
@@ -17,14 +16,16 @@ export interface DeleteFileByUrlRequest {
 
 export interface UploadFileRequest {
   content: Uint8Array
+  filename: string
 }
 
 export interface UploadFileResponse {
-  fileInfo: { [key: string]: any } | undefined
+  fileInfoJson: string
 }
 
 export interface UploadGroupChatAvatarRequest {
   file: Uint8Array
+  filename: string
 }
 
 export interface UploadGroupChatAvatarResponse {
@@ -35,486 +36,34 @@ export interface DeleteGroupChatAvatarRequest {
   avatarUrl: string
 }
 
-function createBaseDeleteFileByUrlRequest(): DeleteFileByUrlRequest {
-  return { url: '' }
+export interface UploadReportImageRequest {
+  file: Uint8Array
+  filename: string
 }
 
-export const DeleteFileByUrlRequest: MessageFns<DeleteFileByUrlRequest> = {
-  encode(message: DeleteFileByUrlRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.url !== '') {
-      writer.uint32(10).string(message.url)
-    }
-    return writer
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): DeleteFileByUrlRequest {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input)
-    const end = length === undefined ? reader.len : reader.pos + length
-    const message = createBaseDeleteFileByUrlRequest()
-    while (reader.pos < end) {
-      const tag = reader.uint32()
-      switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 10) {
-            break
-          }
-
-          message.url = reader.string()
-          continue
-        }
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break
-      }
-      reader.skip(tag & 7)
-    }
-    return message
-  },
-
-  fromJSON(object: any): DeleteFileByUrlRequest {
-    return { url: isSet(object.url) ? globalThis.String(object.url) : '' }
-  },
-
-  toJSON(message: DeleteFileByUrlRequest): unknown {
-    const obj: any = {}
-    if (message.url !== '') {
-      obj.url = message.url
-    }
-    return obj
-  },
-
-  create<I extends Exact<DeepPartial<DeleteFileByUrlRequest>, I>>(
-    base?: I
-  ): DeleteFileByUrlRequest {
-    return DeleteFileByUrlRequest.fromPartial(base ?? ({} as any))
-  },
-  fromPartial<I extends Exact<DeepPartial<DeleteFileByUrlRequest>, I>>(
-    object: I
-  ): DeleteFileByUrlRequest {
-    const message = createBaseDeleteFileByUrlRequest()
-    message.url = object.url ?? ''
-    return message
-  },
+export interface UploadReportImageResponse {
+  url: string
 }
 
-function createBaseUploadFileRequest(): UploadFileRequest {
-  return { content: new Uint8Array(0) }
+export interface UploadReportMessageMediaRequest {
+  filePath: string
+  messageId: number
+  contentType: string
 }
 
-export const UploadFileRequest: MessageFns<UploadFileRequest> = {
-  encode(message: UploadFileRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.content.length !== 0) {
-      writer.uint32(10).bytes(message.content)
-    }
-    return writer
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): UploadFileRequest {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input)
-    const end = length === undefined ? reader.len : reader.pos + length
-    const message = createBaseUploadFileRequest()
-    while (reader.pos < end) {
-      const tag = reader.uint32()
-      switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 10) {
-            break
-          }
-
-          message.content = reader.bytes()
-          continue
-        }
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break
-      }
-      reader.skip(tag & 7)
-    }
-    return message
-  },
-
-  fromJSON(object: any): UploadFileRequest {
-    return { content: isSet(object.content) ? bytesFromBase64(object.content) : new Uint8Array(0) }
-  },
-
-  toJSON(message: UploadFileRequest): unknown {
-    const obj: any = {}
-    if (message.content.length !== 0) {
-      obj.content = base64FromBytes(message.content)
-    }
-    return obj
-  },
-
-  create<I extends Exact<DeepPartial<UploadFileRequest>, I>>(base?: I): UploadFileRequest {
-    return UploadFileRequest.fromPartial(base ?? ({} as any))
-  },
-  fromPartial<I extends Exact<DeepPartial<UploadFileRequest>, I>>(object: I): UploadFileRequest {
-    const message = createBaseUploadFileRequest()
-    message.content = object.content ?? new Uint8Array(0)
-    return message
-  },
-}
-
-function createBaseUploadFileResponse(): UploadFileResponse {
-  return { fileInfo: undefined }
-}
-
-export const UploadFileResponse: MessageFns<UploadFileResponse> = {
-  encode(message: UploadFileResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.fileInfo !== undefined) {
-      Struct.encode(Struct.wrap(message.fileInfo), writer.uint32(10).fork()).join()
-    }
-    return writer
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): UploadFileResponse {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input)
-    const end = length === undefined ? reader.len : reader.pos + length
-    const message = createBaseUploadFileResponse()
-    while (reader.pos < end) {
-      const tag = reader.uint32()
-      switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 10) {
-            break
-          }
-
-          message.fileInfo = Struct.unwrap(Struct.decode(reader, reader.uint32()))
-          continue
-        }
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break
-      }
-      reader.skip(tag & 7)
-    }
-    return message
-  },
-
-  fromJSON(object: any): UploadFileResponse {
-    return { fileInfo: isObject(object.fileInfo) ? object.fileInfo : undefined }
-  },
-
-  toJSON(message: UploadFileResponse): unknown {
-    const obj: any = {}
-    if (message.fileInfo !== undefined) {
-      obj.fileInfo = message.fileInfo
-    }
-    return obj
-  },
-
-  create<I extends Exact<DeepPartial<UploadFileResponse>, I>>(base?: I): UploadFileResponse {
-    return UploadFileResponse.fromPartial(base ?? ({} as any))
-  },
-  fromPartial<I extends Exact<DeepPartial<UploadFileResponse>, I>>(object: I): UploadFileResponse {
-    const message = createBaseUploadFileResponse()
-    message.fileInfo = object.fileInfo ?? undefined
-    return message
-  },
-}
-
-function createBaseUploadGroupChatAvatarRequest(): UploadGroupChatAvatarRequest {
-  return { file: new Uint8Array(0) }
-}
-
-export const UploadGroupChatAvatarRequest: MessageFns<UploadGroupChatAvatarRequest> = {
-  encode(
-    message: UploadGroupChatAvatarRequest,
-    writer: BinaryWriter = new BinaryWriter()
-  ): BinaryWriter {
-    if (message.file.length !== 0) {
-      writer.uint32(10).bytes(message.file)
-    }
-    return writer
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): UploadGroupChatAvatarRequest {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input)
-    const end = length === undefined ? reader.len : reader.pos + length
-    const message = createBaseUploadGroupChatAvatarRequest()
-    while (reader.pos < end) {
-      const tag = reader.uint32()
-      switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 10) {
-            break
-          }
-
-          message.file = reader.bytes()
-          continue
-        }
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break
-      }
-      reader.skip(tag & 7)
-    }
-    return message
-  },
-
-  fromJSON(object: any): UploadGroupChatAvatarRequest {
-    return { file: isSet(object.file) ? bytesFromBase64(object.file) : new Uint8Array(0) }
-  },
-
-  toJSON(message: UploadGroupChatAvatarRequest): unknown {
-    const obj: any = {}
-    if (message.file.length !== 0) {
-      obj.file = base64FromBytes(message.file)
-    }
-    return obj
-  },
-
-  create<I extends Exact<DeepPartial<UploadGroupChatAvatarRequest>, I>>(
-    base?: I
-  ): UploadGroupChatAvatarRequest {
-    return UploadGroupChatAvatarRequest.fromPartial(base ?? ({} as any))
-  },
-  fromPartial<I extends Exact<DeepPartial<UploadGroupChatAvatarRequest>, I>>(
-    object: I
-  ): UploadGroupChatAvatarRequest {
-    const message = createBaseUploadGroupChatAvatarRequest()
-    message.file = object.file ?? new Uint8Array(0)
-    return message
-  },
-}
-
-function createBaseUploadGroupChatAvatarResponse(): UploadGroupChatAvatarResponse {
-  return { url: '' }
-}
-
-export const UploadGroupChatAvatarResponse: MessageFns<UploadGroupChatAvatarResponse> = {
-  encode(
-    message: UploadGroupChatAvatarResponse,
-    writer: BinaryWriter = new BinaryWriter()
-  ): BinaryWriter {
-    if (message.url !== '') {
-      writer.uint32(10).string(message.url)
-    }
-    return writer
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): UploadGroupChatAvatarResponse {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input)
-    const end = length === undefined ? reader.len : reader.pos + length
-    const message = createBaseUploadGroupChatAvatarResponse()
-    while (reader.pos < end) {
-      const tag = reader.uint32()
-      switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 10) {
-            break
-          }
-
-          message.url = reader.string()
-          continue
-        }
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break
-      }
-      reader.skip(tag & 7)
-    }
-    return message
-  },
-
-  fromJSON(object: any): UploadGroupChatAvatarResponse {
-    return { url: isSet(object.url) ? globalThis.String(object.url) : '' }
-  },
-
-  toJSON(message: UploadGroupChatAvatarResponse): unknown {
-    const obj: any = {}
-    if (message.url !== '') {
-      obj.url = message.url
-    }
-    return obj
-  },
-
-  create<I extends Exact<DeepPartial<UploadGroupChatAvatarResponse>, I>>(
-    base?: I
-  ): UploadGroupChatAvatarResponse {
-    return UploadGroupChatAvatarResponse.fromPartial(base ?? ({} as any))
-  },
-  fromPartial<I extends Exact<DeepPartial<UploadGroupChatAvatarResponse>, I>>(
-    object: I
-  ): UploadGroupChatAvatarResponse {
-    const message = createBaseUploadGroupChatAvatarResponse()
-    message.url = object.url ?? ''
-    return message
-  },
-}
-
-function createBaseDeleteGroupChatAvatarRequest(): DeleteGroupChatAvatarRequest {
-  return { avatarUrl: '' }
-}
-
-export const DeleteGroupChatAvatarRequest: MessageFns<DeleteGroupChatAvatarRequest> = {
-  encode(
-    message: DeleteGroupChatAvatarRequest,
-    writer: BinaryWriter = new BinaryWriter()
-  ): BinaryWriter {
-    if (message.avatarUrl !== '') {
-      writer.uint32(10).string(message.avatarUrl)
-    }
-    return writer
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): DeleteGroupChatAvatarRequest {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input)
-    const end = length === undefined ? reader.len : reader.pos + length
-    const message = createBaseDeleteGroupChatAvatarRequest()
-    while (reader.pos < end) {
-      const tag = reader.uint32()
-      switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 10) {
-            break
-          }
-
-          message.avatarUrl = reader.string()
-          continue
-        }
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break
-      }
-      reader.skip(tag & 7)
-    }
-    return message
-  },
-
-  fromJSON(object: any): DeleteGroupChatAvatarRequest {
-    return { avatarUrl: isSet(object.avatarUrl) ? globalThis.String(object.avatarUrl) : '' }
-  },
-
-  toJSON(message: DeleteGroupChatAvatarRequest): unknown {
-    const obj: any = {}
-    if (message.avatarUrl !== '') {
-      obj.avatarUrl = message.avatarUrl
-    }
-    return obj
-  },
-
-  create<I extends Exact<DeepPartial<DeleteGroupChatAvatarRequest>, I>>(
-    base?: I
-  ): DeleteGroupChatAvatarRequest {
-    return DeleteGroupChatAvatarRequest.fromPartial(base ?? ({} as any))
-  },
-  fromPartial<I extends Exact<DeepPartial<DeleteGroupChatAvatarRequest>, I>>(
-    object: I
-  ): DeleteGroupChatAvatarRequest {
-    const message = createBaseDeleteGroupChatAvatarRequest()
-    message.avatarUrl = object.avatarUrl ?? ''
-    return message
-  },
+export interface UploadReportMessageMediaResponse {
+  url: string
 }
 
 export interface UploadService {
-  DeleteFileByUrl(request: DeleteFileByUrlRequest): Promise<Empty>
-  UploadFile(request: UploadFileRequest): Promise<UploadFileResponse>
+  DeleteFileByUrl(request: DeleteFileByUrlRequest): Observable<Empty>
+  UploadFile(request: UploadFileRequest): Observable<UploadFileResponse>
   UploadGroupChatAvatar(
     request: UploadGroupChatAvatarRequest
-  ): Promise<UploadGroupChatAvatarResponse>
-  DeleteGroupChatAvatar(request: DeleteGroupChatAvatarRequest): Promise<Empty>
-}
-
-export const UploadServiceServiceName = 'media.UploadService'
-export class UploadServiceClientImpl implements UploadService {
-  private readonly rpc: Rpc
-  private readonly service: string
-  constructor(rpc: Rpc, opts?: { service?: string }) {
-    this.service = opts?.service || UploadServiceServiceName
-    this.rpc = rpc
-    this.DeleteFileByUrl = this.DeleteFileByUrl.bind(this)
-    this.UploadFile = this.UploadFile.bind(this)
-    this.UploadGroupChatAvatar = this.UploadGroupChatAvatar.bind(this)
-    this.DeleteGroupChatAvatar = this.DeleteGroupChatAvatar.bind(this)
-  }
-  DeleteFileByUrl(request: DeleteFileByUrlRequest): Promise<Empty> {
-    const data = DeleteFileByUrlRequest.encode(request).finish()
-    const promise = this.rpc.request(this.service, 'DeleteFileByUrl', data)
-    return promise.then((data) => Empty.decode(new BinaryReader(data)))
-  }
-
-  UploadFile(request: UploadFileRequest): Promise<UploadFileResponse> {
-    const data = UploadFileRequest.encode(request).finish()
-    const promise = this.rpc.request(this.service, 'UploadFile', data)
-    return promise.then((data) => UploadFileResponse.decode(new BinaryReader(data)))
-  }
-
-  UploadGroupChatAvatar(
-    request: UploadGroupChatAvatarRequest
-  ): Promise<UploadGroupChatAvatarResponse> {
-    const data = UploadGroupChatAvatarRequest.encode(request).finish()
-    const promise = this.rpc.request(this.service, 'UploadGroupChatAvatar', data)
-    return promise.then((data) => UploadGroupChatAvatarResponse.decode(new BinaryReader(data)))
-  }
-
-  DeleteGroupChatAvatar(request: DeleteGroupChatAvatarRequest): Promise<Empty> {
-    const data = DeleteGroupChatAvatarRequest.encode(request).finish()
-    const promise = this.rpc.request(this.service, 'DeleteGroupChatAvatar', data)
-    return promise.then((data) => Empty.decode(new BinaryReader(data)))
-  }
-}
-
-interface Rpc {
-  request(service: string, method: string, data: Uint8Array): Promise<Uint8Array>
-}
-
-function bytesFromBase64(b64: string): Uint8Array {
-  if ((globalThis as any).Buffer) {
-    return Uint8Array.from(globalThis.Buffer.from(b64, 'base64'))
-  } else {
-    const bin = globalThis.atob(b64)
-    const arr = new Uint8Array(bin.length)
-    for (let i = 0; i < bin.length; ++i) {
-      arr[i] = bin.charCodeAt(i)
-    }
-    return arr
-  }
-}
-
-function base64FromBytes(arr: Uint8Array): string {
-  if ((globalThis as any).Buffer) {
-    return globalThis.Buffer.from(arr).toString('base64')
-  } else {
-    const bin: string[] = []
-    arr.forEach((byte) => {
-      bin.push(globalThis.String.fromCharCode(byte))
-    })
-    return globalThis.btoa(bin.join(''))
-  }
-}
-
-type Builtin = Date | Function | Uint8Array | string | number | boolean | undefined
-
-export type DeepPartial<T> = T extends Builtin
-  ? T
-  : T extends globalThis.Array<infer U>
-    ? globalThis.Array<DeepPartial<U>>
-    : T extends ReadonlyArray<infer U>
-      ? ReadonlyArray<DeepPartial<U>>
-      : T extends {}
-        ? { [K in keyof T]?: DeepPartial<T[K]> }
-        : Partial<T>
-
-type KeysOfUnion<T> = T extends T ? keyof T : never
-export type Exact<P, I extends P> = P extends Builtin
-  ? P
-  : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never }
-
-function isObject(value: any): boolean {
-  return typeof value === 'object' && value !== null
-}
-
-function isSet(value: any): boolean {
-  return value !== null && value !== undefined
-}
-
-export interface MessageFns<T> {
-  encode(message: T, writer?: BinaryWriter): BinaryWriter
-  decode(input: BinaryReader | Uint8Array, length?: number): T
-  fromJSON(object: any): T
-  toJSON(message: T): unknown
-  create<I extends Exact<DeepPartial<T>, I>>(base?: I): T
-  fromPartial<I extends Exact<DeepPartial<T>, I>>(object: I): T
+  ): Observable<UploadGroupChatAvatarResponse>
+  DeleteGroupChatAvatar(request: DeleteGroupChatAvatarRequest): Observable<Empty>
+  UploadReportImage(request: UploadReportImageRequest): Observable<UploadReportImageResponse>
+  UploadReportMessageMedia(
+    request: UploadReportMessageMediaRequest
+  ): Observable<UploadReportMessageMediaResponse>
 }

@@ -3,7 +3,6 @@ syntax = "proto3";
 package media;
 
 import "google/protobuf/empty.proto";
-import "google/protobuf/struct.proto";
 
 service UploadService {
   rpc DeleteFileByUrl(DeleteFileByUrlRequest) returns (google.protobuf.Empty);
@@ -12,6 +11,10 @@ service UploadService {
       returns (UploadGroupChatAvatarResponse);
   rpc DeleteGroupChatAvatar(DeleteGroupChatAvatarRequest)
       returns (google.protobuf.Empty);
+  rpc UploadReportImage(UploadReportImageRequest)
+      returns (UploadReportImageResponse);
+  rpc UploadReportMessageMedia(UploadReportMessageMediaRequest)
+      returns (UploadReportMessageMediaResponse);
 }
 
 message DeleteFileByUrlRequest {
@@ -20,14 +23,16 @@ message DeleteFileByUrlRequest {
 
 message UploadFileRequest {
   bytes content = 1;
+  string filename = 2;
 }
 
 message UploadFileResponse {
-  google.protobuf.Struct file_info = 1;
+  string file_info_json = 1;
 }
 
 message UploadGroupChatAvatarRequest {
   bytes file = 1;
+  string filename = 2;
 }
 
 message UploadGroupChatAvatarResponse {
@@ -36,4 +41,23 @@ message UploadGroupChatAvatarResponse {
 
 message DeleteGroupChatAvatarRequest {
   string avatarUrl = 1;
+}
+
+message UploadReportImageRequest {
+  bytes file = 1;
+  string filename = 2;
+}
+
+message UploadReportImageResponse {
+  string url = 1;
+}
+
+message UploadReportMessageMediaRequest {
+  string filePath = 1;
+  int32 messageId = 2;
+  string contentType = 3;
+}
+
+message UploadReportMessageMediaResponse {
+  string url = 1;
 }

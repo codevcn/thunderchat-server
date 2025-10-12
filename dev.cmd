@@ -1,1 +1,1 @@
-pnpm start:debug
+pnpm start:dev

@@ -1,40 +1,37 @@
 {
   "services": {
     "auth": {
-      "routes": [{ "path": "/auth" }]
+      "routes": [
+        { "path": "/auth/logout" },
+        { "path": "/auth/admin/logout" },
+        { "path": "/auth/check-auth" },
+        { "path": "/auth/admin/check-auth" }
+      ]
     },
     "user": {
       "routes": [
-        { "path": "/user" },
+        { "path": "/user/search-users" },
+        { "path": "/user/change-password" },
+        { "path": "/user/block-user" },
+        { "path": "/user/check-blocked-user" },
+        { "path": "/user/unblock-user" },
+        { "path": "/user/get-blocked-users-list" },
         { "path": "/user-settings" },
-        { "path": "/user-report" },
+        { "path": "/user-report/create-violation-report" },
         { "path": "/profile" }
       ]
     },
     "friendship": {
-      "routes": [{ "path": "/friend" }, { "path": "/friend-request" }]
-    },
-    "notification": {
-      "routes": [{ "path": "/push-notification" }]
+      "routes": [{ "path": "/friend-request" }, { "path": "/friend" }]
     },
     "search": {
       "routes": [{ "path": "/search" }]
     },
-    "chat": {
-      "routes": []
-    },
     "media": {
       "routes": [{ "path": "/media-message" }, { "path": "/sticker" }]
     },
-    "call": {
-      "routes": []
-    },
-    "admin": {
-      "routes": [{ "path": "/admin" }]
-    },
     "conversation": {
       "routes": [
-        { "path": "/direct-chat" },
         { "path": "/group-chat" },
         { "path": "/group-member" },
         { "path": "/message" },

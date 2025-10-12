@@ -6,6 +6,7 @@ declare global {
       NODE_ENV: 'development' | 'production'
       PORT: string
       AUTH_GRPC_PORT: string
+      HOST_ADDRESS: string
       DATABASE_URL: string
       SESSION_SECRET: string
       SESSION_NAME: string
