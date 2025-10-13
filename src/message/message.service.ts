@@ -1,6 +1,13 @@
 import { Inject, Injectable } from '@nestjs/common'
 import { PrismaService } from '../configs/db/prisma.service'
-import { EProviderTokens, ESyncDataToESWorkerType } from '@/utils/enums'
+import {
+  EChatType,
+  EProviderTokens,
+  EPushNotificationType,
+  ERoutes,
+  ESyncDataToESWorkerType,
+  Eurgency,
+} from '@/utils/enums'
 import type {
   TMessage,
   TMessageWithMedia,
@@ -15,7 +22,8 @@ import type {
   TMessageUpdates,
 } from './message.type'
 import { SyncDataToESService } from '@/configs/elasticsearch/sync-data-to-ES/sync-data-to-ES.service'
-
+import { PushNotificationService } from '@/configs/push-notification/push-notification.service'
+import { TPushNotificationData } from '@/configs/push-notification/push-notification.type'
 @Injectable()
 export class MessageService {
   private readonly messageFullInfo = {
@@ -41,7 +49,8 @@ export class MessageService {
 
   constructor(
     @Inject(EProviderTokens.PRISMA_CLIENT) private PrismaService: PrismaService,
-    private syncDataToESService: SyncDataToESService
+    private syncDataToESService: SyncDataToESService,
+    private pushNotificationService: PushNotificationService
   ) {}
 
   async fidMsgById(msgId: number): Promise<TMessage | null> {
@@ -97,6 +106,26 @@ export class MessageService {
       data: message,
       // msgEncryptor: this.syncDataToESService.getESMessageEncryptor(authorId),
     })
+    if (recipientId) {
+      const payload: TPushNotificationData = {
+        type: EPushNotificationType.NEW_MESSAGE,
+        conversation: {
+          title: message.Author.Profile?.fullName ?? ERoutes.UNKNOW,
+          avatar: message.Author.Profile?.avatar ?? '',
+          type: directChatId ? EChatType.DIRECT : EChatType.GROUP,
+          message: message,
+        },
+        ttlInSeconds: 50,
+        urgency: Eurgency.NORMAL,
+      }
+
+      try {
+        const result = await this.pushNotificationService.sendNotificationToUser(
+          payload,
+          recipientId
+        )
+      } catch (error) {}
+    }
     return message
   }
 

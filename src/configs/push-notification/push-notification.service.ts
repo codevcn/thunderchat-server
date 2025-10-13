@@ -75,11 +75,16 @@ export class PushNotificationService {
   async removeSubscription(endpoint: TPushSubscriptionEndpoint, userId: TUserId): Promise<void> {
     await this.prismaService.$transaction(async (tx) => {
       await tx.pushNotificationSubscription.delete({ where: { endpoint } })
-      await tx.userSettings.upsert({
+      const remaining = await tx.pushNotificationSubscription.count({
         where: { userId },
-        update: { pushNotificationEnabled: false },
-        create: { userId, pushNotificationEnabled: false },
       })
+      if (remaining === 0) {
+        await tx.userSettings.upsert({
+          where: { userId },
+          update: { pushNotificationEnabled: false },
+          create: { userId, pushNotificationEnabled: false },
+        })
+      }
     })
   }
 
@@ -104,6 +109,10 @@ export class PushNotificationService {
       }
     }
     const subscriptions = await this.findSubscriptionsByUserId(userId)
+    // if (subscriptions.length === 0) {
+    //   // DevLogger.log(`No subscriptions found for user ${userId}`);
+    //   return { success: [], failure: [] }
+    // }
     const successEndpoints: TPushSubscriptionEndpoint[] = []
     const failureEndpoints: TPushSubscriptionEndpoint[] = []
     return await new Promise<TWebPushSendNotificationResult>((resolve, reject) => {

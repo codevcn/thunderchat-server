@@ -13,6 +13,7 @@ export enum ERoutes {
   PROFILE = 'profile',
   PIN_CONVERSATION = 'pin-conversation',
   PUSH_NOTIFICATION = 'push-notification',
+  UNKNOW = 'unknow',
 }
 
 export enum EClientCookieNames {
@@ -98,4 +99,13 @@ export enum EInternalEvents {
 export enum EUserOnlineStatus {
   ONLINE = 'ONLINE',
   OFFLINE = 'OFFLINE',
+}
+
+export enum EPushNotificationType {
+  NEW_MESSAGE = 'new_message',
+  NEW_CONVERSATION = 'new_conversation',
+}
+
+export enum Eurgency {
+  NORMAL = 'normal',
 }
