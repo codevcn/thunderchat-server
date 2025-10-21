@@ -9,4 +9,5 @@ export enum EAuthMessages {
   ADMIN_ACCESS_REQUIRED = 'Admin access required',
   USER_BANNED = 'User is banned',
   INVALID_TOKEN = 'Invalid token',
+  INVALID_HEADER = 'Invalid authorization header',
 }

@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common'
-import { TempController } from './dev.controller'
+import { DevController } from './dev.controller'
 import { MessageService } from '@/message/message.service'
 import { ElasticsearchModule } from '@/configs/elasticsearch/elasticsearch.module'
 import { MessageMappingModule } from '@/message-mapping/message-mapping.module'
@@ -7,7 +7,7 @@ import { SyncDataToESService } from '@/configs/elasticsearch/sync-data-to-ES/syn
 
 @Module({
   imports: [ElasticsearchModule, MessageMappingModule],
-  controllers: [TempController],
+  controllers: [DevController],
   providers: [MessageService, SyncDataToESService],
 })
 export class DevModule {}

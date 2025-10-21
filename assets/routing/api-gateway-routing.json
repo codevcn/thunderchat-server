@@ -95,16 +95,6 @@
           "path": "/upload",
           "rewrite": { "^/": "/api/upload/" },
           "changeOrigin": true
-        },
-        {
-          "path": "/media-message",
-          "rewrite": { "^/": "/api/media-message/" },
-          "changeOrigin": true
-        },
-        {
-          "path": "/sticker",
-          "rewrite": { "^/": "/api/sticker/" },
-          "changeOrigin": true
         }
       ]
     },
@@ -131,6 +121,16 @@
       "healthCheck": "/health",
       "timeout": 10000,
       "routes": [
+        {
+          "path": "/media-message",
+          "rewrite": { "^/": "/api/media-message/" },
+          "changeOrigin": true
+        },
+        {
+          "path": "/sticker",
+          "rewrite": { "^/": "/api/sticker/" },
+          "changeOrigin": true
+        },
         {
           "path": "/direct-chat",
           "rewrite": { "^/": "/api/direct-chat/" },

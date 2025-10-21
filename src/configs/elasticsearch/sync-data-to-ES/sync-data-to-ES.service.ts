@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common'
+import { Injectable } from '@nestjs/common'
 import { createWorker, typeToRawObject } from '@/utils/helpers'
 import { SyncDataToESWorkerMessageDTO } from './sync-data-to-ES.dto'
 import type {
@@ -15,7 +15,6 @@ import ESMessageEncryptor from '@/message/security/es-message-encryptor'
 import { MessageMappingService } from '@/message-mapping/message-mapping.service'
 import { EWorkerEvents, EMsgEncryptionAlgorithms, ESyncDataToESWorkerType } from '@/utils/enums'
 import { SystemException } from '@/utils/exceptions/system.exception'
-import { BaseHttpException } from '@/utils/exceptions/base-http.exception'
 
 @Injectable()
 export class SyncDataToESService {
@@ -55,7 +54,7 @@ export class SyncDataToESService {
   async initESMessageEncryptor(userId: TUserId): Promise<void> {
     const messageMapping = await this.messageMappingService.findMessageMapping(userId)
     if (!messageMapping) {
-      throw new BaseHttpException(ESyncDataToESMessages.MESSAGE_MAPPING_NOT_FOUND)
+      throw new SystemException(ESyncDataToESMessages.MESSAGE_MAPPING_NOT_FOUND)
     }
     const masterKey = process.env.DECRYPT_USER_KEY_MASTER_KEY
     const symmetricEncryptor = new SymmetricEncryptor(EMsgEncryptionAlgorithms.AES_256_ECB)

@@ -1,9 +1,9 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common'
 import { ConfigModule } from '@nestjs/config'
 // import { JwtModule } from '@nestjs/jwt'
-// import { PrismaModule } from './configs/db/prisma.module'
 // import { envValidation } from './utils/validation/env.validation'
 // import ms from 'ms'
+import { PrismaModule } from './configs/db/prisma.module'
 import { EventEmitterModule } from '@nestjs/event-emitter'
 import { LoggerModule } from './configs/logger/logger.module'
 
@@ -13,7 +13,7 @@ const globalConfigModules = [
     // validate: envValidation,
   }),
   LoggerModule,
-  // PrismaModule,
+  PrismaModule,
   // JwtModule.register({
   //   global: true,
   //   secret: process.env.JWT_SECRET,
@@ -36,7 +36,6 @@ const globalConfigModules = [
 // import { UserSettingsModule } from './user/user-settings/user-settings.module'
 // import { FriendModule } from './friend/friend.module'
 // import { MessagingGatewayModule } from './messaging/messaging.module'
-// import { DevModule } from './dev/dev.module'
 // import { StickersModule } from './message/stickers/stickers.module'
 // import { FriendRequestModule } from './friend-request/friend-request.module'
 // import { SearchModule } from './search/search.module'
@@ -48,6 +47,7 @@ const globalConfigModules = [
 // import { HealthcheckModule } from './healthcheck/healthcheck.module'
 // import { PushNotificationModule } from './configs/push-notification/push-notification.module'
 // import { VoiceCallGatewayModule } from './voice-call/voice-call.module'
+import { DevModule } from './dev/dev.module'
 import { GrpcClientModule } from './configs/communication/grpc/grpc-client.module'
 import { RequestLoggerMiddleware } from './app.middleware'
 
@@ -70,7 +70,6 @@ import { RequestLoggerMiddleware } from './app.middleware'
     // GroupChatModule,
     // PinConversationModule,
     // GroupMemberModule,
-    // DevModule,
     // ProfileModule,
     // PinModule,
     // UserSettingsModule,
@@ -78,6 +77,7 @@ import { RequestLoggerMiddleware } from './app.middleware'
     // PushNotificationModule,
     // AdminModule,
     // HealthcheckModule,
+    DevModule,
   ],
 })
 export class AppModule implements NestModule {

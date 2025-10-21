@@ -8,7 +8,7 @@ import { DevLogger } from './dev-logger'
 import { SyncDataToESService } from '@/configs/elasticsearch/sync-data-to-ES/sync-data-to-ES.service'
 
 @Controller('dev')
-export class TempController {
+export class DevController {
   constructor(
     @Inject(EProviderTokens.PRISMA_CLIENT) private PrismaService: PrismaService,
     private MessageService: MessageService,

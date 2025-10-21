@@ -1,7 +1,7 @@
 import type { IAPIGatewayRouting } from '@/app.interface'
 import { EAuthMessages } from '@/auth/auth.message'
 import { AuthService } from '@/configs/communication/grpc/services/auth.service'
-import { EClientCookieNames, EGrpcPackages, EGrpcServices } from '@/utils/enums'
+import { EGrpcPackages, EGrpcServices } from '@/utils/enums'
 import { loadJSONFileSync } from '@/utils/helpers'
 import { UnauthorizedException } from '@nestjs/common'
 import { ClientProxyFactory, Transport } from '@nestjs/microservices'
@@ -33,7 +33,11 @@ export const initAuthMiddleware = (app: NestExpressApplication, apiPrefix: strin
     const { routes } = services[serviceName]
     for (const { path } of routes) {
       app.use(`/${apiPrefix}${path}`, async (req: Request, res: Response, next: NextFunction) => {
-        const token = req.cookies[EClientCookieNames.JWT_TOKEN_AUTH] || undefined
+        const headerAuth = (req.headers['authorization'] || req.headers['Authorization']) as string
+        if (!headerAuth) {
+          return next(new UnauthorizedException(EAuthMessages.INVALID_HEADER))
+        }
+        const token = headerAuth.split(' ')[1]
         if (!token) {
           return next(new UnauthorizedException(EAuthMessages.TOKEN_NOT_FOUND))
         }
