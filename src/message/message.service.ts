@@ -106,26 +106,6 @@ export class MessageService {
       data: message,
       // msgEncryptor: this.syncDataToESService.getESMessageEncryptor(authorId),
     })
-    if (recipientId) {
-      const payload: TPushNotificationData = {
-        type: EPushNotificationType.NEW_MESSAGE,
-        conversation: {
-          title: message.Author.Profile?.fullName ?? ERoutes.UNKNOW,
-          avatar: message.Author.Profile?.avatar ?? '',
-          type: directChatId ? EChatType.DIRECT : EChatType.GROUP,
-          message: message,
-        },
-        ttlInSeconds: 50,
-        urgency: Eurgency.NORMAL,
-      }
-
-      try {
-        const result = await this.pushNotificationService.sendNotificationToUser(
-          payload,
-          recipientId
-        )
-      } catch (error) {}
-    }
     return message
   }
 

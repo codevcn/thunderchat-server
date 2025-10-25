@@ -11,8 +11,8 @@ import type { TGroupChat } from '../entities/group-chat.entity'
 import type { TMessage, TMessageFullInfo } from '../entities/message.entity'
 import type { TUserId } from '@/user/user.type'
 import type { UpdateProfileDto } from '@/profile/profile.dto'
-import type { EHangupReason, ESDPType, EVoiceCallStatus } from '@/voice-call/voice-call.enum'
-import type { TActiveVoiceCallSession } from '@/voice-call/voice-call.type'
+import type { EHangupReason, ESDPType, ECallStatus } from '@/call/call.enum'
+import type { TActiveCallSession } from '@/call/call.type'
 import type { TPinMessageGroupEmitPayload } from './event.type'
 
 export enum EMessagingListenSocketEvents {
@@ -103,7 +103,7 @@ export interface IMessagingEmitSocketEvents {
   [EMessagingEmitSocketEvents.pin_message_group]: (payload: TPinMessageGroupEmitPayload) => void
 }
 
-export enum EVoiceCallListenSocketEvents {
+export enum ECallListenSocketEvents {
   client_hello = 'client_hello',
   call_request = 'voice_call:request',
   call_accept = 'voice_call:accept',
@@ -113,7 +113,7 @@ export enum EVoiceCallListenSocketEvents {
   call_hangup = 'voice_call:hangup',
 }
 
-export enum EVoiceCallEmitSocketEvents {
+export enum ECallEmitSocketEvents {
   server_hello = 'server_hello',
   call_request = 'voice_call:request',
   call_ice = 'voice_call:ice',
@@ -123,19 +123,19 @@ export enum EVoiceCallEmitSocketEvents {
   call_timeout = 'voice_call:timeout',
 }
 
-export interface IVoiceCallEmitSocketEvents {
-  [EVoiceCallEmitSocketEvents.server_hello]: (payload: string) => void
-  [EVoiceCallEmitSocketEvents.call_request]: (activeCallSession: TActiveVoiceCallSession) => void
-  [EVoiceCallEmitSocketEvents.call_status]: (
-    status: EVoiceCallStatus,
-    activeCallSession?: TActiveVoiceCallSession
+export interface ICallEmitSocketEvents {
+  [ECallEmitSocketEvents.server_hello]: (payload: string) => void
+  [ECallEmitSocketEvents.call_request]: (activeCallSession: TActiveCallSession) => void
+  [ECallEmitSocketEvents.call_status]: (
+    status: ECallStatus,
+    activeCallSession?: TActiveCallSession
   ) => void
-  [EVoiceCallEmitSocketEvents.call_offer_answer]: (SDP: string, type: ESDPType) => void
-  [EVoiceCallEmitSocketEvents.call_ice]: (
+  [ECallEmitSocketEvents.call_offer_answer]: (SDP: string, type: ESDPType) => void
+  [ECallEmitSocketEvents.call_ice]: (
     candidate: string,
     sdpMid?: string,
     sdpMLineIndex?: number
   ) => void
-  [EVoiceCallEmitSocketEvents.call_hangup]: (reason?: EHangupReason) => void
-  [EVoiceCallEmitSocketEvents.call_timeout]: () => void
+  [ECallEmitSocketEvents.call_hangup]: (reason?: EHangupReason) => void
+  [ECallEmitSocketEvents.call_timeout]: () => void
 }

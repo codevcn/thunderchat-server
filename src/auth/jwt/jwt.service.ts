@@ -16,12 +16,13 @@ export class JWTService {
       CLIENT_DOMAIN_DEV: process.env.CLIENT_DOMAIN_DEV,
       CLIENT_DOMAIN: process.env.CLIENT_DOMAIN,
     })
+    const isProduction = process.env.NODE_ENV === 'production'
     this.jwtCookieOptions = {
       maxAge: ms(process.env.JWT_TOKEN_MAX_AGE_IN_HOUR),
-      domain: process.env.CLIENT_DOMAIN_DEV,
+      domain: isProduction ? process.env.CLIENT_DOMAIN : process.env.CLIENT_DOMAIN_DEV,
       path: '/',
       httpOnly: true,
-      secure: true,
+      secure: isProduction,
     }
   }
 

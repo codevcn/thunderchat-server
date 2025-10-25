@@ -64,8 +64,8 @@ model User {
     GroupChatMembersJoinedBy      GroupChatMember[]              @relation("GroupChatMembersJoinedBy")
     GroupJoinRequest              GroupJoinRequest[]             @relation("UserRequests")
     PushNotificationSubscriptions PushNotificationSubscription[] @relation("PushNotificationSubscriptions")
-    CallSessionsAsCaller          VoiceCallSession[]             @relation("CallSessionsAsCaller")
-    CallSessionsAsCallee          VoiceCallSession[]             @relation("CallSessionsAsCallee")
+    CallSessionsAsCaller          CallSession[]             @relation("CallSessionsAsCaller")
+    CallSessionsAsCallee          CallSession[]             @relation("CallSessionsAsCallee")
 
     @@index([email], type: BTree)
     @@map("users")
@@ -98,7 +98,7 @@ model DirectChat {
     LastSentMessage Message?           @relation("LastSentMessageOnDirectChat", fields: [lastSentMessageId], references: [id])
     PinnedMessages  PinnedMessage[]    @relation("PinnedMessagesOnDirectChat")
     PinnedChats     PinnedChat[]       @relation("PinnedChatsOnDirectChat")
-    CallSessions    VoiceCallSession[] @relation("CallSessionsOnDirectChat")
+    CallSessions    CallSession[] @relation("CallSessionsOnDirectChat")
 
     @@unique([creatorId, recipientId])
     @@map("direct_chats")
@@ -377,11 +377,12 @@ model PushNotificationSubscription {
     @@map("push_notification_subscriptions")
 }
 
-model VoiceCallSession {
-    id           Int       @id @default(autoincrement())
+model CallSession {
+    id           String       @id @default(uuid()) @db.Uuid
     directChatId Int?      @map("direct_chat_id")
     callerUserId Int       @map("caller_user_id")
     calleeUserId Int       @map("callee_user_id")
+    status       String?   @default("REQUESTING")
     createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
     endedAt      DateTime? @map("ended_at") @db.Timestamptz(3)
     hangupReason String?   @map("hangup_reason")
@@ -392,7 +393,7 @@ model VoiceCallSession {
 
     @@index([callerUserId])
     @@index([calleeUserId])
-    @@map("voice_call_sessions")
+    @@map("call_sessions")
 }
 
 enum ReportedMessageType {

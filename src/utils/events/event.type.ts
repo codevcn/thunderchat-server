@@ -1,4 +1,4 @@
-import type { IMessagingEmitSocketEvents, IVoiceCallEmitSocketEvents } from './socket.event'
+import type { IMessagingEmitSocketEvents, ICallEmitSocketEvents } from './socket.event'
 import type { TPinnedMessageWithMessageWithAuthor } from '../entities/pinned-message.entity'
 import type { Socket } from 'socket.io'
 
@@ -12,4 +12,4 @@ export type TPinMessageGroupEmitPayload = {
 
 export type TClientSocket = Socket<{}, IMessagingEmitSocketEvents>
 
-export type TVoiceCallClientSocket = Socket<{}, IVoiceCallEmitSocketEvents>
+export type TCallClientSocket = Socket<{}, ICallEmitSocketEvents>

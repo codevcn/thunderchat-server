@@ -50,7 +50,7 @@ import { AdminModule } from './admin/admin.module'
 import { PinConversationModule } from './pin-conversation/pin-conversation.module'
 import { HealthcheckModule } from './healthcheck/healthcheck.module'
 import { PushNotificationModule } from './configs/push-notification/push-notification.module'
-import { VoiceCallGatewayModule } from './voice-call/voice-call.module'
+import { CallGatewayModule } from './call/call.module'
 import { join } from 'path'
 import { readFileSync } from 'fs'
 import { createProxyMiddleware } from 'http-proxy-middleware'
@@ -62,7 +62,7 @@ import { IAPIGatewayRouting } from './app.interface'
     ...globalConfigModules,
     AuthModule,
     MessagingGatewayModule,
-    VoiceCallGatewayModule,
+    CallGatewayModule,
     DirectChatsModule,
     MessageModule,
     MediaMessageModule,
