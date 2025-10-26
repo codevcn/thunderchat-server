@@ -10,6 +10,7 @@ import {
   ForgotPasswordDTO,
   VerifyOtpDTO,
   ResetPasswordDTO,
+  GetUserByIdDTO,
 } from '@/user/user.dto'
 import { UserService } from '@/user/user.service'
 import { ERoutes } from '@/utils/enums'
@@ -47,6 +48,10 @@ export class UserController implements IUserController {
   @Get('get-user')
   async getUser(@Query() getUserByEmailPayload: GetUserByEmailDTO) {
     return await this.userService.getUserByEmail(getUserByEmailPayload.email)
+  }
+  @Get('get-user-by-id')
+  async getUserById(@Query() getUserByIdPayload: GetUserByIdDTO) {
+    return await this.userService.getUserById(getUserByIdPayload.id)
   }
 
   @Get('search-users')

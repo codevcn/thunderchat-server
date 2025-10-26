@@ -5,12 +5,12 @@ import type {
   CallAcceptDTO,
   CallHangupDTO,
   CallRequestDTO,
-} from './voice-call.dto'
-import type { TVoiceCallRequestRes } from './voice-call.type'
+} from './call.dto'
+import type { TCallRequestRes } from './call.type'
 import type { TClientSocket } from '@/utils/events/event.type'
 
-export interface IVoiceCallGateway {
-  onCallRequest: (client: TClientSocket, payload: CallRequestDTO) => Promise<TVoiceCallRequestRes>
+export interface ICallGateway {
+  onCallRequest: (client: TClientSocket, payload: CallRequestDTO) => Promise<TCallRequestRes>
   onAccept: (payload: CallAcceptDTO) => Promise<void>
   onReject: (payload: CallRejectDTO) => Promise<void>
   onOfferAnswer: (client: TClientSocket, payload: SDPOfferAnswerDTO) => Promise<void>

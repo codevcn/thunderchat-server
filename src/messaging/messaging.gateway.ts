@@ -78,10 +78,7 @@ import { gatewayValidationPipe } from '@/utils/validation/gateway.validation'
 
 @WebSocketGateway({
   cors: {
-    origin: [
-      process.env.NODE_ENV === 'production' ? process.env.CLIENT_HOST : process.env.CLIENT_HOST_DEV,
-      'http://localhost:3000',
-    ],
+    origin: true,
     credentials: true,
   },
   namespace: ESocketNamespaces.messaging,

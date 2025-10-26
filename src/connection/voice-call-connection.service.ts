@@ -1,34 +1,31 @@
 import { Injectable } from '@nestjs/common'
 import { Server } from 'socket.io'
-import {
-  EVoiceCallEmitSocketEvents,
-  type IVoiceCallEmitSocketEvents,
-} from '@/utils/events/socket.event'
+import { ECallEmitSocketEvents, type ICallEmitSocketEvents } from '@/utils/events/socket.event'
 import type { TUserId } from '@/user/user.type'
 import type { TServerMiddleware, TSocketId } from './user-connection.type'
 import { DevLogger } from '@/dev/dev-logger'
-import { EHangupReason, ESDPType, EVoiceCallStatus } from '@/voice-call/voice-call.enum'
-import type { TVoiceCallClientSocket } from '@/utils/events/event.type'
-import type { TActiveVoiceCallSession } from '@/voice-call/voice-call.type'
+import { EHangupReason, ESDPType, ECallStatus } from '@/call/call.enum'
+import type { TCallClientSocket } from '@/utils/events/event.type'
+import type { TActiveCallSession } from '@/call/call.type'
 
 @Injectable()
-export class VoiceCallConnectionService {
-  private voiceCallServer: Server<{}, IVoiceCallEmitSocketEvents>
-  private readonly connectedClients = new Map<TUserId, TVoiceCallClientSocket[]>()
+export class CallConnectionService {
+  private callServer: Server<{}, ICallEmitSocketEvents>
+  private readonly connectedClients = new Map<TUserId, TCallClientSocket[]>()
 
-  setVoiceCallServer(server: Server): void {
-    this.voiceCallServer = server
+  setCallServer(server: Server): void {
+    this.callServer = server
   }
 
-  getVoiceCallServer(): Server {
-    return this.voiceCallServer
+  getCallServer(): Server {
+    return this.callServer
   }
 
-  setVoiceCallServerMiddleware(middleware: TServerMiddleware): void {
-    this.voiceCallServer.use(middleware)
+  setCallServerMiddleware(middleware: TServerMiddleware): void {
+    this.callServer.use(middleware)
   }
 
-  addConnectedClient(userId: TUserId, client: TVoiceCallClientSocket): void {
+  addConnectedClient(userId: TUserId, client: TCallClientSocket): void {
     const currentClients = this.getConnectedClient(userId)
     if (currentClients && currentClients.length > 0) {
       currentClients.push(client)
@@ -38,7 +35,7 @@ export class VoiceCallConnectionService {
     this.printOutData('after add connected client:')
   }
 
-  getConnectedClient(clientId: TUserId): TVoiceCallClientSocket[] | null {
+  getConnectedClient(clientId: TUserId): TCallClientSocket[] | null {
     return this.connectedClients.get(clientId) || null
   }
 
@@ -71,24 +68,20 @@ export class VoiceCallConnectionService {
     }
   }
 
-  announceCallRequestToCallee(activeCallSession: TActiveVoiceCallSession) {
+  announceCallRequestToCallee(activeCallSession: TActiveCallSession) {
     const calleeSockets = this.getConnectedClient(activeCallSession.calleeUserId)
     if (calleeSockets && calleeSockets.length > 0) {
       for (const socket of calleeSockets) {
-        socket.emit(EVoiceCallEmitSocketEvents.call_request, activeCallSession)
+        socket.emit(ECallEmitSocketEvents.call_request, activeCallSession)
       }
     }
   }
 
-  announceCallStatus(
-    userId: TUserId,
-    status: EVoiceCallStatus,
-    activeCallSession?: TActiveVoiceCallSession
-  ) {
+  announceCallStatus(userId: TUserId, status: ECallStatus, activeCallSession?: TActiveCallSession) {
     const userSockets = this.getConnectedClient(userId)
     if (userSockets && userSockets.length > 0) {
       for (const socket of userSockets) {
-        socket.emit(EVoiceCallEmitSocketEvents.call_status, status, activeCallSession)
+        socket.emit(ECallEmitSocketEvents.call_status, status, activeCallSession)
       }
     }
   }
@@ -97,7 +90,7 @@ export class VoiceCallConnectionService {
     const userSockets = this.getConnectedClient(userId)
     if (userSockets && userSockets.length > 0) {
       for (const socket of userSockets) {
-        socket.emit(EVoiceCallEmitSocketEvents.call_offer_answer, SDP, type)
+        socket.emit(ECallEmitSocketEvents.call_offer_answer, SDP, type)
       }
     }
   }
@@ -111,7 +104,7 @@ export class VoiceCallConnectionService {
     const userSockets = this.getConnectedClient(userId)
     if (userSockets && userSockets.length > 0) {
       for (const socket of userSockets) {
-        socket.emit(EVoiceCallEmitSocketEvents.call_ice, candidate, sdpMid, sdpMLineIndex)
+        socket.emit(ECallEmitSocketEvents.call_ice, candidate, sdpMid, sdpMLineIndex)
       }
     }
   }
@@ -120,7 +113,7 @@ export class VoiceCallConnectionService {
     const userSockets = this.getConnectedClient(userId)
     if (userSockets && userSockets.length > 0) {
       for (const socket of userSockets) {
-        socket.emit(EVoiceCallEmitSocketEvents.call_hangup, reason)
+        socket.emit(ECallEmitSocketEvents.call_hangup, reason)
       }
     }
   }

@@ -1,4 +1,4 @@
-export enum EVoiceCallStatus {
+export enum ECallStatus {
   REQUESTING = 'REQUESTING',
   RINGING = 'RINGING',
   ACCEPTED = 'ACCEPTED',

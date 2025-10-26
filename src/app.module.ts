@@ -1,11 +1,11 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common'
 import { ConfigModule } from '@nestjs/config'
+import { LoggerModule } from './configs/logger/logger.module'
 // import { JwtModule } from '@nestjs/jwt'
 // import { envValidation } from './utils/validation/env.validation'
 // import ms from 'ms'
-import { PrismaModule } from './configs/db/prisma.module'
-import { EventEmitterModule } from '@nestjs/event-emitter'
-import { LoggerModule } from './configs/logger/logger.module'
+// import { PrismaModule } from './configs/db/prisma.module'
+// import { EventEmitterModule } from '@nestjs/event-emitter'
 
 const globalConfigModules = [
   ConfigModule.forRoot({
@@ -13,7 +13,7 @@ const globalConfigModules = [
     // validate: envValidation,
   }),
   LoggerModule,
-  PrismaModule,
+  // PrismaModule,
   // JwtModule.register({
   //   global: true,
   //   secret: process.env.JWT_SECRET,
@@ -21,7 +21,7 @@ const globalConfigModules = [
   //     expiresIn: ms(process.env.JWT_TOKEN_MAX_AGE_IN_HOUR),
   //   },
   // }),
-  EventEmitterModule.forRoot({ verboseMemoryLeak: true, delimiter: ':' }),
+  // EventEmitterModule.forRoot({ verboseMemoryLeak: true, delimiter: ':' }),
 ]
 
 // put gateway here to be able to get env right way

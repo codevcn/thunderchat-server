@@ -13,6 +13,7 @@ export enum ERoutes {
   PROFILE = 'profile',
   PIN_CONVERSATION = 'pin-conversation',
   PUSH_NOTIFICATION = 'push-notification',
+  UNKNOW = 'unknow',
 }
 
 export enum EGrpcPackages {
@@ -111,4 +112,13 @@ export enum EUserOnlineStatus {
 
 export enum ERequestHeaders {
   X_USER_DATA = 'x-user-data',
+}
+
+export enum EPushNotificationType {
+  NEW_MESSAGE = 'new_message',
+  NEW_CONVERSATION = 'new_conversation',
+}
+
+export enum Eurgency {
+  NORMAL = 'normal',
 }
