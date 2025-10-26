@@ -1,10 +1,10 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common'
 import { ConfigModule } from '@nestjs/config'
 import { LoggerModule } from './configs/logger/logger.module'
+import { PrismaModule } from './configs/db/prisma.module'
 // import { JwtModule } from '@nestjs/jwt'
 // import { envValidation } from './utils/validation/env.validation'
 // import ms from 'ms'
-// import { PrismaModule } from './configs/db/prisma.module'
 // import { EventEmitterModule } from '@nestjs/event-emitter'
 
 const globalConfigModules = [
@@ -13,7 +13,7 @@ const globalConfigModules = [
     // validate: envValidation,
   }),
   LoggerModule,
-  // PrismaModule,
+  PrismaModule,
   // JwtModule.register({
   //   global: true,
   //   secret: process.env.JWT_SECRET,

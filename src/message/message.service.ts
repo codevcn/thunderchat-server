@@ -22,8 +22,6 @@ import type {
   TMessageUpdates,
 } from './message.type'
 import { SyncDataToESService } from '@/configs/elasticsearch/sync-data-to-ES/sync-data-to-ES.service'
-import { PushNotificationService } from '@/configs/push-notification/push-notification.service'
-import { TPushNotificationData } from '@/configs/push-notification/push-notification.type'
 @Injectable()
 export class MessageService {
   private readonly messageFullInfo = {
@@ -49,8 +47,7 @@ export class MessageService {
 
   constructor(
     @Inject(EProviderTokens.PRISMA_CLIENT) private PrismaService: PrismaService,
-    private syncDataToESService: SyncDataToESService,
-    private pushNotificationService: PushNotificationService
+    private syncDataToESService: SyncDataToESService
   ) {}
 
   async fidMsgById(msgId: number): Promise<TMessage | null> {
