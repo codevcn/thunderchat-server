@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsNumber, IsEnum, IsNotEmpty } from 'class-validator'
+import { IsString, IsOptional, IsNumber, IsEnum, IsNotEmpty, IsBoolean } from 'class-validator'
 import { EHangupReason, ESDPType } from './call.enum'
 import { Type } from 'class-transformer'
 import type { TCallSessionActiveId } from './call.type'
@@ -6,6 +6,9 @@ import type { TCallSessionActiveId } from './call.type'
 export class CallRequestDTO {
   @IsNumber() @Type(() => Number) directChatId: number
   @IsNumber() @Type(() => Number) calleeUserId: number
+  @IsBoolean()
+  @IsOptional()
+  isVideoCall?: boolean
 }
 
 export class CallAcceptDTO {

@@ -383,6 +383,7 @@ model CallSession {
     callerUserId Int       @map("caller_user_id")
     calleeUserId Int       @map("callee_user_id")
     status       String?   @default("REQUESTING")
+    isVideoCall  Boolean       @default(false)
     createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
     endedAt      DateTime? @map("ended_at") @db.Timestamptz(3)
     hangupReason String?   @map("hangup_reason")

@@ -20,7 +20,8 @@ export class CallService {
   async initActiveCallSession(
     callerUserId: TUserId,
     calleeUserId: TUserId,
-    directChatId: TDirectChat['id']
+    directChatId: TDirectChat['id'],
+    isVideoCall: boolean = false
   ): Promise<TActiveCallSession> {
     let tempSessionId = uuidv4()
     let retryCount: number = 0
@@ -37,6 +38,7 @@ export class CallService {
       callerUserId,
       calleeUserId,
       directChatId,
+      isVideoCall,
     }
     try {
       await this.createDbSession(session)
@@ -92,6 +94,7 @@ export class CallService {
         callerUserId: session.callerUserId,
         calleeUserId: session.calleeUserId,
         status: session.status,
+        isVideoCall: session.isVideoCall || false,
       },
     })
   }

@@ -176,7 +176,7 @@ export class CallGateway
     @MessageBody() payload: CallRequestDTO
   ) {
     const { userId: callerUserId } = await this.authService.validateVoiceCallSocketAuth(client)
-    const { calleeUserId, directChatId } = payload
+    const { calleeUserId, directChatId, isVideoCall = false } = payload
     if (!this.callConnectionService.checkUserIsConnected(calleeUserId)) {
       return { status: ECallStatus.OFFLINE } // thông báo cho caller rằng callee đang offline
     }
@@ -186,8 +186,10 @@ export class CallGateway
     const session = await this.callService.initActiveCallSession(
       callerUserId,
       calleeUserId,
-      directChatId
+      directChatId,
+      isVideoCall
     )
+
     // báo cho callee có cuộc gọi đến
     this.callConnectionService.announceCallRequestToCallee(session)
     // tự động hủy cuộc gọi nếu không có phản hồi

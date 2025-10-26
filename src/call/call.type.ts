@@ -15,4 +15,5 @@ export type TActiveCallSession = {
   callerUserId: TUserId
   calleeUserId: TUserId
   directChatId: TDirectChat['id']
+  isVideoCall?: boolean
 }
