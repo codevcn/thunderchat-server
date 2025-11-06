@@ -40,6 +40,9 @@
         { "path": "/pin" },
         { "path": "/pin-conversation" }
       ]
+    },
+    "notification": {
+      "routes": [{ "path": "/push-notification" }]
     }
   }
 }

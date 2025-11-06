@@ -9,15 +9,14 @@ datasource db {
 }
 
 model MessageMapping {
-    id        Int      @id @default(autoincrement())
-    userId    Int      @unique @map("user_id")
-    mappings  String?
-    key       String   @db.VarChar(255)
-    createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+    id          Int      @id @default(autoincrement())
+    mappings    String
+    key         String   @db.VarChar(255)
+    dek         String   @db.VarChar(128)
+    versionCode String   @unique @map("version_code") @db.VarChar(128) // dek version code
+    createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
 
-    User User @relation("MessageMappings", fields: [userId], references: [id])
-
-    @@index([userId], type: BTree)
+    @@index([versionCode], type: BTree)
     @@map("message_mappings")
 }
 
@@ -51,7 +50,6 @@ model User {
     FriendRequestsSent            FriendRequest[]                @relation("FriendRequestsSent")
     FriendRequestsReceived        FriendRequest[]                @relation("FriendRequestsReceived")
     DirectMessagesAsRecipient     Message[]                      @relation("DirectMessagesAsRecipient")
-    MessageMappings               MessageMapping[]               @relation("MessageMappings")
     GroupChatCreator              GroupChat[]                    @relation("GroupChatCreator")
     GroupChatMembers              GroupChatMember[]              @relation("GroupChatMembers")
     PinnedMessages                PinnedMessage[]                @relation("PinnedMessagesByUser")
@@ -64,8 +62,8 @@ model User {
     GroupChatMembersJoinedBy      GroupChatMember[]              @relation("GroupChatMembersJoinedBy")
     GroupJoinRequest              GroupJoinRequest[]             @relation("UserRequests")
     PushNotificationSubscriptions PushNotificationSubscription[] @relation("PushNotificationSubscriptions")
-    CallSessionsAsCaller          CallSession[]             @relation("CallSessionsAsCaller")
-    CallSessionsAsCallee          CallSession[]             @relation("CallSessionsAsCallee")
+    CallSessionsAsCaller          CallSession[]                  @relation("CallSessionsAsCaller")
+    CallSessionsAsCallee          CallSession[]                  @relation("CallSessionsAsCallee")
 
     @@index([email], type: BTree)
     @@map("users")
@@ -92,13 +90,13 @@ model DirectChat {
     createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
     lastSentMessageId Int?     @unique @map("last_sent_message_id")
 
-    Recipient       User               @relation("DirectChatsAsRecipient", fields: [recipientId], references: [id])
-    Creator         User               @relation("DirectChatsAsSender", fields: [creatorId], references: [id])
-    Messages        Message[]          @relation("MessagesOnDirectChat")
-    LastSentMessage Message?           @relation("LastSentMessageOnDirectChat", fields: [lastSentMessageId], references: [id])
-    PinnedMessages  PinnedMessage[]    @relation("PinnedMessagesOnDirectChat")
-    PinnedChats     PinnedChat[]       @relation("PinnedChatsOnDirectChat")
-    CallSessions    CallSession[] @relation("CallSessionsOnDirectChat")
+    Recipient       User            @relation("DirectChatsAsRecipient", fields: [recipientId], references: [id])
+    Creator         User            @relation("DirectChatsAsSender", fields: [creatorId], references: [id])
+    Messages        Message[]       @relation("MessagesOnDirectChat")
+    LastSentMessage Message?        @relation("LastSentMessageOnDirectChat", fields: [lastSentMessageId], references: [id])
+    PinnedMessages  PinnedMessage[] @relation("PinnedMessagesOnDirectChat")
+    PinnedChats     PinnedChat[]    @relation("PinnedChatsOnDirectChat")
+    CallSessions    CallSession[]   @relation("CallSessionsOnDirectChat")
 
     @@unique([creatorId, recipientId])
     @@map("direct_chats")
@@ -119,20 +117,22 @@ model PinnedChat {
 }
 
 model Message {
-    id           Int               @id @default(autoincrement())
-    content      String
-    authorId     Int               @map("author_id")
-    recipientId  Int?              @map("recipient_id")
-    directChatId Int?              @map("direct_chat_id")
-    groupChatId  Int?              @map("group_chat_id")
-    type         MessageType       @default(TEXT)
-    status       MessageStatusEnum
-    stickerId    Int?              @map("sticker_id")
-    createdAt    DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
-    replyToId    Int?              @map("reply_to_id")
-    isDeleted    Boolean           @default(false) @map("is_deleted")
-    isViolated   Boolean           @default(false) @map("is_violated")
-    mediaId      Int?              @map("media_id")
+    id             Int               @id @default(autoincrement())
+    content        String
+    authorId       Int               @map("author_id")
+    recipientId    Int?              @map("recipient_id")
+    directChatId   Int?              @map("direct_chat_id")
+    groupChatId    Int?              @map("group_chat_id")
+    type           MessageType       @default(TEXT)
+    status         MessageStatusEnum
+    stickerId      Int?              @map("sticker_id")
+    createdAt      DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+    replyToId      Int?              @map("reply_to_id")
+    isDeleted      Boolean           @default(false) @map("is_deleted")
+    isViolated     Boolean           @default(false) @map("is_violated")
+    mediaId        Int?              @map("media_id")
+    dek            String            @db.VarChar(128)
+    dekVersionCode String            @map("dek_version_code") @db.VarChar(128)
 
     DirectChat              DirectChat?       @relation("MessagesOnDirectChat", fields: [directChatId], references: [id])
     Author                  User              @relation("DirectMessagesAsSender", fields: [authorId], references: [id])
@@ -151,16 +151,22 @@ model Message {
 }
 
 model MessageMedia {
-    id           Int              @id @default(autoincrement())
-    url          String           @unique @map("url")
-    fileSize     Int              @map("file_size")
-    fileName     String           @map("file_name")
-    thumbnailUrl String           @map("thumbnail_url")
-    type         MessageMediaType
-    createdAt    DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+    id             Int              @id @default(autoincrement())
+    url            String           @unique @map("url")
+    fileSize       Int              @map("file_size")
+    fileName       String           @map("file_name")
+    fileType       String           @map("file_type")
+    thumbnailUrl   String           @map("thumbnail_url")
+    type           MessageMediaType
+    createdAt      DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+    dek            String           @db.VarChar(128) // base64
+    iv             String           @db.VarChar(128) // base64
+    authTag        String           @map("auth_tag") @db.VarChar(128) // base64
+    dekVersionCode String           @map("dek_version_code") @db.VarChar(128)
 
     Message Message[] @relation("MessageMediaOnMessage")
 
+    @@index([url], type: BTree)
     @@map("message_medias")
 }
 
@@ -378,12 +384,12 @@ model PushNotificationSubscription {
 }
 
 model CallSession {
-    id           String       @id @default(uuid()) @db.Uuid
+    id           String    @id @default(uuid()) @db.Uuid
     directChatId Int?      @map("direct_chat_id")
     callerUserId Int       @map("caller_user_id")
     calleeUserId Int       @map("callee_user_id")
     status       String?   @default("REQUESTING")
-    isVideoCall  Boolean       @default(false)
+    isVideoCall  Boolean   @default(false)
     createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
     endedAt      DateTime? @map("ended_at") @db.Timestamptz(3)
     hangupReason String?   @map("hangup_reason")
@@ -404,6 +410,7 @@ enum ReportedMessageType {
     VIDEO
     AUDIO
     DOCUMENT
+    
 }
 
 enum FriendRequestsStatus {

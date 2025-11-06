@@ -9,6 +9,7 @@ import { join } from 'path'
 
 const addXUserDataHeader = (proxyReq: ClientRequest, req: IncomingMessage) => {
   const user = req['user'] || null
+
   if (user) {
     proxyReq.setHeader(
       ERequestHeaders.X_USER_DATA,
