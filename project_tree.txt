@@ -1,4 +1,4 @@
-Tree view of: D:\D-Documents\Code_VCN\React\VCN-THUNDER-CHAT-APP\server
+Tree view of: F:\DO_ANTN\CLONE\thunderchat-server\thunderchat-server
 
 ├── .env
 ├── .env.development
@@ -8,6 +8,11 @@ Tree view of: D:\D-Documents\Code_VCN\React\VCN-THUNDER-CHAT-APP\server
 ├── .prettierrc.json
 ├── README.md
 ├── add.cmd
+├── assets
+│   ├── auth
+│   │   └── guarded-routes.json
+│   └── routing
+│       └── api-gateway-routing.json
 ├── check-ts.cmd
 ├── dev.cmd
 ├── environment.d.ts
@@ -15,11 +20,7 @@ Tree view of: D:\D-Documents\Code_VCN\React\VCN-THUNDER-CHAT-APP\server
 ├── gen-sql.cmd
 ├── logs
 │   ├── errors.log
-│   ├── es-search.log
-│   ├── incoming-requests.log
-│   ├── info.log
-│   ├── sql-queries.log
-│   └── websocket.log
+│   └── info.log
 ├── mig-db.cmd
 ├── nest-cli.json
 ├── note.txt
@@ -36,6 +37,7 @@ Tree view of: D:\D-Documents\Code_VCN\React\VCN-THUNDER-CHAT-APP\server
 ├── project_tree.txt
 ├── protos
 │   ├── artifacts
+│   │   ├── AI.proto
 │   │   ├── admin.proto
 │   │   ├── auth.proto
 │   │   ├── call.proto
@@ -57,7 +59,6 @@ Tree view of: D:\D-Documents\Code_VCN\React\VCN-THUNDER-CHAT-APP\server
 │       │   └── protobuf
 │       │       ├── any.ts
 │       │       ├── empty.ts
-│       │       ├── struct.ts
 │       │       └── timestamp.ts
 │       ├── media.ts
 │       ├── notification.ts
@@ -66,6 +67,9 @@ Tree view of: D:\D-Documents\Code_VCN\React\VCN-THUNDER-CHAT-APP\server
 ├── rem.cmd
 ├── routing
 │   └── api-gateway-routing.json
+├── secrets
+│   ├── private-key.pem
+│   └── public-certificate.pem
 ├── src
 │   ├── admin
 │   │   ├── README.md
@@ -89,13 +93,11 @@ Tree view of: D:\D-Documents\Code_VCN\React\VCN-THUNDER-CHAT-APP\server
 │   │   ├── auth.guard.ts
 │   │   ├── auth.interface.ts
 │   │   ├── auth.message.ts
-│   │   ├── auth.middleware.ts
 │   │   ├── auth.module.ts
 │   │   ├── auth.service.ts
 │   │   ├── auth.type.ts
 │   │   ├── credentials
 │   │   │   └── credentials.service.ts
-│   │   ├── guarded-routes.json
 │   │   ├── jwt
 │   │   │   ├── jwt.service.ts
 │   │   │   └── jwt.type.ts
@@ -106,7 +108,19 @@ Tree view of: D:\D-Documents\Code_VCN\React\VCN-THUNDER-CHAT-APP\server
 │   │           ├── group-chat-role.guard.ts
 │   │           └── group-chat-role.message.ts
 │   ├── bootstrap
-│   │   └── copy-protos-folder.ts
+│   │   ├── copy-protos-folder.ts
+│   │   ├── init-auth-middleware.ts
+│   │   └── init-routing-middleware.ts
+│   ├── call
+│   │   ├── call.dto.ts
+│   │   ├── call.enum.ts
+│   │   ├── call.gateway.ts
+│   │   ├── call.interceptor.ts
+│   │   ├── call.interface.ts
+│   │   ├── call.message.ts
+│   │   ├── call.module.ts
+│   │   ├── call.service.ts
+│   │   └── call.type.ts
 │   ├── configs
 │   │   ├── communication
 │   │   │   └── grpc
@@ -276,7 +290,6 @@ Tree view of: D:\D-Documents\Code_VCN\React\VCN-THUNDER-CHAT-APP\server
 │   ├── upload
 │   │   ├── file.service.ts
 │   │   ├── s3-upload.service.ts
-│   │   ├── temp-images
 │   │   ├── thumbnail.service.ts
 │   │   ├── upload.controller.ts
 │   │   ├── upload.interface.ts
@@ -310,52 +323,42 @@ Tree view of: D:\D-Documents\Code_VCN\React\VCN-THUNDER-CHAT-APP\server
 │   │   ├── user.module.ts
 │   │   ├── user.service.ts
 │   │   └── user.type.ts
-│   ├── utils
-│   │   ├── crypto
-│   │   │   └── symmetric-encryption.crypto.ts
-│   │   ├── entities
-│   │   │   ├── direct-chat.entity.ts
-│   │   │   ├── friend.entity.ts
-│   │   │   ├── group-chat-member.entity.ts
-│   │   │   ├── group-chat.entity.ts
-│   │   │   ├── message-mappings.entity.ts
-│   │   │   ├── message-media.entity.ts
-│   │   │   ├── message.entity.ts
-│   │   │   ├── pinned-chat.entity.ts
-│   │   │   ├── pinned-message.entity.ts
-│   │   │   ├── profile.entity.ts
-│   │   │   ├── push-notification-subscription.entity.ts
-│   │   │   ├── sticker.entity.ts
-│   │   │   ├── user.entity.ts
-│   │   │   └── voice-call-session.entity.ts
-│   │   ├── enums.ts
-│   │   ├── events
-│   │   │   ├── event.type.ts
-│   │   │   └── socket.event.ts
-│   │   ├── exception-filters
-│   │   │   ├── base-http-exception.filter.ts
-│   │   │   └── base-ws-exception.filter.ts
-│   │   ├── exceptions
-│   │   │   ├── base-http.exception.ts
-│   │   │   ├── base-ws.exception.ts
-│   │   │   ├── custom-error.ts
-│   │   │   └── system.exception.ts
-│   │   ├── helpers.ts
-│   │   ├── messages.ts
-│   │   ├── types.ts
-│   │   └── validation
-│   │       ├── env.validation.ts
-│   │       ├── gateway.validation.ts
-│   │       └── transformers.ts
-│   └── voice-call
-│       ├── voice-call.dto.ts
-│       ├── voice-call.enum.ts
-│       ├── voice-call.gateway.ts
-│       ├── voice-call.interceptor.ts
-│       ├── voice-call.interface.ts
-│       ├── voice-call.message.ts
-│       ├── voice-call.module.ts
-│       ├── voice-call.service.ts
-│       └── voice-call.type.ts
+│   └── utils
+│       ├── crypto
+│       │   └── symmetric-encryption.crypto.ts
+│       ├── entities
+│       │   ├── call-session.entity.ts
+│       │   ├── direct-chat.entity.ts
+│       │   ├── friend.entity.ts
+│       │   ├── group-chat-member.entity.ts
+│       │   ├── group-chat.entity.ts
+│       │   ├── message-mappings.entity.ts
+│       │   ├── message-media.entity.ts
+│       │   ├── message.entity.ts
+│       │   ├── pinned-chat.entity.ts
+│       │   ├── pinned-message.entity.ts
+│       │   ├── profile.entity.ts
+│       │   ├── push-notification-subscription.entity.ts
+│       │   ├── sticker.entity.ts
+│       │   └── user.entity.ts
+│       ├── enums.ts
+│       ├── events
+│       │   ├── event.type.ts
+│       │   └── socket.event.ts
+│       ├── exception-filters
+│       │   ├── base-http-exception.filter.ts
+│       │   └── base-ws-exception.filter.ts
+│       ├── exceptions
+│       │   ├── base-http.exception.ts
+│       │   ├── base-ws.exception.ts
+│       │   ├── custom-error.ts
+│       │   └── system.exception.ts
+│       ├── helpers.ts
+│       ├── messages.ts
+│       ├── types.ts
+│       └── validation
+│           ├── env.validation.ts
+│           ├── gateway.validation.ts
+│           └── transformers.ts
 ├── tsconfig.build.json
 └── tsconfig.json

@@ -90,7 +90,7 @@ export class UploadService {
     @Inject(EProviderTokens.PRISMA_CLIENT) private PrismaService: PrismaService
   ) {}
 
-  async uploadFile(file: Express.Multer.File): Promise<TUploadResult> {
+  async uploadFile(file: Express.Multer.File): Promise<null> {
     if (!process.env.AWS_S3_BUCKET) {
       throw new Error('AWS_S3_BUCKET environment variable is not set')
     }
@@ -114,76 +114,76 @@ export class UploadService {
       : `${Date.now()}_${decodedOriginalName}`
 
     let uploadedFileUrl: string | null = null
+    return null
+    // try {
+    //   // ✅ Upload file bằng AWS SDK v3
+    //   const putCommand = new PutObjectCommand({
+    //     Bucket: process.env.AWS_S3_BUCKET!,
+    //     Key: fileKey,
+    //     Body: file.buffer,
+    //     ContentType: file.mimetype,
+    //   })
 
-    try {
-      // ✅ Upload file bằng AWS SDK v3
-      const putCommand = new PutObjectCommand({
-        Bucket: process.env.AWS_S3_BUCKET!,
-        Key: fileKey,
-        Body: file.buffer,
-        ContentType: file.mimetype,
-      })
+    //   await this.s3.send(putCommand)
 
-      await this.s3.send(putCommand)
+    //   // Tự build URL thay vì `data.Location` như v2
+    //   uploadedFileUrl = `https://${process.env.AWS_S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileKey}`
 
-      // Tự build URL thay vì `data.Location` như v2
-      uploadedFileUrl = `https://${process.env.AWS_S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileKey}`
+    //   // Ghi vào DB
+    //   // const messageMedia = await this.PrismaService.messageMedia.create({
+    //   //   data: {
+    //   //     url: uploadedFileUrl,
+    //   //     type: await detectFileType(file),
+    //   //     fileName: decodedOriginalName,
+    //   //     fileSize: file.size,
+    //   //     thumbnailUrl: '',
+    //   //   },
+    //   // })
 
-      // Ghi vào DB
-      const messageMedia = await this.PrismaService.messageMedia.create({
-        data: {
-          url: uploadedFileUrl,
-          type: await detectFileType(file),
-          fileName: decodedOriginalName,
-          fileSize: file.size,
-          thumbnailUrl: '',
-        },
-      })
+    //   // const result: TUploadResult = {
+    //   //   id: messageMedia.id,
+    //   //   url: messageMedia.url,
+    //   //   fileType: messageMedia.type,
+    //   //   fileName: messageMedia.fileName,
+    //   //   fileSize: formatBytes(messageMedia.fileSize),
+    //   // }
 
-      const result: TUploadResult = {
-        id: messageMedia.id,
-        url: messageMedia.url,
-        fileType: messageMedia.type,
-        fileName: messageMedia.fileName,
-        fileSize: formatBytes(messageMedia.fileSize),
-      }
+    //   // Nếu là video → tạo thumbnail
+    //   if (fileType === 'video') {
+    //     try {
+    //       let thumbnailUrl: string
+    //       const existingThumbnail = await this.thumbnailService.checkThumbnailExists(fileKey)
 
-      // Nếu là video → tạo thumbnail
-      if (fileType === 'video') {
-        try {
-          let thumbnailUrl: string
-          const existingThumbnail = await this.thumbnailService.checkThumbnailExists(fileKey)
+    //       if (existingThumbnail) {
+    //         thumbnailUrl = existingThumbnail
+    //       } else {
+    //         thumbnailUrl = await this.thumbnailService.generateVideoThumbnail(
+    //           uploadedFileUrl,
+    //           fileKey
+    //         )
+    //       }
 
-          if (existingThumbnail) {
-            thumbnailUrl = existingThumbnail
-          } else {
-            thumbnailUrl = await this.thumbnailService.generateVideoThumbnail(
-              uploadedFileUrl,
-              fileKey
-            )
-          }
+    //       await this.PrismaService.messageMedia.update({
+    //         where: { id: messageMedia.id },
+    //         data: { thumbnailUrl },
+    //       })
 
-          await this.PrismaService.messageMedia.update({
-            where: { id: messageMedia.id },
-            data: { thumbnailUrl },
-          })
+    //       result.thumbnailUrl = thumbnailUrl
+    //     } catch (error: any) {
+    //       // Rollback video nếu lỗi
+    //       await this.rollbackFileUpload(fileKey)
+    //       throw new Error(`Failed to create thumbnail: ${error.message}`)
+    //     }
+    //   }
 
-          result.thumbnailUrl = thumbnailUrl
-        } catch (error: any) {
-          // Rollback video nếu lỗi
-          await this.rollbackFileUpload(fileKey)
-          throw new Error(`Failed to create thumbnail: ${error.message}`)
-        }
-      }
-
-      return result
-    } catch (error) {
-      // Nếu có lỗi và file đã upload thì rollback
-      if (uploadedFileUrl) {
-        await this.rollbackFileUpload(fileKey)
-      }
-      throw error
-    }
+    //   return result
+    // } catch (error) {
+    //   // Nếu có lỗi và file đã upload thì rollback
+    //   if (uploadedFileUrl) {
+    //     await this.rollbackFileUpload(fileKey)
+    //   }
+    //   throw error
+    // }
   }
 
   /**
@@ -227,7 +227,7 @@ export class UploadService {
   /**
    * Upload report image to S3
    */
-  async uploadReportImage(file: Express.Multer.File): Promise<{ url: string }> {
+  async uploadReportImage(file: Express.Multer.File): Promise<null> {
     // Create fileKey with report-image folder
     const originalName = file.originalname
     const timestamp = Date.now()
@@ -240,7 +240,7 @@ export class UploadService {
     }
 
     const result = await this.uploadFile(modifiedFile)
-    return { url: result.url }
+    return null
   }
 
   /**

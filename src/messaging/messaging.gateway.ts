@@ -90,8 +90,7 @@ export class MessagingGateway
   implements
     OnGatewayConnection<TClientSocket>,
     OnGatewayDisconnect<TClientSocket>,
-    OnGatewayInit<Server>,
-    IMessagingGateway
+    OnGatewayInit<Server>
 {
   private readonly messageTokensManager = new MessageTokensManager()
   private readonly convTypingManager = new ConversationTypingManager()
@@ -289,195 +288,192 @@ export class MessagingGateway
     }
   }
 
-  async handleMessage(
-    client: THandleMessageParamsClient,
-    message: THandleMessageParamsMessage
-  ): Promise<TMessageFullInfo> {
-    const { id } = client
-    const {
-      content,
-      timestamp,
-      directChatId,
-      receiverId,
-      groupId,
-      stickerId,
-      type,
-      mediaId,
-      replyToId,
-    } = message
-    if (directChatId && receiverId) {
-      const newMessage = await this.messageService.createNewMessage(
-        content,
-        id,
-        timestamp,
-        type,
-        receiverId,
-        stickerId,
-        mediaId,
-        replyToId,
-        directChatId
-      )
-      await this.directChatService.updateLastSentMessage(directChatId, newMessage.id)
-      return newMessage
-    } else if (groupId) {
-      const newMessage = await this.messageService.createNewMessage(
-        content,
-        id,
-        timestamp,
-        type,
-        undefined,
-        stickerId,
-        mediaId,
-        replyToId,
-        undefined,
-        groupId
-      )
-      return newMessage
-    }
-    throw new BaseWsException(EGatewayMessages.INVALID_MESSAGE_TYPE)
-  }
+  // async handleMessage(
+  //   client: THandleMessageParamsClient,
+  //   message: THandleMessageParamsMessage
+  // ): Promise<TMessageFullInfo> {
+  //   const { id } = client
+  //   const {
+  //     content,
+  //     timestamp,
+  //     directChatId,
+  //     receiverId,
+  //     groupId,
+  //     stickerId,
+  //     type,
+  //     mediaId,
+  //     replyToId,
+  //   } = message
+  //   if (directChatId && receiverId) {
+  //     const newMessage = await this.messageService.createNewMessage(
+  //       content,
+  //       id,
+  //       timestamp,
+  //       type,
+  //       receiverId,
+  //       stickerId,
+  //       mediaId,
+  //       replyToId,
+  //       directChatId
+  //     )
+  //     await this.directChatService.updateLastSentMessage(directChatId, newMessage.id)
+  //     return newMessage
+  //   } else if (groupId) {
+  //     const newMessage = await this.messageService.createNewMessage(
+  //       content,
+  //       id,
+  //       timestamp,
+  //       type,
+  //       undefined,
+  //       stickerId,
+  //       mediaId,
+  //       replyToId,
+  //       undefined,
+  //       groupId
+  //     )
+  //     return newMessage
+  //   }
+  //   throw new BaseWsException(EGatewayMessages.INVALID_MESSAGE_TYPE)
+  // }
 
-  async checkCanSendMessageInDirectChat(clientId: number, receiverId: number): Promise<void> {
-    const settings = await this.userSettingsService.findByUserId(receiverId)
-    if (settings?.onlyReceiveFriendMessage) {
-      const isFriend = await this.friendService.isFriend(clientId, receiverId)
-      if (isFriend) return
-      throw new ForbiddenException(EUserSettingsMessages.ONLY_RECEIVE_FRIEND_MESSAGE)
-    }
-    const isBlocked = await this.blockUserService.checkBlockedUser(clientId, receiverId)
-    if (isBlocked?.blockedUserId === clientId)
-      throw new ForbiddenException(EUserMessages.YOU_ARE_BLOCKED_BY_THIS_USER)
-    if (isBlocked?.blockedUserId === receiverId)
-      throw new ForbiddenException(EUserMessages.YOU_HAVE_BLOCKED_THIS_USER)
-  }
+  // async checkCanSendMessageInDirectChat(clientId: number, receiverId: number): Promise<void> {
+  //   const settings = await this.userSettingsService.findByUserId(receiverId)
+  //   if (settings?.onlyReceiveFriendMessage) {
+  //     const isFriend = await this.friendService.isFriend(clientId, receiverId)
+  //     if (isFriend) return
+  //     throw new ForbiddenException(EUserSettingsMessages.ONLY_RECEIVE_FRIEND_MESSAGE)
+  //   }
+  //   const isBlocked = await this.blockUserService.checkBlockedUser(clientId, receiverId)
+  //   if (isBlocked?.blockedUserId === clientId)
+  //     throw new ForbiddenException(EUserMessages.YOU_ARE_BLOCKED_BY_THIS_USER)
+  //   if (isBlocked?.blockedUserId === receiverId)
+  //     throw new ForbiddenException(EUserMessages.YOU_HAVE_BLOCKED_THIS_USER)
+  // }
 
-  @SubscribeMessage(EMessagingListenSocketEvents.send_message_direct)
-  @CatchInternalSocketError()
-  async handleSendDirectMessage(
-    @MessageBody() payload: SendDirectMessageDTO,
-    @ConnectedSocket() client: TClientSocket
-  ) {
-    const { clientId } = await this.authService.validateSocketAuth(client)
-    const { type, msgPayload } = payload
-    const { receiverId, token } = msgPayload
+  // @SubscribeMessage(EMessagingListenSocketEvents.send_message_direct)
+  // @CatchInternalSocketError()
+  // async handleSendDirectMessage(
+  //   @MessageBody() payload: SendDirectMessageDTO,
+  //   @ConnectedSocket() client: TClientSocket
+  // ) {
+  //   const { clientId } = await this.authService.validateSocketAuth(client)
+  //   const { type, msgPayload } = payload
+  //   const { receiverId, token } = msgPayload
 
-    await this.checkCanSendMessageInDirectChat(clientId, receiverId)
+  //   // await this.checkCanSendMessageInDirectChat(clientId, receiverId)
 
-    await this.checkUniqueMessage(token, clientId)
-    const { timestamp, content, replyToId } = msgPayload
+  //   await this.checkUniqueMessage(token, clientId)
+  //   const { timestamp, content, replyToId } = msgPayload
 
-    const { directChat, isNew } = await this.handleDirectChatNotExists(clientId, receiverId)
-    const { id: directChatId } = directChat
+  //   const { directChat, isNew } = await this.handleDirectChatNotExists(clientId, receiverId)
+  //   const { id: directChatId } = directChat
 
-    const sender = await this.userService.findUserWithProfileById(clientId)
-    if (!sender) {
-      throw new BaseWsException(EGatewayMessages.SENDER_NOT_FOUND)
-    }
+  //   const sender = await this.userService.findUserWithProfileById(clientId)
+  //   if (!sender) {
+  //     throw new BaseWsException(EGatewayMessages.SENDER_NOT_FOUND)
+  //   }
 
-    let newMessage: TMessageFullInfo
+  //   let newMessage: TMessageFullInfo
 
-    switch (type) {
-      case EMessageTypeAllTypes.TEXT:
-        newMessage = await this.handleMessage(
-          { id: clientId, socket: client },
-          {
-            content,
-            timestamp,
-            directChatId,
-            receiverId,
-            type: EMessageTypes.TEXT,
-            replyToId,
-          }
-        )
-        break
-      case EMessageTypeAllTypes.STICKER:
-        newMessage = await this.handleMessage(
-          { id: clientId, socket: client },
-          {
-            content: '',
-            timestamp,
-            directChatId,
-            receiverId,
-            type: EMessageTypes.STICKER,
-            stickerId: parseInt(content),
-            replyToId,
-          }
-        )
-        break
-      case EMessageTypeAllTypes.IMAGE:
-        newMessage = await this.handleMessage(
-          { id: clientId, socket: client },
-          {
-            content: '',
-            timestamp,
-            directChatId,
-            receiverId,
-            type: EMessageTypes.MEDIA,
-            mediaId: parseInt(content),
-            replyToId,
-          }
-        )
-        break
-      case EMessageTypeAllTypes.VIDEO:
-        newMessage = await this.handleMessage(
-          { id: clientId, socket: client },
-          {
-            content: '',
-            timestamp,
-            directChatId,
-            receiverId,
-            type: EMessageTypes.MEDIA,
-            mediaId: parseInt(content),
-            replyToId,
-          }
-        )
-        break
-      case EMessageTypeAllTypes.DOCUMENT:
-        newMessage = await this.handleMessage(
-          { id: clientId, socket: client },
-          {
-            content: msgPayload.content || '', // Tên file
-            timestamp,
-            directChatId,
-            receiverId,
-            type: EMessageTypes.MEDIA,
-            mediaId: parseInt(content),
-            replyToId,
-          }
-        )
-        break
-      case EMessageTypeAllTypes.AUDIO:
-        newMessage = await this.handleMessage(
-          { id: clientId, socket: client },
-          {
-            content: msgPayload.content || '', // Caption nếu có
-            timestamp,
-            directChatId,
-            receiverId,
-            type: EMessageTypes.MEDIA,
-            mediaId: parseInt(content),
-            replyToId,
-          }
-        )
-        break
-      default:
-        throw new BaseWsException(EGatewayMessages.INVALID_MESSAGE_FORMAT)
-    }
+  //   switch (type) {
+  //     case EMessageTypeAllTypes.TEXT:
+  //       // newMessage = await this.handleMessage(
+  //       //   { id: clientId, socket: client },
+  //       //   {
+  //       //     content,
+  //       //     timestamp,
+  //       //     directChatId,
+  //       //     receiverId,
+  //       //     type: EMessageTypes.TEXT,
+  //       //     replyToId,
+  //       //   }
+  //       // )
+  //       break
+  //     case EMessageTypeAllTypes.STICKER:
+  //       // newMessage = await this.handleMessage(
+  //       //   { id: clientId, socket: client },
+  //       //   {
+  //       //     content: '',
+  //       //     timestamp,
+  //       //     directChatId,
+  //       //     receiverId,
+  //       //     type: EMessageTypes.STICKER,
+  //       //     stickerId: parseInt(content),
+  //       //     replyToId,
+  //       //   }
+  //       // )
+  //       break
+  //     case EMessageTypeAllTypes.IMAGE:
+  //       // newMessage = await this.handleMessage(
+  //       //   { id: clientId, socket: client },
+  //       //   {
+  //       //     content: '',
+  //       //     timestamp,
+  //       //     directChatId,
+  //       //     receiverId,
+  //       //     type: EMessageTypes.MEDIA,
+  //       //     mediaId: parseInt(content),
+  //       //     replyToId,
+  //       //   }
+  //       // )
+  //       break
+  //     case EMessageTypeAllTypes.VIDEO:
+  //       // newMessage = await this.handleMessage(
+  //       //   { id: clientId, socket: client },
+  //       //   {
+  //       //     content: '',
+  //       //     timestamp,
+  //       //     directChatId,
+  //       //     receiverId,
+  //       //     type: EMessageTypes.MEDIA,
+  //       //     mediaId: parseInt(content),
+  //       //     replyToId,
+  //       //   }
+  //       // )
+  //       break
+  //     case EMessageTypeAllTypes.DOCUMENT:
+  //       // newMessage = await this.handleMessage(
+  //       //   { id: clientId, socket: client },
+  //       //   {
+  //       //     content: msgPayload.content || '', // Tên file
+  //       //     timestamp,
+  //       //     directChatId,
+  //       //     receiverId,
+  //       //     type: EMessageTypes.MEDIA,
+  //       //     mediaId: parseInt(content),
+  //       //     replyToId,
+  //       //   }
+  //       // )
+  //       break
+  //     case EMessageTypeAllTypes.AUDIO:
+  //       // newMessage = await this.handleMessage(
+  //       //   { id: clientId, socket: client },
+  //       //   {
+  //       //     content: msgPayload.content || '', // Caption nếu có
+  //       //     timestamp,
+  //       //     directChatId,
+  //       //     receiverId,
+  //       //     type: EMessageTypes.MEDIA,
+  //       //     mediaId: parseInt(content),
+  //       //     replyToId,
+  //       //   }
+  //       // )
+  //       break
+  //     default:
+  //       throw new BaseWsException(EGatewayMessages.INVALID_MESSAGE_FORMAT)
+  //   }
 
-    await this.handleEmitNewMessage({
-      client: { id: clientId, socket: client },
-      receiverId,
-      newMessage,
-      isNewDirectChat: isNew,
-      directChat,
-      sender,
-    })
+  //   // await this.handleEmitNewMessage({
+  //   //   client: { id: clientId, socket: client },
+  //   //   receiverId,
+  //   //   newMessage,
+  //   //   isNewDirectChat: isNew,
+  //   //   directChat,
+  //   //   sender,
+  //   // })
 
-    return {
-      success: true,
-      newMessage,
-    }
-  }
+  //   return null
+  // }
 
   @SubscribeMessage(EMessagingListenSocketEvents.client_hello)
   @CatchInternalSocketError()
@@ -566,118 +562,118 @@ export class MessagingGateway
     return { member }
   }
 
-  @SubscribeMessage(EMessagingListenSocketEvents.send_message_group)
-  @CatchInternalSocketError()
-  async handleSendGroupMessage(
-    @MessageBody() payload: SendGroupMessageDTO,
-    @ConnectedSocket() client: TClientSocket
-  ) {
-    const { clientId } = await this.authService.validateSocketAuth(client)
-    const { type, msgPayload } = payload
-    const { groupChatId, token } = msgPayload
+  // @SubscribeMessage(EMessagingListenSocketEvents.send_message_group)
+  // @CatchInternalSocketError()
+  // async handleSendGroupMessage(
+  //   @MessageBody() payload: SendGroupMessageDTO,
+  //   @ConnectedSocket() client: TClientSocket
+  // ) {
+  //   const { clientId } = await this.authService.validateSocketAuth(client)
+  //   const { type, msgPayload } = payload
+  //   const { groupChatId, token } = msgPayload
 
-    await this.checkUniqueMessage(token, clientId)
-    const { timestamp, content, replyToId } = msgPayload
+  //   await this.checkUniqueMessage(token, clientId)
+  //   const { timestamp, content, replyToId } = msgPayload
 
-    const { member } = await this.checkCanSendMessageInGroupChat(clientId, type, groupChatId)
+  //   const { member } = await this.checkCanSendMessageInGroupChat(clientId, type, groupChatId)
 
-    const groupChat = member.GroupChat
-    let newMessage: TMessageFullInfo
+  //   const groupChat = member.GroupChat
+  //   let newMessage: TMessageFullInfo
 
-    switch (type) {
-      case EMessageTypeAllTypes.TEXT:
-        newMessage = await this.handleMessage(
-          { id: clientId, socket: client },
-          {
-            content,
-            timestamp,
-            groupId: groupChatId,
-            type: EMessageTypes.TEXT,
-            replyToId,
-          }
-        )
-        break
-      case EMessageTypeAllTypes.STICKER:
-        newMessage = await this.handleMessage(
-          { id: clientId, socket: client },
-          {
-            content: '',
-            timestamp,
-            groupId: groupChatId,
-            type: EMessageTypes.STICKER,
-            stickerId: parseInt(content),
-            replyToId,
-          }
-        )
-        break
-      case EMessageTypeAllTypes.IMAGE:
-        newMessage = await this.handleMessage(
-          { id: clientId, socket: client },
-          {
-            content: '',
-            timestamp,
-            groupId: groupChatId,
-            type: EMessageTypes.MEDIA,
-            mediaId: parseInt(content),
-            replyToId,
-          }
-        )
-        break
-      case EMessageTypeAllTypes.VIDEO:
-        newMessage = await this.handleMessage(
-          { id: clientId, socket: client },
-          {
-            content: '',
-            timestamp,
-            groupId: groupChatId,
-            type: EMessageTypes.MEDIA,
-            mediaId: parseInt(content),
-            replyToId,
-          }
-        )
-        break
-      case EMessageTypeAllTypes.DOCUMENT:
-        newMessage = await this.handleMessage(
-          { id: clientId, socket: client },
-          {
-            content: msgPayload.content || '', // Tên file
-            timestamp,
-            groupId: groupChatId,
-            type: EMessageTypes.MEDIA,
-            mediaId: parseInt(content),
-            replyToId,
-          }
-        )
-        break
-      case EMessageTypeAllTypes.AUDIO:
-        newMessage = await this.handleMessage(
-          { id: clientId, socket: client },
-          {
-            content: msgPayload.content || '', // Caption nếu có
-            timestamp,
-            groupId: groupChatId,
-            type: EMessageTypes.MEDIA,
-            mediaId: parseInt(content),
-            replyToId,
-          }
-        )
-        break
-      default:
-        throw new BaseWsException(EGatewayMessages.INVALID_MESSAGE_FORMAT)
-    }
+  //   switch (type) {
+  //     case EMessageTypeAllTypes.TEXT:
+  //       newMessage = await this.handleMessage(
+  //         { id: clientId, socket: client },
+  //         {
+  //           content,
+  //           timestamp,
+  //           groupId: groupChatId,
+  //           type: EMessageTypes.TEXT,
+  //           replyToId,
+  //         }
+  //       )
+  //       break
+  //     case EMessageTypeAllTypes.STICKER:
+  //       newMessage = await this.handleMessage(
+  //         { id: clientId, socket: client },
+  //         {
+  //           content: '',
+  //           timestamp,
+  //           groupId: groupChatId,
+  //           type: EMessageTypes.STICKER,
+  //           stickerId: parseInt(content),
+  //           replyToId,
+  //         }
+  //       )
+  //       break
+  //     case EMessageTypeAllTypes.IMAGE:
+  //       newMessage = await this.handleMessage(
+  //         { id: clientId, socket: client },
+  //         {
+  //           content: '',
+  //           timestamp,
+  //           groupId: groupChatId,
+  //           type: EMessageTypes.MEDIA,
+  //           mediaId: parseInt(content),
+  //           replyToId,
+  //         }
+  //       )
+  //       break
+  //     case EMessageTypeAllTypes.VIDEO:
+  //       newMessage = await this.handleMessage(
+  //         { id: clientId, socket: client },
+  //         {
+  //           content: '',
+  //           timestamp,
+  //           groupId: groupChatId,
+  //           type: EMessageTypes.MEDIA,
+  //           mediaId: parseInt(content),
+  //           replyToId,
+  //         }
+  //       )
+  //       break
+  //     case EMessageTypeAllTypes.DOCUMENT:
+  //       newMessage = await this.handleMessage(
+  //         { id: clientId, socket: client },
+  //         {
+  //           content: msgPayload.content || '', // Tên file
+  //           timestamp,
+  //           groupId: groupChatId,
+  //           type: EMessageTypes.MEDIA,
+  //           mediaId: parseInt(content),
+  //           replyToId,
+  //         }
+  //       )
+  //       break
+  //     case EMessageTypeAllTypes.AUDIO:
+  //       newMessage = await this.handleMessage(
+  //         { id: clientId, socket: client },
+  //         {
+  //           content: msgPayload.content || '', // Caption nếu có
+  //           timestamp,
+  //           groupId: groupChatId,
+  //           type: EMessageTypes.MEDIA,
+  //           mediaId: parseInt(content),
+  //           replyToId,
+  //         }
+  //       )
+  //       break
+  //     default:
+  //       throw new BaseWsException(EGatewayMessages.INVALID_MESSAGE_FORMAT)
+  //   }
 
-    await this.handleEmitNewMessage({
-      client: { id: clientId, socket: client },
-      newMessage,
-      sender: member.User,
-      groupChat,
-    })
+  //   await this.handleEmitNewMessage({
+  //     client: { id: clientId, socket: client },
+  //     newMessage,
+  //     sender: member.User,
+  //     groupChat,
+  //   })
 
-    return {
-      success: true,
-      newMessage,
-    }
-  }
+  //   return {
+  //     success: true,
+  //     newMessage,
+  //   }
+  // }
 
   @SubscribeMessage(EMessagingListenSocketEvents.check_user_online_status)
   @CatchInternalSocketError()

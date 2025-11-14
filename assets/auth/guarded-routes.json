@@ -25,7 +25,7 @@
       "routes": [{ "path": "/friend-request" }, { "path": "/friend" }]
     },
     "search": {
-      "routes": [{ "path": "/search" }]
+      "routes": [{ "path": "/search" }, { "path": "/smart-search" }]
     },
     "media": {
       "routes": [{ "path": "/media-message" }, { "path": "/sticker" }]

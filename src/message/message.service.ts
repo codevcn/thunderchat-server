@@ -81,29 +81,29 @@ export class MessageService {
     replyToId?: number,
     directChatId?: number,
     groupChatId?: number
-  ): Promise<TGetDirectMessagesMessage> {
-    const message = await this.PrismaService.message.create({
-      data: {
-        content: this.createMessageContentForMedia(encryptedContent, stickerId, mediaId),
-        authorId,
-        createdAt: timestamp,
-        status: EMessageStatus.SENT,
-        type,
-        stickerId,
-        recipientId,
-        mediaId,
-        replyToId,
-        groupChatId,
-        directChatId,
-      },
-      include: this.messageFullInfo,
-    })
-    this.syncDataToESService.syncDataToES({
-      type: ESyncDataToESWorkerType.CREATE_MESSAGE,
-      data: message,
-      // msgEncryptor: this.syncDataToESService.getESMessageEncryptor(authorId),
-    })
-    return message
+  ): Promise<null> {
+    // const message = await this.PrismaService.message.create({
+    //   data: {
+    //     content: this.createMessageContentForMedia(encryptedContent, stickerId, mediaId),
+    //     authorId,
+    //     createdAt: timestamp,
+    //     status: EMessageStatus.SENT,
+    //     type,
+    //     stickerId,
+    //     recipientId,
+    //     mediaId,
+    //     replyToId,
+    //     groupChatId,
+    //     directChatId,
+    //   },
+    //   include: this.messageFullInfo,
+    // })
+    // this.syncDataToESService.syncDataToES({
+    //   type: ESyncDataToESWorkerType.CREATE_MESSAGE,
+    //   data: message,
+    //   // msgEncryptor: this.syncDataToESService.getESMessageEncryptor(authorId),
+    // })
+    return null
   }
 
   async updateMsg(msgId: number, updates: TMessageUpdates): Promise<TMessageWithMedia> {

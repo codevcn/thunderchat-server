@@ -77,6 +77,11 @@
           "path": "/search",
           "rewrite": { "^/": "/api/search/" },
           "changeOrigin": true
+        },
+        {
+          "path": "/smart-search",
+          "rewrite": { "^/": "/api/smart-search/" },
+          "changeOrigin": true
         }
       ]
     },

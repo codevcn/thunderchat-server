@@ -240,14 +240,14 @@ const createOrUpdateMessageMapping = async (
   } else {
     encryptedMsgContent = symmetricEncryptor.encrypt(rawMsgContent, userSecretKey)
   }
-  await prismaClient.messageMapping.update({
-    where: {
-      userId,
-    },
-    data: {
-      mappings: encryptedMsgContent,
-    },
-  })
+  // await prismaClient.messageMapping.update({
+  //   where: {
+  //     id,
+  //   },
+  //   data: {
+  //     mappings: encryptedMsgContent,
+  //   },
+  // })
 }
 
 const encryptMessageContent = (

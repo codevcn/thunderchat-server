@@ -130,34 +130,34 @@ export class PinService {
       }
 
       // Tạo message thông báo
-      const pinNoticeMessage = await this.prismaService.message.create({
-        data: {
-          content: `${fullName} has pinned the message: ${originalMessageDescription}`,
-          authorId: userId,
-          recipientId,
-          directChatId,
-          type: EMessageTypes.PIN_NOTICE,
-          status: EMessageStatus.SENT,
-          replyToId: messageId, // Liên kết tới tin nhắn gốc
-        },
-        include: {
-          Author: { include: { Profile: true } },
-          ReplyTo: { include: { Author: { include: { Profile: true } } } },
-          Media: true,
-        },
-      })
+      // const pinNoticeMessage = await this.prismaService.message.create({
+      //   data: {
+      //     content: `${fullName} has pinned the message: ${originalMessageDescription}`,
+      //     authorId: userId,
+      //     recipientId,
+      //     directChatId,
+      //     type: EMessageTypes.PIN_NOTICE,
+      //     status: EMessageStatus.SENT,
+      //     replyToId: messageId, // Liên kết tới tin nhắn gốc
+      //   },
+      //   include: {
+      //     Author: { include: { Profile: true } },
+      //     ReplyTo: { include: { Author: { include: { Profile: true } } } },
+      //     Media: true,
+      //   },
+      // })
 
-      this.syncDataToESService.syncDataToES({
-        type: ESyncDataToESWorkerType.CREATE_MESSAGE,
-        data: pinNoticeMessage,
-      })
+      // this.syncDataToESService.syncDataToES({
+      //   type: ESyncDataToESWorkerType.CREATE_MESSAGE,
+      //   data: pinNoticeMessage,
+      // })
 
       // Emit socket event gửi message mới cho cả 2 user
-      this.userConnectionService.emitToDirectChat(
-        directChatId,
-        EMessagingEmitSocketEvents.send_message_direct,
-        pinNoticeMessage
-      )
+      // this.userConnectionService.emitToDirectChat(
+      //   directChatId,
+      //   EMessagingEmitSocketEvents.send_message_direct,
+      //   pinNoticeMessage
+      // )
 
       // PHÁT SOCKET EVENT ĐẾN TẤT CẢ CLIENT CÙNG PHÒNG
       this.userConnectionService.emitToDirectChat(
@@ -210,33 +210,33 @@ export class PinService {
       }
 
       // Tạo message thông báo
-      const pinNoticeMessage = await this.prismaService.message.create({
-        data: {
-          content: `${fullName} has unpinned the message: ${originalMessageDescription}`,
-          authorId: userId,
-          recipientId,
-          directChatId,
-          type: EMessageTypes.PIN_NOTICE,
-          status: EMessageStatus.SENT,
-        },
-        include: {
-          Author: { include: { Profile: true } },
-          ReplyTo: { include: { Author: { include: { Profile: true } } } },
-          Media: true,
-        },
-      })
+      // const pinNoticeMessage = await this.prismaService.message.create({
+      //   data: {
+      //     content: `${fullName} has unpinned the message: ${originalMessageDescription}`,
+      //     authorId: userId,
+      //     recipientId,
+      //     directChatId,
+      //     type: EMessageTypes.PIN_NOTICE,
+      //     status: EMessageStatus.SENT,
+      //   },
+      //   include: {
+      //     Author: { include: { Profile: true } },
+      //     ReplyTo: { include: { Author: { include: { Profile: true } } } },
+      //     Media: true,
+      //   },
+      // })
 
-      this.syncDataToESService.syncDataToES({
-        type: ESyncDataToESWorkerType.CREATE_MESSAGE,
-        data: pinNoticeMessage,
-      })
+      // this.syncDataToESService.syncDataToES({
+      //   type: ESyncDataToESWorkerType.CREATE_MESSAGE,
+      //   data: pinNoticeMessage,
+      // })
 
       // Emit socket event gửi message mới cho cả 2 user
-      this.userConnectionService.emitToDirectChat(
-        directChatId,
-        EMessagingEmitSocketEvents.send_message_direct,
-        pinNoticeMessage
-      )
+      // this.userConnectionService.emitToDirectChat(
+      //   directChatId,
+      //   EMessagingEmitSocketEvents.send_message_direct,
+      //   pinNoticeMessage
+      // )
 
       // PHÁT SOCKET EVENT ĐẾN TẤT CẢ CLIENT CÙNG PHÒNG
       this.userConnectionService.emitToDirectChat(
@@ -421,36 +421,36 @@ export class PinService {
         : ''
 
       // Tạo message thông báo
-      const pinNoticeMessage = await this.prismaService.message.create({
-        data: {
-          content: `${fullName} has pinned the message: ${originalMessageDescription}`,
-          authorId: userId,
-          groupChatId,
-          type: EMessageTypes.PIN_NOTICE,
-          status: EMessageStatus.SENT,
-          replyToId: messageId, // Liên kết tới tin nhắn gốc
-        },
-        include: {
-          Author: { include: { Profile: true } },
-          ReplyTo: {
-            include: {
-              Author: { include: { Profile: true } },
-              Media: true,
-              Sticker: true,
-            },
-          },
-          Media: true,
-          Sticker: true,
-        },
-      })
+      // const pinNoticeMessage = await this.prismaService.message.create({
+      //   data: {
+      //     content: `${fullName} has pinned the message: ${originalMessageDescription}`,
+      //     authorId: userId,
+      //     groupChatId,
+      //     type: EMessageTypes.PIN_NOTICE,
+      //     status: EMessageStatus.SENT,
+      //     replyToId: messageId, // Liên kết tới tin nhắn gốc
+      //   },
+      //   include: {
+      //     Author: { include: { Profile: true } },
+      //     ReplyTo: {
+      //       include: {
+      //         Author: { include: { Profile: true } },
+      //         Media: true,
+      //         Sticker: true,
+      //       },
+      //     },
+      //     Media: true,
+      //     Sticker: true,
+      //   },
+      // })
 
-      this.syncDataToESService.syncDataToES({
-        type: ESyncDataToESWorkerType.CREATE_MESSAGE,
-        data: pinNoticeMessage,
-      })
+      // this.syncDataToESService.syncDataToES({
+      //   type: ESyncDataToESWorkerType.CREATE_MESSAGE,
+      //   data: pinNoticeMessage,
+      // })
 
       // Emit socket event gửi message mới cho cả thành viên trong group
-      this.userConnectionService.sendNewMessageToGroupChat(groupChatId, pinNoticeMessage)
+      // this.userConnectionService.sendNewMessageToGroupChat(groupChatId, pinNoticeMessage)
 
       // PHÁT SOCKET EVENT ĐẾN TẤT CẢ CLIENT CÙNG PHÒNG
       this.userConnectionService
@@ -492,46 +492,46 @@ export class PinService {
         : ''
 
       // Tạo message thông báo
-      const pinNoticeMessage = await this.prismaService.message.create({
-        data: {
-          content: `${fullName} has unpinned the message: ${originalMessageDescription}`,
-          authorId: userId,
-          groupChatId,
-          type: EMessageTypes.PIN_NOTICE,
-          status: EMessageStatus.SENT,
-        },
-        include: {
-          Author: { include: { Profile: true } },
-          ReplyTo: {
-            include: {
-              Author: { include: { Profile: true } },
-              Media: true,
-              Sticker: true,
-            },
-          },
-          Media: true,
-          Sticker: true,
-        },
-      })
+      // const pinNoticeMessage = await this.prismaService.message.create({
+      //   data: {
+      //     content: `${fullName} has unpinned the message: ${originalMessageDescription}`,
+      //     authorId: userId,
+      //     groupChatId,
+      //     type: EMessageTypes.PIN_NOTICE,
+      //     status: EMessageStatus.SENT,
+      //   },
+      //   include: {
+      //     Author: { include: { Profile: true } },
+      //     ReplyTo: {
+      //       include: {
+      //         Author: { include: { Profile: true } },
+      //         Media: true,
+      //         Sticker: true,
+      //       },
+      //     },
+      //     Media: true,
+      //     Sticker: true,
+      //   },
+      // })
 
-      this.syncDataToESService.syncDataToES({
-        type: ESyncDataToESWorkerType.CREATE_MESSAGE,
-        data: pinNoticeMessage,
-      })
+      // this.syncDataToESService.syncDataToES({
+      //   type: ESyncDataToESWorkerType.CREATE_MESSAGE,
+      //   data: pinNoticeMessage,
+      // })
 
       // Emit socket event gửi message mới cho cả 2 user
-      this.userConnectionService.sendNewMessageToGroupChat(groupChatId, pinNoticeMessage)
+      // this.userConnectionService.sendNewMessageToGroupChat(groupChatId, pinNoticeMessage)
 
-      // PHÁT SOCKET EVENT ĐẾN TẤT CẢ CLIENT CÙNG PHÒNG
-      this.userConnectionService
-        .getMessagingServer()
-        .to(createGroupChatRoomName(groupChatId))
-        .emit(EMessagingEmitSocketEvents.pin_message_group, {
-          messageId: pinNoticeMessage.id,
-          groupChatId,
-          isPinned: false,
-          userId,
-        })
+      // // PHÁT SOCKET EVENT ĐẾN TẤT CẢ CLIENT CÙNG PHÒNG
+      // this.userConnectionService
+      //   .getMessagingServer()
+      //   .to(createGroupChatRoomName(groupChatId))
+      //   .emit(EMessagingEmitSocketEvents.pin_message_group, {
+      //     messageId: pinNoticeMessage.id,
+      //     groupChatId,
+      //     isPinned: false,
+      //     userId,
+      //   })
 
       return { success: true, deletedCount: deletedPin.count }
     }

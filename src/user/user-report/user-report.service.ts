@@ -89,16 +89,15 @@ export class UserReportService implements IUserReportService {
           for (const image of reportImages) {
             try {
               // Upload to AWS S3 using the service method
-              const { url: imageUrl } = await this.uploadService.uploadReportImage(image)
-              uploadedImageUrls.push(imageUrl)
-
-              // Save to database
-              await prisma.reportImage.create({
-                data: {
-                  reportId: violationReport.id,
-                  imageUrl,
-                },
-              })
+              // const { url: imageUrl } = await this.uploadService.uploadReportImage(image)
+              // uploadedImageUrls.push(imageUrl)
+              // // Save to database
+              // await prisma.reportImage.create({
+              //   data: {
+              //     reportId: violationReport.id,
+              //     imageUrl,
+              //   },
+              // })
             } catch (error) {
               DevLogger.logError(`Failed to upload report image:`, error)
               // Rollback uploaded images
